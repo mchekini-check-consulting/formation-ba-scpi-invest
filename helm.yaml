@@ -11,11 +11,11 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: d732252
-      qualif: ""
+      qualif: d732252
       preprod: ""
       prod: ""
     containerPort: 8080
-    replicas: {dev: 1, qualif: 2, preprod: 2, prod: 3}
+    replicas: {dev: 1, qualif: 1, preprod: 2, prod: 2}
     service:
       port: 80
     ingress:
@@ -36,11 +36,11 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 3dabae2
-      qualif: ""
+      qualif: 3dabae2
       preprod: ""
       prod: ""
     containerPort: 8080
-    replicas: {dev: 1, qualif: 2, preprod: 2, prod: 3}
+    replicas: {dev: 1, qualif: 1, preprod: 2, prod: 2}
     service:
       port: 80
     ingress:
