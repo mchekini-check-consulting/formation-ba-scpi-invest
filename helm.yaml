@@ -11,7 +11,7 @@ applications:
     # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
     # remplace tout jusqu'à la fin de la ligne.
     tag:
-      dev: d732252
+      dev: 7ba4a1a
       qualif: d732252
       preprod: ""
       prod: ""
@@ -41,7 +41,7 @@ applications:
     # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
     # remplace tout jusqu'à la fin de la ligne.
     tag:
-      dev: 3dabae2
+      dev: 7ba4a1a
       qualif: 3dabae2
       preprod: ""
       prod: ""
