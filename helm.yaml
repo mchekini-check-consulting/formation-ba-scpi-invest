@@ -41,7 +41,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 475815b
-      qualif: d76806f
+      qualif: 475815b
       preprod: ""
       prod: ""
     containerPort: 8080
