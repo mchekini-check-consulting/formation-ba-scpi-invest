@@ -1,1 +1,9 @@
-/* You can add global styles to this file, and also import other style files */
+/* Styles globaux */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Archivo, system-ui, sans-serif;
+}
