@@ -1,13 +1,13 @@
-// Palette « pierre & laiton » : vert empire des institutions patrimoniales,
+// Palette « pierre & laiton » : bleu nuit des institutions patrimoniales,
 // laiton des plaques de sociétés de gestion, papier froid en contrepoint.
-$vert: #123f33;
-$vert-fonce: #0c2b23;
-$vert-fenetre: #1b4a3c;
+$bleu: #16365c;
+$bleu-fonce: #0b2036;
+$bleu-fenetre: #1d4066;
 $laiton: #c89b3c;
 $laiton-clair: #e8c87e;
-$craie: #eef1ec;
-$zinc: #93a79e;
-$encre: #15241f;
+$craie: #edf0f3;
+$zinc: #93a3b5;
+$encre: #141c26;
 
 :host {
   display: block;
@@ -29,7 +29,7 @@ $encre: #15241f;
   justify-content: space-between;
   gap: 1rem;
   padding: 1.1rem clamp(1.25rem, 5vw, 4rem);
-  background: $vert;
+  background: $bleu;
   color: $craie;
 }
 
@@ -61,7 +61,7 @@ $encre: #15241f;
   align-items: center;
   gap: clamp(2rem, 6vw, 5rem);
   padding: clamp(3rem, 8vw, 6rem) clamp(1.25rem, 5vw, 4rem);
-  background: linear-gradient(180deg, $vert 0%, $vert-fonce 100%);
+  background: linear-gradient(180deg, $bleu 0%, $bleu-fonce 100%);
   color: $craie;
 }
 
@@ -100,7 +100,7 @@ h1 {
 .btn {
   padding: 0.85rem 1.6rem;
   background: $laiton;
-  color: $vert-fonce;
+  color: $bleu-fonce;
   text-decoration: none;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -141,14 +141,14 @@ h1 {
   gap: 0.55rem;
   width: min(100%, 21rem);
   padding: 1.1rem;
-  background: $vert-fonce;
+  background: $bleu-fonce;
   border: 1px solid rgba($craie, 0.14);
   border-top-width: 6px; // la corniche
 }
 
 .fenetre {
   aspect-ratio: 5 / 8;
-  background: $vert-fenetre;
+  background: $bleu-fenetre;
   border: 1px solid rgba($craie, 0.1);
   opacity: 0;
   animation: allumage 0.5s ease-out forwards;
@@ -196,7 +196,7 @@ figcaption {
   padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 5vw, 4rem);
 
   article {
-    border-top: 2px solid $vert;
+    border-top: 2px solid $bleu;
     padding-top: 1.1rem;
   }
 
