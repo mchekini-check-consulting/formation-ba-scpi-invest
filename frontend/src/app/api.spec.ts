@@ -3,7 +3,7 @@ import { apiBase } from './api';
 describe('apiBase', () => {
   it('pointe la passerelle de l\'environnement du frontend', () => {
     expect(apiBase('frontend.formation-ba-scpi-invest.qualif.check-consulting.net')).toBe(
-      'https://api.qualif.check-consulting.net/formation-ba-scpi-invest/backend',
+      'https://gateway.formation-ba-scpi-invest.qualif.check-consulting.net/backend',
     );
   });
 
