@@ -15,6 +15,6 @@ describe('App', () => {
   it('affiche la landing page sur la racine', async () => {
     const harness = await RouterTestingHarness.create('/');
     const page = harness.routeNativeElement as HTMLElement;
-    expect(page.querySelector('h1')?.textContent).toContain('une part');
+    expect(page.querySelector('h1')?.textContent).toContain('deux parts');
   });
 });
