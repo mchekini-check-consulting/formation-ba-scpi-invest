@@ -1,6 +1,7 @@
 package com.example.scpiinvest.item;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -38,7 +39,7 @@ public class Item {
 
 	@PrePersist
 	void avantCreation() {
-		creeLe = OffsetDateTime.now();
+		creeLe = OffsetDateTime.now(ZoneOffset.UTC);
 	}
 
 	public Long getId() {
