@@ -1,6 +1,9 @@
-**/target
-.idea
-*.iml
+node_modules
+dist
+.angular
+coverage
 .vscode
+*.log
 Dockerfile
 .dockerignore
+compose.yaml

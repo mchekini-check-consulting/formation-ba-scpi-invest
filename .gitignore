@@ -1,3 +1,9 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+# Outillage racine (prettier, husky, lint-staged)
+node_modules/

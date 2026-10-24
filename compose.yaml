@@ -1,0 +1,49 @@
+# Environnement local (hors CI et hors cluster), depuis la racine du dépôt.
+#
+# Développement : la base seule, backend et frontend lancés avec npm run dev
+#   docker compose up -d                      ->  PostgreSQL sur localhost:5432
+#
+# Pile complète : images construites depuis les Dockerfile, comme la CI
+#   docker compose --profile full up --build  ->  http://localhost:8081
+#
+# Arrêt : docker compose --profile full down  (ajouter -v pour vider la base)
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: scpi_invest
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      # Même URL que la valeur par défaut de backend/src/db.ts
+      - '5432:5432'
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'app', '-d', 'scpi_invest']
+      interval: 2s
+      retries: 15
+
+  backend:
+    profiles: [full]
+    build: ./backend
+    environment:
+      # Même variable que sur le cluster (helm.yaml : database)
+      DATABASE_URL: postgresql://app:app@postgres:5432/scpi_invest
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    profiles: [full]
+    build: ./frontend
+    ports:
+      - '8081:8080'
+    volumes:
+      # Config nginx locale : ajoute /api -> backend (rôle de la passerelle sur le cluster)
+      - ./frontend/nginx.local.conf:/etc/nginx/conf.d/nginx.default.conf:ro
+    depends_on:
+      - backend
+
+volumes:
+  postgres:
