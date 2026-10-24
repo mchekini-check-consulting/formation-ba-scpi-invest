@@ -28,6 +28,7 @@ class ScpiInvestApplicationIT {
 
 	@Test
 	void contextLoads() {
+		// Vide intentionnellement : vérifie seulement que le contexte Spring démarre sans erreur.
 	}
 
 	@Test
