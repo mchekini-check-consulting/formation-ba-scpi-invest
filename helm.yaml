@@ -55,7 +55,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: "93e9715"
-      qualif: f45a717
+      qualif: "93e9715"
       preprod: ""
       prod: ""
     containerPort: 8080
