@@ -8,7 +8,7 @@ class HelloControllerTest {
 
 	@Test
 	void helloRetourneLeMessage() {
-		assertEquals("Hello, World !", new HelloController().hello());
+		assertEquals("Hello, World!", new HelloController().hello());
 	}
 
 }
