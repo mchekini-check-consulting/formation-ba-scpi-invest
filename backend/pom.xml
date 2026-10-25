@@ -23,6 +23,22 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aspectj</artifactId>
+		</dependency>
+
+		<!-- Logging applicatif structuré (JSON sur stdout, layer controller/service/db) -->
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>8.0</version>
+		</dependency>
+		<dependency>
+			<groupId>net.ttddyy</groupId>
+			<artifactId>datasource-proxy</artifactId>
+			<version>1.10</version>
+		</dependency>
 
 		<!-- Base PostgreSQL : connexion lue dans SPRING_DATASOURCE_* (injectées par la
 		     plateforme, helm.yaml : database), schéma versionné par Flyway -->

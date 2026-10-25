@@ -11,3 +11,9 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate   # le schéma vient uniquement des migrations Flyway
+
+# Niveau minimal des logs applicatifs (JSON sur stdout, cf. logback-spring.xml) ;
+# LOG_LEVEL est injecté par la plateforme (helm.yaml, envList).
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
