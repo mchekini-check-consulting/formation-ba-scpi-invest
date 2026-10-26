@@ -18,7 +18,7 @@ ENV NODE_ENV=production
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/migrations ./migrations
+COPY --from=build /app/drizzle ./drizzle
 USER nonroot
 EXPOSE 8080
 # ENTRYPOINT de l'image : ["/nodejs/bin/node"]

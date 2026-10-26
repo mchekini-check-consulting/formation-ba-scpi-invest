@@ -7,3 +7,8 @@ Thumbs.db
 .vscode/
 # Outillage racine (prettier, husky, lint-staged)
 node_modules/
+
+# Local sonarqube
+sonar_scan.sh
+sonar_compose.yaml
+.scannerwork/

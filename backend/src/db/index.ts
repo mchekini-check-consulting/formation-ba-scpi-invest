@@ -1,6 +1,8 @@
+import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
+import * as schema from './schema.js';
 
-// bigint (item.id) renvoyé en number, comme le Long de Spring, et non en string
+// bigint renvoyé en number, et non en string
 pg.types.setTypeParser(20, Number);
 
 // DATABASE_URL injectée par la plateforme (helm.yaml : database) ;
@@ -10,3 +12,9 @@ export function createPool(
 ): pg.Pool {
   return new pg.Pool({ connectionString: url });
 }
+
+export function createDb(pool: pg.Pool) {
+  return drizzle(pool, { schema });
+}
+
+export type Db = ReturnType<typeof createDb>;

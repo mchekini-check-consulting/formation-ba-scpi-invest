@@ -6,3 +6,7 @@ docs/
 package-lock.json
 coverage/
 dist/
+# Skills partagés entre dépôts, gateway lu par la plateforme, fichiers générés par drizzle-kit
+.claude/
+gateway.yaml
+backend/drizzle/meta/

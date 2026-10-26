@@ -6,7 +6,7 @@ export default defineConfig({
     coverage: {
       include: ['src/**/*.ts'],
       // Démarrage / câblage : mêmes exclusions que sonar.coverage.exclusions
-      exclude: ['src/server.ts', 'src/db.ts', 'src/migrate.ts'],
+      exclude: ['src/server.ts', 'src/db/**', 'src/migrate.ts'],
     },
   },
 });

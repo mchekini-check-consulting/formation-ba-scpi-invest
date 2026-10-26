@@ -5,10 +5,10 @@ Monorepo contenant le backend Express (TypeScript) et l'application frontend Rea
 ```
 backend/                  # API Express scpi-invest (TypeScript)
   src/
-    app.ts                # application Express : GET "/" -> "Hello, World !", /items
+    app.ts                # application Express : GET "/" -> "Hello, World!", GET /health
     server.ts             # migrations puis écoute sur 8080
-    items/                # GET/POST /items
-  migrations/             # V1__init.sql, V2__item.sql... appliquées au démarrage
+    db/schema.ts          # schéma Drizzle (tables)
+  drizzle/                # migrations SQL générées par drizzle-kit, appliquées au démarrage
   test/                   # tests d'intégration (PostgreSQL jetable, Docker requis)
 frontend/                 # application React (Vite)
 compose.yaml              # local : PostgreSQL seul, ou pile complète (profil full)
@@ -71,7 +71,7 @@ npm install
 npm run dev
 ```
 
-Disponible sur http://localhost:8080/ (http://localhost:8080/items)
+Disponible sur http://localhost:8080/ (état de la base : http://localhost:8080/health)
 
 ### Frontend
 
@@ -93,6 +93,16 @@ docker compose --profile full up --build    # depuis la racine
 
 Disponible sur http://localhost:8081/ ; `docker compose --profile full down` pour arrêter
 (`-v` vide la base).
+
+## Modifier la base (Drizzle)
+
+1. Modifier `backend/src/db/schema.ts`.
+2. `npm run db:generate` dans `backend/` : nouveau fichier SQL dans `backend/drizzle/`.
+3. Relire ce fichier : idempotent (`IF NOT EXISTS`) et compatible avec la version précédente.
+4. Le backend l'applique à son démarrage (en local avec `npm run dev`, puis sur chaque environnement).
+
+Une migration déjà appliquée ne se modifie plus : en créer une nouvelle. Les tables de
+l'ancien backend (`item`, `flyway_schema_history`) restent en base, Drizzle les ignore.
 
 ## Tests
 
