@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<!-- Une ligne JSON par log sur stdout (champs time/level/msg) ; le niveau minimal
+	     est celui de logging.level.root (application.yaml, LOG_LEVEL). Les champs
+	     additionnels (layer, class, method...) viennent des arguments structurés
+	     passés aux appels de log (voir BusinessLog). -->
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder class="net.logstash.logback.encoder.LogstashEncoder">
+			<fieldNames>
+				<timestamp>time</timestamp>
+				<message>msg</message>
+				<version>[ignore]</version>
+				<levelValue>[ignore]</levelValue>
+				<logger>[ignore]</logger>
+				<thread>[ignore]</thread>
+			</fieldNames>
+		</encoder>
+	</appender>
+
+	<root level="INFO">
+		<appender-ref ref="STDOUT" />
+	</root>
+
+</configuration>

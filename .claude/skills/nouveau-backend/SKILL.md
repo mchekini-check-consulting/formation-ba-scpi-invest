@@ -1,6 +1,6 @@
 ---
 name: nouveau-backend
-description: Initialise un nouveau microservice backend minimal ("Hello World" uniquement) pour un Business Analyst (BA) qui ne maîtrise pas git — synchronise main, crée la branche, détecte la stack déjà utilisée dans CE dépôt (Node/Java/Python — ce skill est réutilisé tel quel dans plusieurs dépôts `formation-ba-*` qui n'ont pas tous la même stack), duplique un composant backend existant comme modèle vivant pour sa plomberie (Dockerfile/Makefile/sonar-project.properties/build), lui donne sa propre base de données, l'ajoute à `helm.yaml`, et vérifie/met à jour le gateway du projet (type: gateway dans helm.yaml, et gateway.yaml s'il fige un routage personnalisé) pour que ce backend soit joignable depuis l'extérieur. Ne commit ni ne push rien (c'est le rôle du skill `deploy`). À utiliser quand le BA veut créer un nouveau backend / microservice / service, en plus de ceux qui existent déjà.
+description: Initialise un nouveau microservice backend minimal ("Hello World" uniquement) pour un Business Analyst (BA) qui ne maîtrise pas git — synchronise main, crée la branche, détecte la stack déjà utilisée dans CE dépôt (Node/Java/Python — ce skill est réutilisé tel quel dans plusieurs dépôts `formation-ba-*` qui n'ont pas tous la même stack), duplique un composant backend existant comme modèle vivant pour sa plomberie (Dockerfile/Makefile/sonar-project.properties/build, logging structuré JSON avec layer controller/service/db), lui donne sa propre base de données, l'ajoute à `helm.yaml`, et vérifie/met à jour le gateway du projet (type: gateway dans helm.yaml, et gateway.yaml s'il fige un routage personnalisé) pour que ce backend soit joignable depuis l'extérieur. Ne commit ni ne push rien (c'est le rôle du skill `deploy`). À utiliser quand le BA veut créer un nouveau backend / microservice / service, en plus de ceux qui existent déjà.
 ---
 
 # Initialiser un nouveau backend (microservice)
@@ -85,8 +85,32 @@ réellement dans **ce** dépôt.
   **modèle vivant** — à la fois pour sa stack (Node, Java/Maven, Python...)
   et pour sa "plomberie" CI/plateforme (`Dockerfile`, `Makefile`,
   `sonar-project.properties`, fichiers de build/lint spécifiques à cette
-  stack) : ces fichiers encodent des choix de la plateforme (image de base,
-  outil de lint, wiring Sonar) qu'il ne faut pas réinventer.
+  stack, **et son logging structuré** — voir encadré ci-dessous) : ces
+  fichiers encodent des choix de la plateforme (image de base, outil de
+  lint, wiring Sonar, convention de logs) qu'il ne faut pas réinventer.
+
+> **Convention de logging (fixée côté infrastructure, Alloy/Loki)** : une
+> ligne JSON par log sur stdout (champs `time`/`level`/`msg`), niveau
+> minimal piloté par `LOG_LEVEL` (déjà injecté par `helm.yaml`, jamais une
+> autre variable). Seules les lignes avec un champ `layer`
+> (`controller`/`service`/`db`) sont collectées par Loki — le reste
+> (démarrage, câblage) reste simplement visible via `kubectl logs`. Un log
+> par requête HTTP entrante (`layer: controller` : route déclarée, statut,
+> durée — jamais les paramètres/le corps), un mécanisme réutilisable pour la
+> couche métier (`layer: service` : classe/méthode/durée, jamais les
+> arguments ni le retour), et seulement les requêtes lentes (> ~200ms) ou en
+> erreur côté base de données (`layer: db`, jamais les valeurs des
+> paramètres SQL). Le modèle vivant choisi ci-dessus porte déjà cette
+> convention, implémentée de façon idiomatique pour sa stack (pour
+> Java/Spring Boot : voir `backend/src/main/java/.../logging/` et
+> `backend/src/main/resources/logback-spring.xml` de ce dépôt —
+> Logback + `logstash-logback-encoder`, un `HandlerInterceptor`, une
+> annotation `@Loggable` + un aspect Spring AOP, et `datasource-proxy`). Ce
+> skill ne réinvente jamais cette convention pour une autre stack : il la
+> duplique telle quelle depuis le modèle choisi, comme le reste de la
+> plomberie. Si aucun backend de ce dépôt ne la porte encore, le dire
+> simplement au BA/à son encadrant technique plutôt que d'improviser une
+> implémentation non vérifiée.
 - S'il n'en existe **aucun** (ce serait le premier backend du dépôt) : ce
   skill ne peut pas deviner la stack à utiliser. S'arrêter et demander au
   BA/à son encadrant technique quelle stack utiliser (node, maven ou
@@ -112,9 +136,15 @@ Puis, en lisant le code copié (peu importe le langage), réduire au minimum
 "Hello World" :
 - **Garder** : le point d'entrée de l'application, le branchement à la base
   de données (générique, lu depuis des variables d'environnement — cf.
-  `helm.yaml`), et **une seule route minimale qui répond "Hello World"**
+  `helm.yaml`), **une seule route minimale qui répond "Hello World"**
   (ou équivalent déjà présent dans le modèle — ne pas en inventer une si le
-  modèle en a déjà une).
+  modèle en a déjà une), et **le logging structuré** (encadré de l'étape 6 :
+  fichier(s) de config du logger, intercepteur/middleware de la couche
+  controller, décorateur/aspect/wrapper de la couche service, logger de la
+  couche db) — c'est de la plomberie plateforme, pas un exemple métier à
+  retirer, même si le squelette réduit n'a plus de couche service propre à
+  lui (la route "Hello World" n'en a pas besoin : seul le mécanisme reste en
+  place, prêt pour la logique métier que le BA ajoutera).
 - **Retirer** tout module/ressource métier d'exemple plus riche qu'un
   "Hello World" (ex. un module CRUD de démonstration, ses migrations, ses
   tests dédiés) — et toute référence à ce module dans le fichier
@@ -134,8 +164,8 @@ Puis, en lisant le code copié (peu importe le langage), réduire au minimum
   chaque scan).
 - Ne pas toucher aux fichiers de plomberie CI/plateforme identifiés à
   l'étape 6 (`Dockerfile`, `Makefile`, `sonar-project.properties`, config de
-  lint/format/build de la stack) : ils sont déjà corrects pour cette
-  plateforme et cette stack.
+  lint/format/build de la stack, fichiers du logging structuré) : ils sont
+  déjà corrects pour cette plateforme et cette stack.
 
 ### 8. Vérifier que le squelette fonctionne avant de rendre la main
 
@@ -170,7 +200,13 @@ doit donc jamais être sauté silencieusement :
    http://localhost:8099/`, ou équivalent si le modèle répond sur une autre
    route "Hello World") : la commande doit réussir et renvoyer le contenu
    attendu, pas seulement démarrer sans erreur.
-5. Nettoyer dans tous les cas (même en cas d'échec) :
+5. Vérifier que le logging structuré a bien survécu à la duplication
+   (`docker logs <slug>-test`) : cet appel doit avoir produit une ligne JSON
+   avec `"layer":"controller"` (route déclarée, statut, durée). Si elle est
+   absente, c'est que l'étape 7 a cassé ou oublié ce logging — corriger
+   avant de continuer, ne pas rendre la main avec un squelette qui a perdu
+   cette convention.
+6. Nettoyer dans tous les cas (même en cas d'échec) :
    `docker rm -f <slug>-test` puis `docker compose down`.
 
 Si `docker` n'est exceptionnellement pas disponible sur ce poste, le dire
@@ -247,6 +283,10 @@ version, `deploy` s'occupera du commit, du push, de la PR et du suivi.
   n'y a encore aucun backend.
 - Ne copie jamais un exemple métier complet (type CRUD de démonstration) —
   s'en tient à "Hello World", quelle que soit la stack.
+- Ne retire jamais le logging structuré du modèle (étape 6/7) en le
+  confondant avec l'exemple métier à supprimer, et n'invente jamais une
+  implémentation de cette convention pour une stack qui ne l'a pas encore —
+  il la duplique telle quelle depuis le modèle, ou s'arrête pour demander.
 - Ne commit, ne push et n'ouvre jamais de PR — 100% local, comme
   `nouvelle-fonctionnalite`. C'est `deploy` qui s'occupe de tout envoi vers
   GitHub.
