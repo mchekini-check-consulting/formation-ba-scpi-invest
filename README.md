@@ -104,6 +104,20 @@ Disponible sur http://localhost:8081/ ; `docker compose --profile full down` pou
 Une migration déjà appliquée ne se modifie plus : en créer une nouvelle. Les tables de
 l'ancien backend (`item`, `flyway_schema_history`) restent en base, Drizzle les ignore.
 
+## Logs
+
+Une ligne JSON par log sur stdout (`time`, `level`, `msg`), niveau minimal `LOG_LEVEL`
+(`helm.yaml`). Seules les lignes avec un champ `layer` sont collectées dans Loki :
+
+- `controller` : une ligne par requête HTTP (route déclarée, statut, durée), automatique
+  (`backend/src/logging/controller.ts`). Nommer les routes (`const lister = ...`) : le nom
+  apparaît dans le champ `method`.
+- `service` : envelopper le code métier avec `loggable('ClientService', { ... })`
+  (`backend/src/logging/service.ts`) ; une erreur métier se lève avec
+  `new HttpError(404, '...')` (log `warn`, statut renvoyé au client).
+
+Jamais de paramètres, de corps de requête ni de valeurs métier dans les logs.
+
 ## Tests
 
 Mêmes commandes que la CI, dans `backend/` ou `frontend/` :
