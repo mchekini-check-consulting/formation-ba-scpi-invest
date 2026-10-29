@@ -13,6 +13,12 @@ expliquer en langage simple, et demander avant toute action risquée.
 - Mettre en ligne : skill `/deploy`. Merger sur `main` déploie **automatiquement en dev**
   (CI → ECR → Kargo → Argo CD) ; qualif se promeut à la main dans Kargo.
 
+## Appeler le backend depuis le frontend
+
+Toujours construire l'URL avec `apiBase()` (`frontend/src/api.js`) :
+``fetch(`${apiBase()}/health`)``. Jamais `/api/...` ni une URL écrite en dur : en dev et en
+qualif, le backend n'est joignable que par la passerelle du projet.
+
 ## Ne jamais faire sans un référent technique
 
 - Modifier `helm.yaml` (les lignes `tag:` sont écrites par Kargo), `gateway.yaml`,

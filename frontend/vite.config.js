@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
-    // Appels au backend en local : /api -> backend lancé sur le poste (src/api.js)
+    // Appels au backend en local : /api -> backend lancé sur le poste (src/api.js : apiBase)
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

@@ -82,6 +82,8 @@ npm run dev
 ```
 
 Disponible sur http://localhost:5173/ ; `/api` est relayé vers le backend sur 8080.
+Appels au backend : URL construite par `apiBase()` (`src/api.js`) : `/api` en local, la
+passerelle du projet (`https://gateway.<projet>.<env>.<domaine>/backend`) sur le cluster.
 
 ### Tout dans Docker
 
