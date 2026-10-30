@@ -32,7 +32,7 @@ function appTest() {
 describe('requestLogger (layer controller)', () => {
   it('un log INFO avec la route déclarée, sans les valeurs ni le corps', async () => {
     const { app, lignes } = appTest();
-    await request(app).get('/clients/42?nom=dupont').expect(200);
+    await request(app).get('/clients/422ABC?nom=dupont').expect(200);
     expect(lignes).toHaveLength(1);
     expect(lignes[0]).toMatchObject({
       level: 'INFO',
@@ -45,7 +45,7 @@ describe('requestLogger (layer controller)', () => {
       status: 200,
     });
     expect(lignes[0].durationMs).toEqual(expect.any(Number));
-    expect(JSON.stringify(lignes)).not.toMatch(/42|dupont/);
+    expect(JSON.stringify(lignes)).not.toMatch(/422ABC|dupont/);
   });
 
   it('route d’un sous-routeur, fonction anonyme', async () => {
