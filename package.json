@@ -1,0 +1,16 @@
+{
+  "name": "formation-ba-scpi-invest",
+  "private": true,
+  "type": "module",
+  "description": "Outillage du dépôt (formatage, hook pre-commit) ; backend/ et frontend/ ont leur propre package.json",
+  "scripts": {
+    "prepare": "husky",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10"
+  }
+}

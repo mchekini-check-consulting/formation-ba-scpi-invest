@@ -1,4 +1,4 @@
-# Base locale pour ./mvnw spring-boot:run (mêmes valeurs que application.yaml) :
+# Base locale pour npm run dev (même URL que la valeur par défaut de src/db.ts) :
 #   docker compose up -d
 services:
   postgres:
@@ -8,4 +8,4 @@ services:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
     ports:
-      - "5432:5432"
+      - '5432:5432'

@@ -2,10 +2,10 @@
 .PHONY: lint test-unit test-integration
 
 lint:
-	npx --yes oxlint src
+	npm run lint
 
 test-unit:
-	npx ng test --watch=false --coverage --coverage-reporters=lcov   # -> coverage/app/lcov.info
+	npm run test:cov -- --coverage.reporter=lcov   # -> coverage/lcov.info
 
 test-integration:
 	@echo "pas de tests d'intégration"
