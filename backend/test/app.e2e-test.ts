@@ -69,10 +69,12 @@ describe('reprise d’une base existante (e2e)', () => {
     await postgres?.stop();
   });
 
-  it('démarre sans erreur et ne touche pas aux tables existantes', async () => {
+  it('démarre sans erreur ; supprime item (0003_drop_item), garde flyway_schema_history', async () => {
     await migrate(pool);
     expect(await migrationsAppliquees(pool)).toBeGreaterThan(0);
-    const { rows } = await pool.query('select nom from item');
-    expect(rows).toEqual([{ nom: 'existant' }]);
+    const { rows } = await pool.query(
+      `select to_regclass('item') as item, to_regclass('flyway_schema_history') as flyway`,
+    );
+    expect(rows).toEqual([{ item: null, flyway: 'flyway_schema_history' }]);
   });
 });
