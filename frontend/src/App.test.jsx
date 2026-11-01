@@ -10,11 +10,11 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Hello la team');
   });
 
-  it('est tout en rose', () => {
+  it('est tout en mauve', () => {
     render(<App />);
-    expect(screen.getByRole('main').className).toContain('bg-pink-500');
+    expect(screen.getByRole('main').className).toContain('bg-purple-500');
     expect(screen.getByRole('heading', { level: 1 }).parentElement.className).toContain(
-      'text-pink-50',
+      'text-purple-50',
     );
   });
 });
