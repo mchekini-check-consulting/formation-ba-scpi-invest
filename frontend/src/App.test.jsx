@@ -12,7 +12,9 @@ describe('App', () => {
 
   it('affiche un chat', () => {
     render(<App />);
-    expect(screen.getByRole('img', { name: 'Un chat' }).textContent).toContain('( o.o )');
+    const chat = screen.getByRole('figure');
+    expect(chat.textContent).toContain('( o.o )');
+    expect(chat.querySelector('figcaption').textContent).toBe('Un chat');
   });
 
   it('est tout en mauve', () => {
