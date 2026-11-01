@@ -1,5 +1,25 @@
 @import 'tailwindcss';
 
+/* Couleurs et polices de la charte SCPI Invest+ (maquette « Landing page-html.zip ») */
+@theme {
+  --color-encre: #0e1e33;
+  --color-encre-clair: #16294a;
+  --color-vert: #0b6e4f;
+  --color-vert-fonce: #084f39;
+  --color-vert-pale: #e3f2ea;
+  --color-menthe: #7fd8b4;
+  --color-fond: #f6f7f4;
+  --color-bord: #e1e5df;
+  --color-texte: #3f4b5e;
+  --color-discret: #556173;
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-titre: Sora, Inter, system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
 }
