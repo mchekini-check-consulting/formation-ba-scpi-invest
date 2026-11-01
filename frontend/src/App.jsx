@@ -266,12 +266,13 @@ function App() {
         <div className="container footer__inner">
           <div className="footer__haut">
             <Logo className="logo--footer" />
-            <nav aria-label="Liens légaux" className="footer__nav">
-              <a href="#">Mentions légales</a>
-              <a href="#">Politique de confidentialité</a>
-              <a href="#">CGU</a>
-              <a href="#">Contact</a>
-            </nav>
+            {/* Pages légales pas encore rédigées : simples intitulés en attendant */}
+            <ul className="footer__nav">
+              <li>Mentions légales</li>
+              <li>Politique de confidentialité</li>
+              <li>CGU</li>
+              <li>Contact</li>
+            </ul>
           </div>
           <p className="footer__mention">
             Les SCPI sont des placements immobiliers à long terme, présentant un risque de perte en

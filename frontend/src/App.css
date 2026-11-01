@@ -479,14 +479,16 @@
   align-items: center;
 }
 
-.footer__nav {
+.landing .footer__nav {
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
   font-size: 14px;
 }
 
-.landing .footer__nav a {
+.footer__nav li {
   color: var(--creme);
 }
 
