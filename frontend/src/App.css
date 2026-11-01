@@ -1,0 +1,524 @@
+/* Couleurs : première palette de palettedecouleur.net
+   (#e5e7e6, #EEE6D8, #DAAB3A, #B67332, #93441A) + deux teintes de texte dérivées du brun */
+.landing {
+  --gris-clair: #e5e7e6;
+  --creme: #eee6d8;
+  --or: #daab3a;
+  --cuivre: #b67332;
+  --brun: #93441a;
+  --brun-carte: #a05a36;
+  --texte: #3a1d0e;
+  --texte-secondaire: #6b4a36;
+  --font-titre: Manrope, sans-serif;
+
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--texte);
+  background: #fff;
+}
+
+.landing h1,
+.landing h2,
+.landing h3,
+.landing p,
+.landing ul,
+.landing ol {
+  margin: 0;
+}
+
+.landing a {
+  color: var(--cuivre);
+}
+
+.landing a:hover {
+  color: var(--brun);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.container--etroit {
+  max-width: 820px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* --- Boutons ------------------------------------------------------------- */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.landing .btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.landing .btn--outline,
+.landing .btn--outline:hover {
+  border: 1px solid var(--creme);
+  color: #fff;
+}
+
+.landing .btn--primary,
+.landing .btn--primary:hover {
+  background: var(--or);
+  color: var(--texte);
+  font-weight: 600;
+}
+
+.landing .btn--lg {
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.landing .btn--lg.btn--primary {
+  font-weight: 700;
+}
+
+/* --- En-tête ------------------------------------------------------------- */
+
+.header {
+  background: var(--brun);
+  color: #fff;
+}
+
+.header__inner {
+  padding: 18px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+  justify-content: space-between;
+}
+
+.header__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  font-size: 15px;
+}
+
+.landing .header__nav a {
+  color: var(--creme);
+  text-decoration: none;
+}
+
+.landing .logo-lien {
+  text-decoration: none;
+}
+
+.logo {
+  font-family: var(--font-titre);
+  font-weight: 800;
+  font-size: 22px;
+  color: #fff;
+}
+
+.logo__plus {
+  color: var(--or);
+}
+
+.logo--footer {
+  font-size: 20px;
+}
+
+/* --- Hero ---------------------------------------------------------------- */
+
+.hero {
+  background: var(--brun);
+  color: #fff;
+  padding: 72px 24px 96px;
+}
+
+.hero__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 48px;
+  align-items: center;
+}
+
+.hero__text {
+  flex: 999 1 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hero__title {
+  max-width: 820px;
+  font-family: var(--font-titre);
+  font-size: 56px;
+  line-height: 1.08;
+  font-weight: 800;
+}
+
+.hero__lead {
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--creme);
+  max-width: 600px;
+}
+
+.hero__note {
+  font-size: 14px;
+  color: var(--gris-clair);
+}
+
+.eyebrow {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--cuivre);
+}
+
+.eyebrow--light {
+  color: var(--or);
+}
+
+/* --- Sections ------------------------------------------------------------ */
+
+.section {
+  padding: 80px 24px;
+}
+
+.section--gris {
+  background: var(--creme);
+}
+
+.section--sombre {
+  background: var(--brun);
+  color: #fff;
+}
+
+.section--teal {
+  background: var(--or);
+  color: var(--texte);
+}
+
+.titre-section {
+  font-family: var(--font-titre);
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.intro__texte {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--texte-secondaire);
+}
+
+.entete-centre {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+  align-items: center;
+}
+
+.grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.carte {
+  background: #fff;
+  border: 1px solid var(--gris-clair);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.carte__avant {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cuivre);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.carte h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.carte p:not(.carte__avant) {
+  font-size: 15px;
+  color: var(--texte-secondaire);
+  line-height: 1.6;
+}
+
+.etapes {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.etape {
+  border: 1px solid var(--gris-clair);
+  border-radius: 14px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.etape__numero {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--creme);
+  color: var(--brun);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-titre);
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.etape h3 {
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.etape p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texte-secondaire);
+}
+
+.avantage {
+  background: var(--brun-carte);
+  border: 1px solid var(--cuivre);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.avantage svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: var(--or);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.avantage h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.avantage p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--creme);
+}
+
+.landing .avantage__lien {
+  margin-top: auto;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--or);
+}
+
+.landing .avantage__lien:hover {
+  color: #fff;
+}
+
+/* --- FAQ ----------------------------------------------------------------- */
+
+.faq {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.faq__titre {
+  text-align: center;
+}
+
+.faq__item {
+  border: 1px solid var(--gris-clair);
+  border-radius: 12px;
+  padding: 0 20px;
+}
+
+.faq__item summary {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.landing .faq__item p {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--texte-secondaire);
+}
+
+/* --- Inscription --------------------------------------------------------- */
+
+.inscription {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  text-align: center;
+}
+
+.inscription__titre {
+  font-family: var(--font-titre);
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.inscription__texte,
+.inscription__connexion {
+  font-size: 17px;
+  color: var(--texte);
+}
+
+.landing .inscription__connexion a {
+  color: var(--brun);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.inscription__form {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.inscription__form input {
+  flex: 999 1 280px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 16px;
+  font:
+    400 16px Inter,
+    sans-serif;
+  color: var(--texte);
+  background: #fff;
+}
+
+.inscription__form button {
+  flex: 1 1 180px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--brun);
+  color: #fff;
+  font:
+    700 16px Inter,
+    sans-serif;
+  cursor: pointer;
+}
+
+/* --- Pied de page -------------------------------------------------------- */
+
+.footer {
+  background: var(--brun);
+  color: var(--creme);
+}
+
+.footer__inner {
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.footer__haut {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.landing .footer__nav {
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  font-size: 14px;
+}
+
+.footer__nav li {
+  color: var(--creme);
+}
+
+.footer__mention {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--gris-clair);
+}
+
+/* La maquette est dessinée pour 1440 px : on réduit les grands titres sur mobile */
+@media (max-width: 640px) {
+  .hero {
+    padding: 48px 16px 64px;
+  }
+
+  .hero__title {
+    font-size: 36px;
+  }
+
+  .section {
+    padding: 56px 16px;
+  }
+
+  .titre-section,
+  .inscription__titre {
+    font-size: 28px;
+  }
+
+  .header__inner,
+  .footer__inner {
+    padding-inline: 16px;
+  }
+}
