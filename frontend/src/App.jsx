@@ -13,8 +13,7 @@ function App() {
   return (
     <main className="place-items-center content-center gap-8 grid bg-purple-500 min-h-svh text-purple-50">
       <h1 className="m-0 font-serif font-normal text-6xl text-center md:text-8xl">Hello la team</h1>
-      <pre role="img" aria-label="Un chat" className="m-0 font-mono text-2xl md:text-4xl leading-tight">
-        {CHAT}
+      <pre role="img" aria-label="Un chat" className="m-0 font-mono text-2xl md:text-4xl leading-tight">{CHAT}
       </pre>
     </main>
   );
