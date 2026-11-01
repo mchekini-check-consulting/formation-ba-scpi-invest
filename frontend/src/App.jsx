@@ -1,379 +1,304 @@
-// Landing page SCPI Invest+ : présentation, fonctionnalités, simulateur, critères, étapes, FAQ
+// Page d'accueil SCPI Invest+ (maquette « 0 · Landing page ») :
+// présente la plateforme et donne accès à l'inscription et à la connexion
+import './App.css';
 import Simulateur from './Simulateur';
-
-const NAVIGATION = [
-  { lien: '#fonctionnalites', libelle: 'Fonctionnalités' },
-  { lien: '#simulateur', libelle: 'Simulateur' },
-  { lien: '#etapes', libelle: 'Comment ça marche' },
-  { lien: '#faq', libelle: 'FAQ' },
-];
-
-const APERCU = [
-  { nom: '[SCPI de bureaux]', couleur: 'bg-menthe' },
-  { nom: '[SCPI de santé]', couleur: 'bg-amber-300' },
-  { nom: '[SCPI européenne]', couleur: 'bg-blue-300' },
-];
-
-const FONCTIONNALITES = [
-  {
-    titre: 'Rechercher',
-    texte: "Filtrez les SCPI par typologie d'actifs, zone géographique, label ISR ou ticket d'entrée.",
-    icone: (
-      <>
-        <circle cx="11" cy="11" r="7" />
-        <path d="m20 20-4-4" />
-      </>
-    ),
-  },
-  {
-    titre: 'Comparer',
-    texte:
-      'Mettez plusieurs SCPI côte à côte sur les mêmes indicateurs : rendement, frais, occupation, capitalisation.',
-    icone: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
-  },
-  {
-    titre: 'Simuler',
-    texte:
-      "Estimez vos revenus potentiels selon votre montant, la durée et les frais — avant d'investir le moindre euro.",
-    icone: (
-      <>
-        <rect x="4" y="3" width="16" height="18" rx="2" />
-        <path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2" />
-      </>
-    ),
-  },
-  {
-    titre: 'Suivre',
-    texte:
-      "Centralisez vos parts, vos distributions et l'évolution de votre portefeuille dans un tableau de bord unique.",
-    icone: (
-      <>
-        <path d="M3 17l6-6 4 4 8-8" />
-        <path d="M15 7h6v6" />
-      </>
-    ),
-  },
-];
-
-const CRITERES = [
-  'Taux de distribution',
-  "Taux d'occupation financier",
-  'Frais de souscription et de gestion',
-  'Délai de jouissance',
-  'Capitalisation',
-  "Typologie d'actifs",
-  'Zone géographique',
-  'Label ISR',
-  "Prix de part et ticket d'entrée",
-  'Société de gestion',
-];
 
 const ETAPES = [
   {
-    titre: 'Définissez votre profil',
-    texte:
-      'Objectif, horizon, budget, sensibilité ISR : vos préférences filtrent automatiquement les SCPI pertinentes.',
+    n: '1',
+    titre: 'Recherchez',
+    texte: 'Filtrez les SCPI selon vos objectifs : rendement, stratégie, zone, budget.',
   },
   {
-    titre: 'Comparez et simulez',
-    texte:
-      'Sélectionnez vos SCPI, comparez-les sur des critères homogènes et simulez vos revenus potentiels.',
+    n: '2',
+    titre: 'Comparez',
+    texte: 'Mettez jusqu’à 4 SCPI côte à côte pour voir ce qui les distingue.',
   },
   {
-    titre: 'Suivez votre portefeuille',
-    texte:
-      'Retrouvez vos parts, vos distributions trimestrielles et vos documents dans un seul tableau de bord.',
+    n: '3',
+    titre: 'Souscrivez',
+    texte: 'Réglez votre souscription directement auprès de la société de gestion de la SCPI.',
+  },
+  {
+    n: '4',
+    titre: 'Suivez',
+    texte: 'Importez vos relevés : tout votre portefeuille réuni sur un seul tableau de bord.',
+  },
+];
+
+const AVANTAGES = [
+  {
+    titre: 'Recherche par critères',
+    texte: 'Rendement, stratégie, zone, ticket d’entrée, frais : filtrez en quelques clics.',
+    icone: <path d="M3 6h18M6 12h12M10 18h4" />,
+  },
+  {
+    titre: 'Comparateur côte à côte',
+    texte: 'Jusqu’à 4 SCPI comparées sur les mêmes indicateurs, la meilleure valeur mise en avant.',
+    icone: <path d="M12 20V10M18 20V4M6 20v-4" />,
+  },
+  {
+    titre: 'Indicateurs expliqués',
+    texte: 'Rendement, TOF, WALT, report à nouveau : chaque indicateur est défini simplement.',
+    // Page des définitions à alimenter plus tard
+    lien: { href: '/indicateurs', texte: 'Voir les définitions des indicateurs' },
+    icone: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4M12 8h.01" />
+      </>
+    ),
+  },
+  {
+    titre: 'Import automatique des relevés',
+    texte: 'Déposez vos PDF : parts et revenus sont reconnus, sans saisie manuelle.',
+    icone: (
+      <>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <path d="M17 8l-5-5-5 5" />
+        <path d="M12 3v12" />
+      </>
+    ),
+  },
+  {
+    titre: 'Votre argent reste chez vous',
+    texte: 'Aucun fonds ne transite par la plateforme : vous réglez directement la SCPI.',
+    icone: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+  },
+  {
+    titre: 'Vue consolidée',
+    texte: 'Valeur, revenus et répartition de toutes vos SCPI, sur un seul tableau de bord.',
+    icone: (
+      <>
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+      </>
+    ),
   },
 ];
 
 const FAQ = [
   {
-    question: "Qu'est-ce qu'une SCPI ?",
-    reponse:
-      "Une Société Civile de Placement Immobilier collecte l'épargne de nombreux investisseurs pour acheter et gérer un parc immobilier (bureaux, commerces, santé, logistique…). Les loyers perçus sont redistribués aux associés au prorata de leurs parts.",
+    q: 'Pourquoi investir en SCPI ?',
+    r: 'Une SCPI permet d’investir dans l’immobilier (bureaux, commerces, santé, logistique…) sans gérer de biens soi-même. Vous achetez des parts, la société de gestion s’occupe des locataires et de l’entretien, et vous percevez une partie des loyers.',
   },
   {
-    question: 'Quels sont les risques ?',
-    reponse:
-      "Le capital n'est pas garanti, les revenus peuvent varier à la hausse comme à la baisse et la revente des parts peut prendre du temps. Il s'agit d'un placement de long terme, généralement recommandé sur 8 à 10 ans minimum.",
+    q: 'Quels sont les avantages et les risques ?',
+    r: 'Côté avantages : des revenus potentiellement réguliers, une diversification sur de nombreux immeubles et locataires, et aucune gestion locative. Côté risques : une perte en capital est possible, les revenus et la valeur des parts ne sont pas garantis, et la revente des parts peut prendre du temps. C’est un placement à envisager sur le long terme.',
   },
   {
-    question: "D'où viennent les données affichées ?",
-    reponse:
-      "[Sources de données à préciser par l'équipe : bulletins trimestriels, DIC, rapports annuels des sociétés de gestion…]",
+    q: 'Puis-je suivre des SCPI achetées ailleurs ?',
+    r: 'Oui. Importez vos relevés en PDF : nous reconnaissons la SCPI, vos parts et vos revenus, quelle que soit la société de gestion.',
   },
-  { question: 'SCPI Invest+ est-il payant ?', reponse: '[Modèle tarifaire à préciser]' },
+  {
+    q: 'Comment s’assurer que la plateforme est neutre ?',
+    r: 'Toutes les SCPI sont présentées et comparées sur les mêmes indicateurs, avec les mêmes définitions, consultables par tous. Les résultats dépendent uniquement des critères que vous choisissez.',
+  },
 ];
 
-const BOUTON = 'inline-flex items-center rounded-xl font-semibold no-underline';
-const SURTITRE = 'font-semibold text-sm uppercase tracking-widest';
-const TITRE_H2 = 'm-0 font-titre text-3xl md:text-[44px] leading-tight tracking-tight';
-const CONTENU = 'mx-auto px-4 md:px-6 py-16 md:py-24 max-w-[1200px]';
+// Pas encore d'API d'inscription : on empêche juste le rechargement de la page
+function inscrire(event) {
+  event.preventDefault();
+}
 
-function Marque({ className = '' }) {
+function Logo({ className = '' }) {
   return (
-    <span className={`font-titre font-bold tracking-tight ${className}`}>
-      SCPI Invest<span className="text-vert">+</span>
+    <span className={`logo ${className}`}>
+      SCPI INVEST<span className="logo__plus">+</span>
     </span>
   );
 }
 
 function App() {
   return (
-    <div className="bg-fond min-h-svh font-sans text-encre leading-relaxed">
-      <header className="border-bord border-b">
-        <nav
-          aria-label="Navigation principale"
-          className="flex flex-wrap justify-between items-center gap-4 mx-auto px-4 md:px-6 py-4.5 max-w-[1200px]"
-        >
-          <a href="#top" className="flex items-center gap-2.5 text-encre no-underline">
-            <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
-              <rect width="32" height="32" rx="8" className="fill-encre" />
-              <path
-                d="M9 21V13M14 21V10M19 21V15M23 11v6M20 14h6"
-                className="stroke-menthe"
-                strokeWidth="2.2"
-                fill="none"
-                strokeLinecap="round"
-              />
-            </svg>
-            <Marque className="text-xl" />
+    <div className="landing">
+      <header className="header">
+        <div className="container header__inner">
+          <a href="/" className="logo-lien" aria-label="SCPI Invest+ — accueil">
+            <Logo />
           </a>
-          <div className="flex flex-wrap items-center gap-x-7 gap-y-2 font-medium text-[15px]">
-            {NAVIGATION.map(({ lien, libelle }) => (
-              <a key={lien} href={lien} className="text-slate-700 hover:text-vert no-underline">
-                {libelle}
-              </a>
-            ))}
-            <a href="#inscription" className={`${BOUTON} bg-encre px-5 min-h-11 text-white`}>
+          <nav aria-label="Navigation" className="header__nav">
+            <a href="#fonctionnement">Comment ça marche</a>
+            <a href="#simulateur">Simulateur</a>
+            <a href="#avantages">Avantages</a>
+            <a href="#faq">FAQ</a>
+          </nav>
+          <div className="actions">
+            <a href="/connexion" className="btn btn--outline">
+              Se connecter
+            </a>
+            <a href="#inscription" className="btn btn--primary">
               Créer mon compte
             </a>
           </div>
-        </nav>
+        </div>
       </header>
 
       <main>
-        <section id="top" className={`${CONTENU} flex flex-wrap items-center gap-16`}>
-          <div className="flex flex-col gap-7 min-w-0 basis-[480px] grow">
-            <span className="self-start bg-vert-pale px-3.5 py-1.5 rounded-full font-semibold text-vert-fonce text-sm">
-              L&apos;investissement en SCPI, enfin simplifié
-            </span>
-            <h1 className="m-0 font-titre text-[40px] md:text-[64px] leading-[1.05] tracking-tighter">
-              Toutes vos SCPI.
-              <br />
-              Un seul point d&apos;entrée.
-            </h1>
-            <p className="m-0 max-w-[540px] text-texte text-lg md:text-[19px]">
-              Recherchez, comparez, simulez et suivez vos investissements en SCPI depuis une seule
-              application — avec des critères clairs pour décider en connaissance de cause.
-            </p>
-            <div className="flex flex-wrap gap-3.5">
-              <a href="#inscription" className={`${BOUTON} bg-vert hover:bg-vert-fonce px-6.5 min-h-13 text-white`}>
-                Commencer gratuitement
-              </a>
-              <a
-                href="#simulateur"
-                className={`${BOUTON} border-[1.5px] border-encre px-6.5 min-h-13 text-encre`}
-              >
-                Essayer le simulateur
-              </a>
+        <section className="hero">
+          <div className="container hero__inner">
+            <div className="hero__text">
+              <p className="eyebrow eyebrow--light">La plateforme des investisseurs en SCPI</p>
+              <h1 className="hero__title">
+                Choisissez vos SCPI en confiance. Suivez-les toutes au même endroit.
+              </h1>
+              <p className="hero__lead">
+                Comparez les SCPI selon vos critères, comprenez leurs indicateurs et regroupez tout
+                votre portefeuille grâce à l’import automatique de vos relevés.
+              </p>
+              <div className="actions">
+                <a href="#inscription" className="btn btn--primary btn--lg">
+                  Créer mon compte
+                </a>
+                <a href="/connexion" className="btn btn--outline btn--lg">
+                  J’ai déjà un compte
+                </a>
+              </div>
+              <p className="hero__note">
+                Sans engagement · Aucun fonds ne transite par la plateforme
+              </p>
             </div>
-            <p className="m-0 text-discret text-sm">Sans engagement · [Mention tarifaire à préciser]</p>
           </div>
+        </section>
 
-          <div
-            role="img"
-            aria-label="Aperçu de l'application : un portefeuille de trois SCPI dont la valeur progresse"
-            className="flex flex-col gap-4 bg-encre shadow-2xl p-5 md:p-7 rounded-3xl min-w-0 basis-[440px] grow"
-          >
-            <div className="flex justify-between text-slate-300 text-sm">
-              <span className="font-semibold text-white">Mon portefeuille</span>
-              <span>Mis à jour [date]</span>
+        <section className="section section--gris">
+          <div className="container stack">
+            <div className="intro">
+              <h2 className="titre-section">Investir en SCPI ne devrait pas être un casse-tête.</h2>
+              <p className="intro__texte">
+                Des centaines de SCPI, des indicateurs difficiles à comparer, des relevés éparpillés
+                chez plusieurs sociétés de gestion… SCPI INVEST+ remet de la clarté à chaque étape.
+              </p>
             </div>
-            <div className="flex flex-col gap-1.5 bg-encre-clair p-5 rounded-2xl">
-              <span className="text-[13px] text-slate-400">Valeur estimée</span>
-              <span className="font-titre font-semibold text-[34px] text-white">[Montant] €</span>
-              <svg viewBox="0 0 320 70" width="100%" height="70" aria-hidden="true">
-                <path
-                  d="M0 60 L40 54 L80 56 L120 44 L160 46 L200 34 L240 30 L280 22 L320 14"
-                  className="stroke-menthe"
-                  strokeWidth="2.5"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+            <div className="grille">
+              <div className="carte">
+                <p className="carte__avant">Avant</p>
+                <h3>Trop de choix, peu de repères</h3>
+                <p>Comparer rendement, frais et stratégie demande des heures de lecture.</p>
+              </div>
+              <div className="carte">
+                <p className="carte__avant">Avant</p>
+                <h3>Des indicateurs obscurs</h3>
+                <p>TOF, WALT, report à nouveau : des termes techniques rarement expliqués.</p>
+              </div>
+              <div className="carte">
+                <p className="carte__avant">Avant</p>
+                <h3>Un portefeuille éclaté</h3>
+                <p>Un espace client par société de gestion, aucune vue d’ensemble.</p>
+              </div>
             </div>
-            <div className="flex flex-col gap-2.5">
-              {APERCU.map(({ nom, couleur }) => (
-                <div
-                  key={nom}
-                  className="flex justify-between items-center gap-3 bg-encre-clair px-4 py-3.5 rounded-xl text-[15px] text-white"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className={`rounded-[3px] size-2.5 ${couleur}`} />
-                    {nom}
-                  </span>
-                  <span className="text-slate-300">[x] parts</span>
+          </div>
+        </section>
+
+        <section id="fonctionnement" className="section">
+          <div className="container stack">
+            <div className="entete-centre">
+              <p className="eyebrow">Comment ça marche</p>
+              <h2 className="titre-section">De la recherche au suivi, en 4 étapes</h2>
+            </div>
+            <ol className="etapes">
+              {ETAPES.map((e) => (
+                <li key={e.n} className="etape">
+                  <span className="etape__numero">{e.n}</span>
+                  <h3>{e.titre}</h3>
+                  <p>{e.texte}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section id="simulateur" className="section section--gris">
+          <div className="container simulation">
+            <div className="intro">
+              <p className="eyebrow">Simulateur</p>
+              <h2 className="titre-section">Combien pourrait vous rapporter votre SCPI ?</h2>
+              <p className="intro__texte">
+                Ajustez vos hypothèses et voyez immédiatement l’effet des frais de souscription et
+                de la durée de détention.
+              </p>
+              <p className="simulation__avertissement">
+                Simulation indicative, avant fiscalité. Le taux de distribution est une hypothèse que
+                vous choisissez : les revenus d’une SCPI ne sont pas garantis.
+              </p>
+            </div>
+            <Simulateur />
+          </div>
+        </section>
+
+        <section id="avantages" className="section section--sombre">
+          <div className="container stack">
+            <h2 className="titre-section intro">Pourquoi choisir SCPI INVEST+</h2>
+            <div className="grille">
+              {AVANTAGES.map((a) => (
+                <div key={a.titre} className="avantage">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    {a.icone}
+                  </svg>
+                  <h3>{a.titre}</h3>
+                  <p>{a.texte}</p>
+                  {a.lien && (
+                    <a href={a.lien.href} className="avantage__lien">
+                      {a.lien.texte} →
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section id="fonctionnalites" className="bg-white border-bord border-y">
-          <div className={`${CONTENU} flex flex-col gap-12`}>
-            <div className="flex flex-col gap-3.5 max-w-[680px]">
-              <span className={`${SURTITRE} text-vert`}>Fonctionnalités</span>
-              <h2 className={TITRE_H2}>Quatre outils, un seul parcours</h2>
-              <p className="m-0 text-texte text-lg">
-                Fini les onglets ouverts sur dix sites de sociétés de gestion. SCPI Invest+ réunit
-                tout ce qu&apos;il faut pour choisir et piloter vos SCPI.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-5">
-              {FONCTIONNALITES.map(({ titre, texte, icone }) => (
-                <article
-                  key={titre}
-                  className="flex flex-col gap-3.5 bg-fond p-7 border border-bord rounded-2xl min-w-0 basis-60 grow"
-                >
-                  <span className="flex justify-center items-center bg-vert-pale rounded-xl size-12">
-                    <svg
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                      className="fill-none stroke-2 stroke-vert size-6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      {icone}
-                    </svg>
-                  </span>
-                  <h3 className="m-0 font-titre text-[21px]">{titre}</h3>
-                  <p className="m-0 text-texte">{texte}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="simulateur" className={`${CONTENU} flex flex-wrap items-start gap-14`}>
-          <div className="flex flex-col gap-4 min-w-0 basis-[360px] grow">
-            <span className={`${SURTITRE} text-vert`}>Simulateur</span>
-            <h2 className={TITRE_H2}>Combien pourrait vous rapporter votre SCPI ?</h2>
-            <p className="m-0 text-texte text-lg">
-              Ajustez vos hypothèses et voyez immédiatement l&apos;effet des frais de souscription et
-              de la durée de détention.
-            </p>
-            <p className="m-0 text-discret text-sm">
-              Simulation indicative, avant fiscalité. Le taux de distribution est une hypothèse que
-              vous choisissez : les revenus d&apos;une SCPI ne sont pas garantis.
-            </p>
-          </div>
-          <Simulateur />
-        </section>
-
-        <section className="bg-encre text-white">
-          <div className={`${CONTENU} flex flex-wrap items-center gap-14`}>
-            <div className="flex flex-col gap-4 min-w-0 basis-[360px] grow">
-              <span className={`${SURTITRE} text-menthe`}>Comparateur</span>
-              <h2 className={TITRE_H2}>Les bons critères, au même endroit</h2>
-              <p className="m-0 text-slate-300 text-lg">
-                Le rendement ne fait pas tout. SCPI Invest+ affiche les indicateurs qui comptent
-                vraiment pour juger la solidité d&apos;une SCPI.
-              </p>
-            </div>
-            <ul className="flex flex-wrap gap-3 m-0 p-0 min-w-0 basis-[520px] grow list-none">
-              {CRITERES.map((critere) => (
-                <li key={critere} className="px-4.5 py-3 border border-slate-600 rounded-full font-medium">
-                  {critere}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section id="etapes" className={`${CONTENU} flex flex-col gap-12`}>
-          <div className="flex flex-col gap-3.5 max-w-[680px]">
-            <span className={`${SURTITRE} text-vert`}>Comment ça marche</span>
-            <h2 className={TITRE_H2}>De la recherche au suivi, en trois étapes</h2>
-          </div>
-          <ol className="flex flex-wrap gap-5 m-0 p-0 list-none">
-            {ETAPES.map(({ titre, texte }, index) => (
-              <li
-                key={titre}
-                className="flex flex-col gap-3 pt-6 border-encre border-t-2 min-w-0 basis-[280px] grow"
-              >
-                <span className="font-titre font-bold text-[15px] text-vert">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <h3 className="m-0 font-titre text-[22px]">{titre}</h3>
-                <p className="m-0 text-texte">{texte}</p>
-              </li>
+        <section id="faq" className="section">
+          <div className="container container--etroit faq">
+            <h2 className="titre-section faq__titre">Questions fréquentes</h2>
+            {FAQ.map((f) => (
+              <details key={f.q} className="faq__item">
+                <summary>{f.q}</summary>
+                <p>{f.r}</p>
+              </details>
             ))}
-          </ol>
-        </section>
-
-        <section id="faq" className="bg-white border-bord border-y">
-          <div className="flex flex-col gap-8 mx-auto px-4 md:px-6 py-16 md:py-24 max-w-[860px]">
-            <h2 className={TITRE_H2}>Questions fréquentes</h2>
-            <div className="flex flex-col gap-3">
-              {FAQ.map(({ question, reponse }) => (
-                <details key={question} className="bg-fond px-5.5 py-4.5 border border-bord rounded-2xl">
-                  <summary className="font-semibold text-[17px] cursor-pointer">{question}</summary>
-                  <p className="mt-3 mb-0 text-texte">{reponse}</p>
-                </details>
-              ))}
-            </div>
           </div>
         </section>
 
-        <section id="inscription" className={CONTENU}>
-          <div className="flex flex-wrap justify-between items-center gap-8 bg-vert px-6 md:px-12 py-10 md:py-14 rounded-[28px] text-white">
-            <div className="flex flex-col gap-3 min-w-0 basis-[420px] grow">
-              <h2 className="m-0 font-titre text-[28px] md:text-[40px] leading-tight tracking-tight">
-                Prêt à y voir plus clair dans vos SCPI ?
-              </h2>
-              <p className="m-0 text-emerald-100 text-lg">
-                Créez votre compte et lancez votre première comparaison en quelques minutes.
-              </p>
-            </div>
-            <form className="flex flex-wrap gap-3 min-w-0 basis-[380px] grow" onSubmit={(e) => e.preventDefault()}>
-              <label htmlFor="cta-email" className="sr-only">
+        <section id="inscription" className="section section--teal">
+          <div className="container container--etroit inscription">
+            <h2 className="inscription__titre">Prêt à investir plus sereinement ?</h2>
+            <p className="inscription__texte">
+              Créez votre compte en 2 minutes et importez votre premier relevé.
+            </p>
+            <form className="inscription__form" aria-label="Inscription" onSubmit={inscrire}>
+              <label htmlFor="email" className="sr-only">
                 Adresse e-mail
               </label>
-              <input
-                id="cta-email"
-                type="email"
-                placeholder="votre@email.fr"
-                className="bg-white px-4.5 border-0 rounded-xl min-w-0 min-h-13 text-encre text-base basis-56 grow"
-              />
-              <button
-                type="submit"
-                className="bg-encre px-6 border-0 rounded-xl min-h-13 font-semibold text-base text-white cursor-pointer"
-              >
-                Créer mon compte
-              </button>
+              <input id="email" type="email" placeholder="Votre adresse e-mail" />
+              <button type="submit">Créer mon compte</button>
             </form>
+            <p className="inscription__connexion">
+              Déjà inscrit ? <a href="/connexion">Se connecter</a>
+            </p>
           </div>
         </section>
       </main>
 
-      <footer className="border-bord border-t">
-        <div className="flex flex-col gap-6 mx-auto px-4 md:px-6 py-12 max-w-[1200px]">
-          <div className="flex flex-wrap justify-between items-center gap-4">
-            <Marque className="text-lg" />
-            <div className="flex flex-wrap gap-6 text-[15px]">
-              <a href="#top" className="text-vert">Mentions légales</a>
-              <a href="#top" className="text-vert">Confidentialité</a>
-              <a href="#top" className="text-vert">Contact</a>
-            </div>
+      <footer className="footer">
+        <div className="container footer__inner">
+          <div className="footer__haut">
+            <Logo className="logo--footer" />
+            {/* Pages légales pas encore rédigées : simples intitulés en attendant */}
+            <ul className="footer__nav">
+              <li>Mentions légales</li>
+              <li>Politique de confidentialité</li>
+              <li>CGU</li>
+              <li>Contact</li>
+            </ul>
           </div>
-          <p className="m-0 max-w-[900px] text-[13px] text-discret">
-            Investir en SCPI comporte des risques, notamment de perte en capital et de liquidité. Les
-            performances passées ne préjugent pas des performances futures et les revenus ne sont pas
-            garantis. Les informations présentées ne constituent pas un conseil en investissement.
+          <p className="footer__mention">
+            Les SCPI sont des placements immobiliers à long terme, présentant un risque de perte en
+            capital, sans garantie de rendement ni de liquidité. Les performances passées ne
+            préjugent pas des performances futures. [STATUT RÉGLEMENTAIRE ET N° ORIAS]
           </p>
-          <p className="m-0 text-[13px] text-discret">© 2026 SCPI Invest+ — Projet d&apos;équipe</p>
         </div>
       </footer>
     </div>

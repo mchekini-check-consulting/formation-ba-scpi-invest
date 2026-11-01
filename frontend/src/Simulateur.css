@@ -1,0 +1,101 @@
+/* Simulateur de revenus : reprend les couleurs de la landing page (variables de .landing dans App.css) */
+
+.simulation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 48px;
+}
+
+.simulation .intro {
+  flex: 1 1 340px;
+  min-width: 0;
+}
+
+.simulation__avertissement {
+  font-size: 14px;
+  color: var(--texte-secondaire);
+}
+
+.simulateur {
+  flex: 1 1 520px;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-clair);
+  border-radius: 14px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.simulateur__curseurs {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.simulateur__curseur {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.simulateur__entete {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.simulateur__entete span,
+.simulateur__resultat output {
+  font-family: var(--font-titre);
+  font-weight: 700;
+}
+
+.simulateur input[type='range'] {
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  accent-color: var(--cuivre);
+}
+
+.simulateur__resultats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.simulateur__resultat {
+  flex: 1 1 150px;
+  min-width: 0;
+  background: var(--creme);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--texte-secondaire);
+}
+
+.simulateur__resultat output {
+  font-size: 22px;
+  color: var(--texte);
+}
+
+.simulateur__resultat--fonce {
+  background: var(--brun);
+  color: var(--creme);
+}
+
+.simulateur__resultat--fonce output {
+  color: var(--or);
+}
+
+@media (max-width: 640px) {
+  .simulateur {
+    padding: 20px;
+  }
+}

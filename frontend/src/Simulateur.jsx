@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import './Simulateur.css';
 import { formatDuree, formatEuros, formatPourcent, simuler } from './simulation';
 
-// Curseurs du simulateur : valeur de départ, bornes et affichage de chaque hypothèse
+// Curseurs du simulateur : bornes et affichage de chaque hypothèse
 const CURSEURS = [
   { cle: 'montant', libelle: 'Montant investi', min: 1000, max: 200000, pas: 1000, format: formatEuros },
   { cle: 'taux', libelle: 'Taux de distribution (hypothèse)', min: 2, max: 8, pas: 0.1, format: formatPourcent },
@@ -19,13 +20,13 @@ function Simulateur() {
     setHypotheses((avant) => ({ ...avant, [cle]: Number(event.target.value) }));
 
   return (
-    <div className="flex flex-col gap-7 bg-white p-6 md:p-8 border border-bord rounded-3xl min-w-0 basis-[560px] grow">
-      <div className="flex flex-col gap-5">
+    <div className="simulateur">
+      <div className="simulateur__curseurs">
         {CURSEURS.map(({ cle, libelle, min, max, pas, format }) => (
-          <div key={cle} className="flex flex-col gap-2">
-            <div className="flex justify-between gap-3 font-semibold">
+          <div key={cle} className="simulateur__curseur">
+            <div className="simulateur__entete">
               <label htmlFor={`sim-${cle}`}>{libelle}</label>
-              <span className="font-titre">{format(hypotheses[cle])}</span>
+              <span>{format(hypotheses[cle])}</span>
             </div>
             <input
               id={`sim-${cle}`}
@@ -35,35 +36,28 @@ function Simulateur() {
               step={pas}
               value={hypotheses[cle]}
               onChange={regler(cle)}
-              className="m-0 w-full h-7 accent-vert"
             />
           </div>
         ))}
       </div>
-      <div className="flex flex-wrap gap-3.5" aria-live="polite">
+      <div className="simulateur__resultats" aria-live="polite">
         <Resultat libelle="Capital réellement investi" valeur={formatEuros(net)} />
         <Resultat libelle="Revenus bruts / mois" valeur={formatEuros(mensuel)} />
         <Resultat
           libelle={`Revenus cumulés sur ${formatDuree(hypotheses.duree)}`}
           valeur={formatEuros(cumul)}
-          sombre
+          fonce
         />
       </div>
     </div>
   );
 }
 
-function Resultat({ libelle, valeur, sombre = false }) {
+function Resultat({ libelle, valeur, fonce = false }) {
   return (
-    <div
-      className={`flex flex-col gap-1 p-4.5 rounded-2xl min-w-0 text-sm basis-[150px] grow ${
-        sombre ? 'bg-encre text-slate-300' : 'bg-fond text-texte'
-      }`}
-    >
+    <div className={`simulateur__resultat${fonce ? ' simulateur__resultat--fonce' : ''}`}>
       <span>{libelle}</span>
-      <output className={`font-titre font-semibold text-2xl ${sombre ? 'text-menthe' : 'text-encre'}`}>
-        {valeur}
-      </output>
+      <output>{valeur}</output>
     </div>
   );
 }

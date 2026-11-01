@@ -1,63 +1,76 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import App from './App';
 
 afterEach(cleanup);
 
-describe('Landing page', () => {
-  it('présente SCPI Invest+ avec son accroche', () => {
+describe('App', () => {
+  it('présente SCPI Invest+', () => {
     render(<App />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
-      "Toutes vos SCPI.Un seul point d'entrée.",
+      'Choisissez vos SCPI en confiance. Suivez-les toutes au même endroit.',
     );
-    expect(screen.getByRole('link', { name: /SCPI Invest\+/ }).getAttribute('href')).toBe('#top');
+    expect(screen.getByRole('link', { name: 'SCPI Invest+ — accueil' }).textContent).toBe(
+      'SCPI INVEST+',
+    );
   });
 
-  it('propose une navigation vers chaque section', () => {
+  it('donne accès à l’inscription', () => {
     render(<App />);
-    const nav = screen.getByRole('navigation', { name: 'Navigation principale' });
-    const liens = within(nav)
-      .getAllByRole('link')
-      .map((lien) => lien.getAttribute('href'));
-    expect(liens).toEqual(['#top', '#fonctionnalites', '#simulateur', '#etapes', '#faq', '#inscription']);
-    for (const id of ['fonctionnalites', 'simulateur', 'etapes', 'faq', 'inscription']) {
-      expect(document.getElementById(id)).not.toBeNull();
-    }
+    const liens = screen.getAllByRole('link', { name: /Créer mon compte/ });
+    expect(liens.length).toBeGreaterThan(0);
+    liens.forEach((lien) => expect(lien.getAttribute('href')).toBe('#inscription'));
+    expect(screen.getByRole('form', { name: 'Inscription' })).toBeDefined();
   });
 
-  it('présente les quatre outils', () => {
+  it('donne accès à la connexion', () => {
     render(<App />);
-    const outils = screen.getAllByRole('heading', { level: 3 }).map((titre) => titre.textContent);
-    expect(outils.slice(0, 4)).toEqual(['Rechercher', 'Comparer', 'Simuler', 'Suivre']);
+    const liens = [
+      ...screen.getAllByRole('link', { name: 'Se connecter' }),
+      screen.getByRole('link', { name: 'J’ai déjà un compte' }),
+    ];
+    liens.forEach((lien) => expect(lien.getAttribute('href')).toBe('/connexion'));
   });
 
-  it('numérote les trois étapes', () => {
+  it('propose le simulateur de revenus, accessible depuis la navigation', () => {
     render(<App />);
-    const etapes = within(document.getElementById('etapes')).getAllByRole('listitem');
-    expect(etapes.map((etape) => etape.firstChild.textContent)).toEqual(['01', '02', '03']);
-  });
-
-  it('liste les critères de comparaison et les questions fréquentes', () => {
-    render(<App />);
-    expect(screen.getByText("Taux d'occupation financier")).toBeTruthy();
-    expect(screen.getByText('Quels sont les risques ?').tagName).toBe('SUMMARY');
-  });
-
-  it('rappelle les risques de l’investissement en SCPI', () => {
-    render(<App />);
-    expect(screen.getByRole('contentinfo').textContent).toContain('perte en capital');
-  });
-
-  it("garde l'utilisateur sur la page quand il envoie son e-mail", () => {
-    render(<App />);
-    const champ = screen.getByLabelText('Adresse e-mail');
-    const envoi = fireEvent.submit(champ.closest('form'));
-    expect(envoi).toBe(false); // envoi bloqué : pas encore de backend d'inscription
-  });
-
-  it('affiche le simulateur avec ses valeurs de départ', () => {
-    render(<App />);
+    const lien = screen.getByRole('link', { name: 'Simulateur' });
+    expect(lien.getAttribute('href')).toBe('#simulateur');
+    expect(document.getElementById('simulateur')).not.toBeNull();
     expect(screen.getByLabelText('Montant investi').value).toBe('20000');
-    expect(screen.getByText('Revenus cumulés sur 10 ans')).toBeTruthy();
+  });
+
+  it('donne accès aux définitions des indicateurs', () => {
+    render(<App />);
+    const lien = screen.getByRole('link', { name: /Voir les définitions des indicateurs/ });
+    expect(lien.getAttribute('href')).toBe('/indicateurs');
+  });
+
+  it('ne parle pas d’accompagnement', () => {
+    render(<App />);
+    expect(document.body.textContent).not.toMatch(/accompagn|conseiller/i);
+  });
+
+  it('ne mentionne aucune offre', () => {
+    render(<App />);
+    expect(document.body.textContent).not.toMatch(/offre|gratuit|premium|essentiel/i);
+  });
+
+  it('répond aux questions fréquentes', () => {
+    render(<App />);
+    const questions = [...document.querySelectorAll('summary')].map((q) => q.textContent);
+    expect(questions).toEqual([
+      'Pourquoi investir en SCPI ?',
+      'Quels sont les avantages et les risques ?',
+      'Puis-je suivre des SCPI achetées ailleurs ?',
+      'Comment s’assurer que la plateforme est neutre ?',
+    ]);
+  });
+
+  it('ne recharge pas la page à l’envoi du formulaire d’inscription', () => {
+    render(<App />);
+    const envoi = new Event('submit', { bubbles: true, cancelable: true });
+    fireEvent(screen.getByRole('form', { name: 'Inscription' }), envoi);
+    expect(envoi.defaultPrevented).toBe(true);
   });
 });
