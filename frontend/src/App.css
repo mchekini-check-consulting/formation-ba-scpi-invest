@@ -1,19 +1,34 @@
-/* Couleurs : première palette de palettedecouleur.net
-   (#e5e7e6, #EEE6D8, #DAAB3A, #B67332, #93441A) + deux teintes de texte dérivées du brun */
+/* Charte de la maquette « Landing_v3 · version photo » : bleus, photo d'immeuble en tête de page */
 .landing {
-  --gris-clair: #e5e7e6;
-  --creme: #eee6d8;
-  --or: #daab3a;
-  --cuivre: #b67332;
-  --brun: #93441a;
-  --brun-carte: #a05a36;
-  --texte: #3a1d0e;
-  --texte-secondaire: #6b4a36;
+  --fond: #f5f7fa;
+  --blanc: #fff;
+  --bleu: #1e3a8a;
+  --bleu-fonce: #1e40af;
+  --bleu-vif: #3b6fd4;
+  --bleu-nuit: #0f2a5c;
+  --bleu-pied: #0b1730;
+  --bleu-pale: #dbe7fa;
+  --bleu-clair: #93b4e8;
+  --bleu-logo-pied: #7fa6e6;
+  --bordure: #e2e8f0;
+  --bordure-bouton: #c2d0e4;
+  --bordure-badge: #c2d4ee;
+  --decor: #d6e2f2;
+  --texte: #0f172a;
+  --texte-menu: #1e293b;
+  --texte-intro: #334155;
+  --texte-secondaire: #475569;
+  --texte-discret: #64748b;
+  --texte-sur-sombre: #d5e1f5;
+  --texte-pied: #cbd5e1;
+  --gris-faq: #f8fafc;
   --font-titre: Manrope, sans-serif;
 
+  position: relative;
+  overflow-x: hidden;
   font-family: Inter, system-ui, sans-serif;
   color: var(--texte);
-  background: #fff;
+  background: var(--fond);
 }
 
 .landing h1,
@@ -26,20 +41,21 @@
 }
 
 .landing a {
-  color: var(--cuivre);
+  color: var(--bleu);
 }
 
 .landing a:hover {
-  color: var(--brun);
+  color: var(--bleu-fonce);
 }
 
 .container {
+  position: relative;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .container--etroit {
-  max-width: 820px;
+  max-width: 900px;
 }
 
 .stack {
@@ -57,177 +73,346 @@
 }
 
 .landing .btn {
-  min-height: 44px;
   display: inline-flex;
   align-items: center;
-  padding: 0 18px;
-  border-radius: 8px;
+  padding: 12px 20px;
+  border-radius: 10px;
   text-decoration: none;
   font-size: 15px;
+  font-weight: 600;
 }
 
 .landing .btn--outline,
 .landing .btn--outline:hover {
-  border: 1px solid var(--creme);
-  color: #fff;
+  border: 1px solid var(--bordure-bouton);
+  background: var(--blanc);
+  color: var(--texte);
 }
 
 .landing .btn--primary,
 .landing .btn--primary:hover {
-  background: var(--or);
-  color: var(--texte);
-  font-weight: 600;
+  background: var(--bleu);
+  color: var(--blanc);
 }
 
 .landing .btn--lg {
-  min-height: 52px;
-  padding: 0 24px;
-  border-radius: 10px;
+  padding: 16px 26px;
+  border-radius: 12px;
   font-size: 16px;
-  font-weight: 600;
 }
 
 .landing .btn--lg.btn--primary {
-  font-weight: 700;
+  box-shadow: 0 10px 24px rgb(30 58 138 / 25%);
 }
 
-/* --- En-tête ------------------------------------------------------------- */
+/* --- En-tête (posé sur la photo) ----------------------------------------- */
 
 .header {
-  background: var(--brun);
-  color: #fff;
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
 }
 
 .header__inner {
-  padding: 18px 24px;
+  padding: 20px 24px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
   justify-content: space-between;
 }
 
 .header__nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 28px;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 75%);
   font-size: 15px;
+  font-weight: 500;
 }
 
 .landing .header__nav a {
-  color: var(--creme);
+  padding: 8px 14px;
+  color: var(--texte-menu);
   text-decoration: none;
 }
 
 .landing .logo-lien {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
+}
+
+.logo__icone {
+  width: 30px;
+  height: 30px;
 }
 
 .logo {
   font-family: var(--font-titre);
   font-weight: 800;
   font-size: 22px;
-  color: #fff;
+  letter-spacing: -0.5px;
+  color: var(--texte);
 }
 
 .logo__plus {
-  color: var(--or);
+  color: var(--bleu-vif);
 }
 
 .logo--footer {
   font-size: 20px;
+  color: var(--blanc);
 }
 
-/* --- Hero ---------------------------------------------------------------- */
+.logo--footer .logo__plus {
+  color: var(--bleu-logo-pied);
+}
+
+/* --- Hero : photo d'immeuble, voile clair à gauche pour lire le texte ----- */
 
 .hero {
-  background: var(--brun);
-  color: #fff;
-  padding: 72px 24px 96px;
+  position: relative;
+  min-height: 720px;
+  padding: 200px 24px 150px;
+  background: #cfe0f3 url('./assets/landing-immeuble.jpg') right center / cover no-repeat;
 }
 
-.hero__inner {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 48px;
-  align-items: center;
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgb(245 248 252 / 94%) 0%,
+    rgb(245 248 252 / 80%) 38%,
+    rgb(245 248 252 / 15%) 62%,
+    rgb(245 248 252 / 0%) 75%
+  );
 }
 
 .hero__text {
-  flex: 999 1 520px;
+  max-width: 620px;
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
 .hero__title {
-  max-width: 820px;
   font-family: var(--font-titre);
-  font-size: 56px;
-  line-height: 1.08;
+  font-size: 64px;
+  line-height: 1.04;
+  letter-spacing: -1.6px;
   font-weight: 800;
+}
+
+.hero__accent {
+  color: var(--bleu);
 }
 
 .hero__lead {
   font-size: 19px;
   line-height: 1.6;
-  color: var(--creme);
-  max-width: 600px;
+  color: var(--texte-intro);
 }
 
-.hero__note {
+.landing .hero__note {
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   font-size: 14px;
-  color: var(--gris-clair);
+  color: var(--texte-menu);
+}
+
+.hero__note li {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 90%);
 }
 
 .eyebrow {
   font-size: 14px;
-  letter-spacing: 0.08em;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
   font-weight: 600;
-  color: var(--cuivre);
+  color: var(--bleu);
 }
 
 .eyebrow--light {
-  color: var(--or);
+  color: var(--bleu-clair);
+}
+
+.hero .eyebrow {
+  align-self: flex-start;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--bordure-badge);
+  background: var(--blanc);
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--bleu);
 }
 
 /* --- Sections ------------------------------------------------------------ */
 
 .section {
-  padding: 80px 24px;
+  position: relative;
+  overflow: hidden;
+  padding: 88px 24px;
 }
 
-.section--gris {
-  background: var(--creme);
+/* Trame de petits cercles décorative (FAQ) */
+.section--blanc::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 240px;
+  height: 200px;
+  background-image: radial-gradient(
+    circle,
+    transparent 4px,
+    var(--decor) 4px 5.5px,
+    transparent 5.5px
+  );
+  background-size: 26px 26px;
+}
+
+/* Ondes concentriques partant du coin haut droit : un quart de disque bleu pâle
+   et trois arcs fins de plus en plus clairs */
+.section--cercles::before,
+.section--cercles::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-radius: 999px;
+  transform: translate(50%, -50%);
+}
+
+.section--cercles::before {
+  width: 300px;
+  height: 300px;
+  background: var(--bleu-pale);
+}
+
+.section--cercles::after {
+  width: 900px;
+  height: 900px;
+  background: radial-gradient(
+    circle closest-side,
+    transparent 228px,
+    var(--bordure-badge) 228px 230px,
+    transparent 230px 318px,
+    rgb(194 212 238 / 70%) 318px 320px,
+    transparent 320px 408px,
+    rgb(194 212 238 / 40%) 408px 410px,
+    transparent 410px
+  );
 }
 
 .section--sombre {
-  background: var(--brun);
-  color: #fff;
+  background: var(--bleu-nuit);
+  color: var(--blanc);
 }
 
-.section--teal {
-  background: var(--or);
-  color: var(--texte);
+/* Rayures fines en diagonale */
+.section--sombre::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgb(255 255 255 / 4%) 0,
+    rgb(255 255 255 / 4%) 2px,
+    transparent 2px,
+    transparent 26px
+  );
+}
+
+/* Groupe d'immeubles dans l'espace libre en bas à droite des avantages */
+.decor-quartier {
+  position: absolute;
+  right: max(24px, calc((100% - 1200px) / 2));
+  bottom: 0;
+  width: 340px;
+  height: 270px;
+}
+
+.section--blanc {
+  background: var(--blanc);
+  border-top: 1px solid var(--bordure);
+}
+
+.section--bleu {
+  background: var(--bleu);
+  color: var(--blanc);
+  padding-bottom: 150px;
+}
+
+/* Couleurs des immeubles : blanc translucide sur le bandeau bleu, bleu pâle sur fond clair */
+.immeubles__antenne {
+  stroke-width: 2;
+}
+
+.decor-ville .immeubles__facade {
+  fill: rgb(255 255 255 / 14%);
+}
+
+.decor-ville .immeubles__fenetre {
+  fill: rgb(255 255 255 / 32%);
+}
+
+.decor-ville .immeubles__antenne {
+  stroke: rgb(255 255 255 / 30%);
+}
+
+.decor-quartier .immeubles__facade {
+  fill: var(--bleu-pale);
+}
+
+.decor-quartier .immeubles__fenetre {
+  fill: var(--blanc);
+}
+
+.decor-quartier .immeubles__antenne {
+  stroke: var(--bleu-pale);
+}
+
+.decor-ville {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 200px;
 }
 
 .titre-section {
   font-family: var(--font-titre);
-  font-size: 38px;
+  font-size: 40px;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.1;
+  letter-spacing: -1px;
 }
 
 .intro {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-width: 720px;
+  gap: 16px;
+  max-width: 760px;
+}
+
+.intro .titre-section {
+  font-size: 44px;
 }
 
 .intro__texte {
-  font-size: 17px;
+  font-size: 18px;
   line-height: 1.6;
   color: var(--texte-secondaire);
 }
@@ -236,127 +421,128 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  text-align: center;
-  align-items: center;
 }
 
 .grille {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 24px;
 }
 
-.carte {
-  background: #fff;
-  border: 1px solid var(--gris-clair);
-  border-radius: 14px;
-  padding: 24px;
+/* 5 avantages : 3 par ligne sur grand écran plutôt que 4 + 1 */
+.grille--avantages {
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+}
+
+.carte,
+.avantage {
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-radius: 16px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+}
+
+.carte__icone {
+  width: 40px;
+  height: 40px;
+  fill: none;
+  stroke: var(--texte-discret);
+  stroke-width: 1.6;
 }
 
 .carte__avant {
   font-size: 13px;
   font-weight: 700;
-  color: var(--cuivre);
-  letter-spacing: 0.06em;
+  color: var(--texte-discret);
+  letter-spacing: 1.2px;
   text-transform: uppercase;
 }
 
-.carte h3 {
-  font-size: 18px;
+.carte h3,
+.avantage h3 {
+  font-size: 20px;
   font-weight: 600;
 }
 
-.carte p:not(.carte__avant) {
-  font-size: 15px;
+.carte p:not(.carte__avant),
+.avantage p {
+  font-size: 16px;
   color: var(--texte-secondaire);
   line-height: 1.6;
 }
+
+/* --- Comment ça marche (fond bleu nuit) ---------------------------------- */
 
 .etapes {
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+  gap: 24px;
 }
 
 .etape {
-  border: 1px solid var(--gris-clair);
-  border-radius: 14px;
-  padding: 28px 24px;
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 7%);
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
 .etape__numero {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--creme);
-  color: var(--brun);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--blanc);
+  color: var(--bleu-nuit);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-titre);
   font-weight: 800;
-  font-size: 18px;
 }
 
 .etape h3 {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 600;
 }
 
 .etape p {
   font-size: 15px;
   line-height: 1.6;
-  color: var(--texte-secondaire);
+  color: var(--texte-sur-sombre);
 }
 
-.avantage {
-  background: var(--brun-carte);
-  border: 1px solid var(--cuivre);
-  border-radius: 14px;
-  padding: 24px;
+/* --- Avantages ----------------------------------------------------------- */
+
+.avantage__icone {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--bleu-pale);
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
 }
 
 .avantage svg {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   fill: none;
-  stroke: var(--or);
+  stroke: var(--bleu);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.avantage h3 {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.avantage p {
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--creme);
 }
 
 .landing .avantage__lien {
   margin-top: auto;
   font-size: 15px;
   font-weight: 600;
-  color: var(--or);
-}
-
-.landing .avantage__lien:hover {
-  color: #fff;
 }
 
 /* --- FAQ ----------------------------------------------------------------- */
@@ -364,60 +550,60 @@
 .faq {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .faq__titre {
-  text-align: center;
+  margin-bottom: 8px;
 }
 
 .faq__item {
-  border: 1px solid var(--gris-clair);
-  border-radius: 12px;
-  padding: 0 20px;
+  background: var(--gris-faq);
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  padding: 20px 24px;
 }
 
 .faq__item summary {
-  min-height: 60px;
-  display: flex;
-  align-items: center;
   font-size: 17px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .landing .faq__item p {
-  margin: 0 0 20px;
-  font-size: 15px;
-  line-height: 1.7;
+  margin: 12px 0 0;
+  font-size: 16px;
+  line-height: 1.6;
   color: var(--texte-secondaire);
 }
 
-/* --- Inscription --------------------------------------------------------- */
+/* --- Inscription (fond bleu, silhouettes d'immeubles) -------------------- */
 
 .inscription {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   align-items: center;
   text-align: center;
 }
 
 .inscription__titre {
   font-family: var(--font-titre);
-  font-size: 40px;
+  font-size: 36px;
   font-weight: 800;
   line-height: 1.15;
+  letter-spacing: -0.5px;
 }
 
 .inscription__texte,
 .inscription__connexion {
   font-size: 17px;
-  color: var(--texte);
+  line-height: 1.6;
+  color: var(--texte-sur-sombre);
 }
 
 .landing .inscription__connexion a {
-  color: var(--brun);
+  color: var(--blanc);
   font-weight: 600;
   text-decoration: underline;
 }
@@ -433,24 +619,24 @@
 
 .inscription__form input {
   flex: 999 1 280px;
-  min-height: 52px;
+  min-height: 54px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0 16px;
   font:
     400 16px Inter,
     sans-serif;
   color: var(--texte);
-  background: #fff;
+  background: var(--blanc);
 }
 
 .inscription__form button {
   flex: 1 1 180px;
-  min-height: 52px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--brun);
-  color: #fff;
+  min-height: 54px;
+  border: 1px solid var(--blanc);
+  border-radius: 12px;
+  background: var(--blanc);
+  color: var(--bleu);
   font:
     700 16px Inter,
     sans-serif;
@@ -460,12 +646,12 @@
 /* --- Pied de page -------------------------------------------------------- */
 
 .footer {
-  background: var(--brun);
-  color: var(--creme);
+  background: var(--bleu-pied);
+  color: var(--texte-pied);
 }
 
 .footer__inner {
-  padding: 40px 24px;
+  padding: 48px 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -484,28 +670,45 @@
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 20px;
   font-size: 14px;
 }
 
-.footer__nav li {
-  color: var(--creme);
+.landing .footer__nav a,
+.landing .footer__nav a:hover {
+  color: var(--texte-pied);
 }
 
 .footer__mention {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
-  color: var(--gris-clair);
 }
 
-/* La maquette est dessinée pour 1440 px : on réduit les grands titres sur mobile */
-@media (max-width: 640px) {
+/* La maquette est dessinée pour 1440 px : sur petit écran, titres réduits,
+   en-tête au-dessus de la photo et voile plus couvrant pour garder le texte lisible */
+@media (max-width: 760px) {
+  .header {
+    position: static;
+    background: var(--blanc);
+    border-bottom: 1px solid var(--bordure);
+  }
+
   .hero {
-    padding: 48px 16px 64px;
+    min-height: 0;
+    padding: 56px 16px 72px;
+  }
+
+  .hero::before {
+    background: rgb(245 248 252 / 88%);
+  }
+
+  .decor-quartier {
+    display: none;
   }
 
   .hero__title {
-    font-size: 36px;
+    font-size: 38px;
+    letter-spacing: -1px;
   }
 
   .section {
@@ -513,6 +716,7 @@
   }
 
   .titre-section,
+  .intro .titre-section,
   .inscription__titre {
     font-size: 28px;
   }
