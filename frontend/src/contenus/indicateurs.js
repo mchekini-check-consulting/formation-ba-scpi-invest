@@ -262,7 +262,11 @@ export const THEMES = [
 
 // Recherche insensible aux majuscules, aux accents et au type d'apostrophe (' ou ’)
 function normaliser(texte) {
-  return texte.normalize('NFD').replace(/[̀-ͯ]/g, '').replaceAll('’', "'").toLowerCase();
+  return texte
+    .normalize('NFD')
+    .replaceAll(/[\u0300-\u036f]/g, '')
+    .replaceAll('’', "'")
+    .toLowerCase();
 }
 
 // Thèmes à afficher pour une recherche et un thème donnés ('tous' = pas de filtre),

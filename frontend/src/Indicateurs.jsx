@@ -57,7 +57,8 @@ function Indicateurs() {
               placeholder="Ex. taux d’occupation, TRI, report à nouveau…"
             />
           </div>
-          <div role="group" aria-label="Thèmes" className="ind-filtres">
+          <fieldset className="ind-filtres">
+            <legend className="sr-only">Thèmes</legend>
             {FILTRES.map((f) => (
               <button
                 key={f.id}
@@ -69,7 +70,7 @@ function Indicateurs() {
                 {f.titre}
               </button>
             ))}
-          </div>
+          </fieldset>
         </section>
 
         <section className="ind-conteneur ind-liste">
