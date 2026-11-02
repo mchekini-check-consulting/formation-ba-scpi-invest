@@ -39,7 +39,6 @@ const AVANTAGES = [
   {
     titre: 'Indicateurs expliqués',
     texte: 'Rendement, TOF, WALT, report à nouveau : chaque indicateur est défini simplement.',
-    // Page des définitions à alimenter plus tard
     lien: { href: '/indicateurs', texte: 'Voir les définitions des indicateurs' },
     icone: (
       <>

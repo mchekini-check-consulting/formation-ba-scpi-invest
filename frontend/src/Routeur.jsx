@@ -1,6 +1,7 @@
 // Choix de l'écran selon l'adresse de la page (nginx renvoie index.html pour toute
 // adresse : nginx.conf). Navigation par liens classiques, sans bibliothèque de routage.
 import App from './App.jsx';
+import Indicateurs from './Indicateurs.jsx';
 import Inscription from './inscription/Inscription.jsx';
 import Kyc from './Kyc.jsx';
 import PageCompte from './PageCompte.jsx';
@@ -22,6 +23,9 @@ export default function Routeur({
   }
   if (page === '/kyc') {
     return <Kyc />;
+  }
+  if (page === '/indicateurs') {
+    return <Indicateurs />;
   }
   if (A_VENIR[page]) {
     return (
