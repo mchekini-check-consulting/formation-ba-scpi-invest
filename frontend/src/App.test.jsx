@@ -38,14 +38,44 @@ describe('App', () => {
     expect(lien.getAttribute('href')).toBe('/indicateurs');
   });
 
+  // Le pied de page cite le statut réglementaire du partenaire (« conseiller en
+  // investissements financiers ») : seul le contenu de la page est vérifié
   it('ne parle pas d’accompagnement', () => {
     render(<App />);
-    expect(document.body.textContent).not.toMatch(/accompagn|conseiller/i);
+    expect(document.querySelector('main').textContent).not.toMatch(/accompagn|conseiller/i);
+  });
+
+  it('pied de page : liens légaux et statut réglementaire', () => {
+    render(<App />);
+    const liens = screen.getByRole('navigation', { name: 'Liens légaux' }).querySelectorAll('a');
+    expect([...liens].map((l) => [l.textContent, l.getAttribute('href')])).toEqual([
+      ['Mentions légales', '/mentions-legales'],
+      ['Politique de confidentialité', '/confidentialite'],
+      ['CGU', '/cgu'],
+      ['Contact', '/contact'],
+    ]);
+    const pied = document.querySelector('footer').textContent;
+    expect(pied).toContain('immatriculé à l’ORIAS sous le numéro 08066027');
+    expect(pied).not.toContain('[STATUT');
   });
 
   it('ne mentionne aucune offre', () => {
     render(<App />);
     expect(document.body.textContent).not.toMatch(/offre|gratuit|premium|essentiel/i);
+  });
+
+  it('décrit le parcours en 4 étapes et 5 avantages distincts', () => {
+    render(<App />);
+    const titres = (id) =>
+      [...document.querySelectorAll(`#${id} h3`)].map((titre) => titre.textContent);
+    expect(titres('fonctionnement')).toEqual(['Recherchez', 'Comparez', 'Souscrivez', 'Suivez']);
+    expect(titres('avantages')).toEqual([
+      'La santé des SCPI, pas seulement leur rendement',
+      'Une commission identique pour toutes',
+      'Indicateurs expliqués',
+      'Import automatique des relevés',
+      'Votre argent reste chez vous',
+    ]);
   });
 
   it('répond aux questions fréquentes', () => {

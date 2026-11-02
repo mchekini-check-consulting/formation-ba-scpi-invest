@@ -48,6 +48,14 @@ describe('Routeur', () => {
     expect(document.body.textContent).toContain('bientôt disponible');
   });
 
+  it('liens du pied de page : bientôt disponibles', () => {
+    afficher('/mentions-legales');
+    expect(titre()).toBe('Mentions légales');
+    cleanup();
+    afficher('/contact');
+    expect(titre()).toBe('Contact');
+  });
+
   it('adresse inconnue : landing page', () => {
     afficher('/nimporte-quoi');
     expect(titre()).toContain('Choisissez vos SCPI en confiance');

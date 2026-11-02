@@ -9,6 +9,8 @@ import PageCompte from './PageCompte.jsx';
 // Pages prévues par d'autres US, pas encore réalisées
 const A_VENIR = {
   '/connexion': 'Connexion',
+  '/mentions-legales': 'Mentions légales',
+  '/contact': 'Contact',
   '/cgu': 'Conditions générales d’utilisation',
   '/confidentialite': 'Politique de confidentialité',
 };
