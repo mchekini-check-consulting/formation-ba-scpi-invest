@@ -1,5 +1,11 @@
 import { sql } from 'drizzle-orm';
+import { toNodeHandler } from 'better-auth/node';
+import type { RequestHandler } from 'express';
 import { createApp } from './app.js';
+import { creerAuth, fournisseurBetterAuth } from './auth/better-auth.js';
+import { routesComptes } from './comptes/routes.js';
+import { creerCompteService } from './comptes/service.js';
+import { depotAcceptationsCgu, secretDesSessions } from './db/depots.js';
 import { createDb, createPool } from './db/index.js';
 import { logger } from './logging/logger.js';
 import { migrate } from './migrate.js';
@@ -8,7 +14,15 @@ import { migrate } from './migrate.js';
 const pool = createPool();
 await migrate(pool);
 const db = createDb(pool);
+
+// Authentification : Better-Auth derrière l'interface FournisseurIdentite (src/auth/)
+const auth = creerAuth(db, await secretDesSessions(db));
+const fournisseur = fournisseurBetterAuth(auth);
+const betterAuth: RequestHandler = toNodeHandler(auth);
+const comptes = creerCompteService(fournisseur, depotAcceptationsCgu(db));
+
 const port = Number(process.env.PORT ?? 8080);
-createApp(() => db.execute(sql`select 1`)).listen(port, () =>
-  logger.info({ port }, 'backend démarré'),
-);
+createApp(() => db.execute(sql`select 1`), logger, {
+  auth: betterAuth,
+  routeurs: [routesComptes(comptes, fournisseur)],
+}).listen(port, () => logger.info({ port }, 'backend démarré'));

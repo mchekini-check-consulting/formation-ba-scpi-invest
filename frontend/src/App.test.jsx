@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
 afterEach(cleanup);
@@ -19,7 +19,7 @@ describe('App', () => {
     render(<App />);
     const liens = screen.getAllByRole('link', { name: /Créer mon compte/ });
     expect(liens.length).toBeGreaterThan(0);
-    liens.forEach((lien) => expect(lien.getAttribute('href')).toBe('#inscription'));
+    liens.forEach((lien) => expect(lien.getAttribute('href')).toBe('/inscription'));
     expect(screen.getByRole('form', { name: 'Inscription' })).toBeDefined();
   });
 
@@ -59,10 +59,19 @@ describe('App', () => {
     ]);
   });
 
-  it('ne recharge pas la page à l’envoi du formulaire d’inscription', () => {
-    render(<App />);
+  it('le formulaire du bas ouvre la création de compte, email déjà saisi', () => {
+    const allerA = vi.fn();
+    render(<App allerA={allerA} />);
+    const formulaire = screen.getByRole('form', { name: 'Inscription' });
     const envoi = new Event('submit', { bubbles: true, cancelable: true });
-    fireEvent(screen.getByRole('form', { name: 'Inscription' }), envoi);
+    fireEvent(formulaire, envoi);
     expect(envoi.defaultPrevented).toBe(true);
+    expect(allerA).toHaveBeenLastCalledWith('/inscription');
+
+    fireEvent.change(screen.getByLabelText('Adresse e-mail'), {
+      target: { value: ' jean+scpi@exemple.fr ' },
+    });
+    fireEvent.submit(formulaire);
+    expect(allerA).toHaveBeenLastCalledWith('/inscription?email=jean%2Bscpi%40exemple.fr');
   });
 });

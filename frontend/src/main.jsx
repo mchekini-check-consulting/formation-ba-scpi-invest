@@ -11,7 +11,7 @@ import '@fontsource/manrope/500.css';
 import '@fontsource/manrope/700.css';
 import '@fontsource/manrope/800.css';
 import './index.css';
-import App from './App.jsx';
+import Routeur from './Routeur.jsx';
 
 // Cache des requêtes serveur (TanStack Query) partagé par toute l'application
 const queryClient = new QueryClient();
@@ -19,7 +19,7 @@ const queryClient = new QueryClient();
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <Routeur />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </StrictMode>,
