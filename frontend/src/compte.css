@@ -1,0 +1,233 @@
+/* Écrans du compte : même palette que la landing page (App.css) */
+.compte {
+  --creme: #eee6d8;
+  --or: #daab3a;
+  --cuivre: #b67332;
+  --brun: #93441a;
+  --texte: #3a1d0e;
+  --texte-secondaire: #6b4a36;
+  --erreur: #b3261e;
+  --succes: #2e7d32;
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--texte);
+  background: var(--creme);
+}
+
+.compte a {
+  color: var(--cuivre);
+}
+
+.compte a:hover {
+  color: var(--brun);
+}
+
+.compte__entete {
+  background: var(--brun);
+  padding: 18px 24px;
+}
+
+.compte .compte__logo {
+  font-family: Manrope, sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.compte__logo span {
+  color: var(--or);
+}
+
+.compte__contenu {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 40px 16px;
+}
+
+.compte__carte {
+  width: 100%;
+  max-width: 480px;
+  align-self: flex-start;
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 10px 30px rgb(58 29 14 / 8%);
+}
+
+.compte__carte h1 {
+  margin: 0 0 24px;
+  font-family: Manrope, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.compte__carte p {
+  margin: 0;
+}
+
+.compte__form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.champ > label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.champ input[type='email'],
+.champ input[type='password'],
+.champ input[type='text'] {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid #d3c7b4;
+  border-radius: 8px;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.champ input:focus-visible {
+  outline: 2px solid var(--or);
+  outline-offset: 1px;
+}
+
+.champ input[aria-invalid='true'] {
+  border-color: var(--erreur);
+}
+
+.champ__mdp {
+  position: relative;
+}
+
+.champ__mdp input {
+  padding-right: 48px;
+}
+
+.champ__oeil {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--texte-secondaire);
+}
+
+.champ__oeil svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.champ__erreur {
+  min-height: 0;
+  font-size: 13px;
+  color: var(--erreur);
+}
+
+.champ__erreur:empty {
+  display: none;
+}
+
+.regles {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--texte-secondaire);
+}
+
+.regle--ok {
+  color: var(--succes);
+}
+
+.case {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.case input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  flex-shrink: 0;
+  accent-color: var(--brun);
+}
+
+.compte__alerte {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fbe9e7;
+  color: var(--erreur);
+  font-size: 14px;
+}
+
+.compte__bouton {
+  min-height: 50px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--or);
+  color: var(--texte);
+  font: inherit;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.compte__bouton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.compte__bouton--secondaire {
+  background: none;
+  border: 1px solid var(--cuivre);
+  color: var(--cuivre);
+  padding: 0 20px;
+}
+
+.compte__lien,
+.compte__texte {
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--texte-secondaire);
+  line-height: 1.5;
+}
+
+.compte__texte + .compte__bouton {
+  margin-top: 24px;
+}
+
+@media (max-width: 640px) {
+  .compte__carte {
+    padding: 24px 20px;
+  }
+}

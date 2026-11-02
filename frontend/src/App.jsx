@@ -97,9 +97,14 @@ const FAQ = [
   },
 ];
 
-// Pas encore d'API d'inscription : on empêche juste le rechargement de la page
-function inscrire(event) {
-  event.preventDefault();
+function naviguer(url) {
+  window.location.assign(url);
+}
+
+// Ouvre l'écran de création de compte (US-02a), email déjà saisi
+function adresseInscription(email) {
+  const saisi = email.trim();
+  return saisi ? `/inscription?email=${encodeURIComponent(saisi)}` : '/inscription';
 }
 
 function Logo({ className = '' }) {
@@ -110,7 +115,12 @@ function Logo({ className = '' }) {
   );
 }
 
-function App() {
+function App({ allerA = naviguer }) {
+  function inscrire(event) {
+    event.preventDefault();
+    allerA(adresseInscription(event.currentTarget.elements.email.value));
+  }
+
   return (
     <div className="landing">
       <header className="header">
@@ -127,7 +137,7 @@ function App() {
             <a href="/connexion" className="btn btn--outline">
               Se connecter
             </a>
-            <a href="#inscription" className="btn btn--primary">
+            <a href="/inscription" className="btn btn--primary">
               Créer mon compte
             </a>
           </div>
@@ -147,7 +157,7 @@ function App() {
                 votre portefeuille grâce à l’import automatique de vos relevés.
               </p>
               <div className="actions">
-                <a href="#inscription" className="btn btn--primary btn--lg">
+                <a href="/inscription" className="btn btn--primary btn--lg">
                   Créer mon compte
                 </a>
                 <a href="/connexion" className="btn btn--outline btn--lg">

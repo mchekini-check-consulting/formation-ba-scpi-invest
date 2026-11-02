@@ -1,0 +1,132 @@
+import { APIError } from 'better-auth/api';
+import { describe, expect, it, vi } from 'vitest';
+import type { Db } from '../db/index.js';
+import { captureLogs } from '../logging/capture.js';
+import { type Auth, creerAuth, fournisseurBetterAuth, originesDeConfiance } from './better-auth.js';
+import { EmailDejaUtilise } from './fournisseur.js';
+
+// Faux mot de passe d'exemple, utilisé seulement par les tests
+const EXEMPLE = 'Tr0pBien!Choisi';
+
+function fauxAuth(api: Record<string, unknown>): Auth {
+  return { api } as unknown as Auth;
+}
+
+describe('creerAuth', () => {
+  const auth = creerAuth(
+    {} as Db,
+    'secret-de-test-suffisamment-long-0123456789',
+    captureLogs().log,
+  );
+
+  it('sessions de 7 jours, prolongées chaque jour d’activité', () => {
+    expect(auth.options.session).toEqual({ expiresIn: 604_800, updateAge: 86_400 });
+  });
+
+  it('mot de passe de 12 caractères minimum, connexion automatique après inscription', () => {
+    expect(auth.options.emailAndPassword).toMatchObject({
+      enabled: true,
+      autoSignIn: true,
+      minPasswordLength: 12,
+    });
+  });
+
+  it('inscription directe désactivée (passe par POST /comptes)', () => {
+    expect(auth.options.disabledPaths).toEqual(['/sign-up/email']);
+  });
+
+  it('origines de confiance déduites de l’adresse appelée', async () => {
+    const trusted = auth.options.trustedOrigins as (r?: Request) => Promise<string[]>;
+    const req = new Request('http://x/auth/sign-out', {
+      headers: { host: 'gateway.projet.dev.exemple.net' },
+    });
+    expect(await trusted(req)).toEqual(['https://frontend.projet.dev.exemple.net']);
+    expect(await trusted()).toEqual([]);
+  });
+
+  it('logs de Better-Auth en JSON, sans layer', () => {
+    const { log, lignes } = captureLogs();
+    const avecLog = creerAuth({} as Db, 'secret-de-test-suffisamment-long-0123456789', log);
+    avecLog.options.logger?.log?.('error', 'panne');
+    avecLog.options.logger?.log?.('warn', 'attention');
+    expect(lignes).toMatchObject([
+      { level: 'ERROR', module: 'better-auth', msg: 'panne' },
+      { level: 'WARN', module: 'better-auth', msg: 'attention' },
+    ]);
+    expect(lignes[0].layer).toBeUndefined();
+  });
+});
+
+describe('fournisseurBetterAuth', () => {
+  it('creerCompte : inscription Better-Auth, renvoie l’utilisateur et le jeton', async () => {
+    const signUpEmail = vi.fn().mockResolvedValue({
+      user: { id: 'u1', email: 'jean@exemple.fr', name: '' },
+      token: 'jeton',
+    });
+    const compte = await fournisseurBetterAuth(fauxAuth({ signUpEmail })).creerCompte(
+      'jean@exemple.fr',
+      EXEMPLE,
+    );
+    expect(compte).toEqual({ utilisateur: { id: 'u1', email: 'jean@exemple.fr' }, jeton: 'jeton' });
+    expect(signUpEmail).toHaveBeenCalledWith({
+      body: { email: 'jean@exemple.fr', password: EXEMPLE, name: '' },
+    });
+  });
+
+  it('creerCompte : email déjà utilisé -> EmailDejaUtilise', async () => {
+    const existe = new APIError('UNPROCESSABLE_ENTITY', {
+      code: 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL',
+      message: 'User already exists',
+    });
+    const fournisseur = fournisseurBetterAuth(
+      fauxAuth({ signUpEmail: vi.fn().mockRejectedValue(existe) }),
+    );
+    await expect(fournisseur.creerCompte('a@b.fr', 'x')).rejects.toBeInstanceOf(EmailDejaUtilise);
+  });
+
+  it('creerCompte : autre erreur relancée, session absente = erreur', async () => {
+    const panne = new Error('panne');
+    const enPanne = fournisseurBetterAuth(
+      fauxAuth({ signUpEmail: vi.fn().mockRejectedValue(panne) }),
+    );
+    await expect(enPanne.creerCompte('a@b.fr', 'x')).rejects.toBe(panne);
+
+    const sansJeton = fournisseurBetterAuth(
+      fauxAuth({ signUpEmail: vi.fn().mockResolvedValue({ user: { id: 'u1' }, token: null }) }),
+    );
+    await expect(sansJeton.creerCompte('a@b.fr', 'x')).rejects.toThrow('session non créée');
+  });
+
+  it('utilisateurConnecte : session lue depuis les en-têtes de la requête', async () => {
+    const getSession = vi
+      .fn()
+      .mockResolvedValueOnce({ user: { id: 'u1', email: 'jean@exemple.fr' }, session: {} })
+      .mockResolvedValueOnce(null);
+    const fournisseur = fournisseurBetterAuth(fauxAuth({ getSession }));
+
+    expect(await fournisseur.utilisateurConnecte({ authorization: 'Bearer jeton' })).toEqual({
+      id: 'u1',
+      email: 'jean@exemple.fr',
+    });
+    expect(getSession.mock.calls[0][0].headers.get('authorization')).toBe('Bearer jeton');
+    expect(await fournisseur.utilisateurConnecte({})).toBeNull();
+  });
+});
+
+describe('originesDeConfiance', () => {
+  it('cluster : le frontend du même projet et du même environnement', () => {
+    expect(
+      originesDeConfiance('gateway.formation-ba-scpi-invest.qualif.check-consulting.net'),
+    ).toEqual(['https://frontend.formation-ba-scpi-invest.qualif.check-consulting.net']);
+  });
+
+  it('poste de dev : l’adresse du serveur de dev', () => {
+    expect(originesDeConfiance('localhost:5173')).toEqual(['http://localhost:5173']);
+    expect(originesDeConfiance('127.0.0.1:8081')).toEqual(['http://127.0.0.1:8081']);
+  });
+
+  it('autre adresse : aucune origine', () => {
+    expect(originesDeConfiance('exemple.net')).toEqual([]);
+    expect(originesDeConfiance('')).toEqual([]);
+  });
+});

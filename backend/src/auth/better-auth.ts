@@ -1,0 +1,98 @@
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { APIError } from 'better-auth/api';
+import { fromNodeHeaders } from 'better-auth/node';
+import { bearer } from 'better-auth/plugins';
+import type { Logger } from 'pino';
+import type { Db } from '../db/index.js';
+import { authAccount, authSession, authUser, authVerification } from '../db/schema.js';
+import { logger as loggerParDefaut } from '../logging/logger.js';
+import { EmailDejaUtilise, type FournisseurIdentite } from './fournisseur.js';
+
+const JOUR = 24 * 60 * 60;
+
+// Better-Auth : email + mot de passe (haché scrypt), sessions stockées en base
+// (table auth_session), valables 7 jours et prolongées une fois par jour d'activité.
+// Routes Better-Auth sous /auth (get-session, sign-out...) ; l'inscription passe par
+// POST /comptes (règles métier : CGU, mot de passe), d'où /sign-up/email désactivée.
+export function creerAuth(db: Db, secret: string, log: Logger = loggerParDefaut) {
+  return betterAuth({
+    secret,
+    basePath: '/auth',
+    database: drizzleAdapter(db, {
+      provider: 'pg',
+      schema: {
+        user: authUser,
+        session: authSession,
+        account: authAccount,
+        verification: authVerification,
+      },
+    }),
+    emailAndPassword: {
+      enabled: true,
+      autoSignIn: true, // US-02a : connecté dès la création du compte
+      minPasswordLength: 12,
+      maxPasswordLength: 128,
+    },
+    session: { expiresIn: 7 * JOUR, updateAge: JOUR },
+    disabledPaths: ['/sign-up/email'],
+    // Session transmise par "Authorization: Bearer <jeton>" (frontend et gateway sur
+    // deux adresses différentes ; même principe qu'un jeton OIDC)
+    plugins: [bearer()],
+    trustedOrigins: (request) => originesDeConfiance(hoteDe(request)),
+    telemetry: { enabled: false },
+    // Logs techniques de Better-Auth : JSON sans layer (kubectl logs, hors Loki)
+    logger: {
+      level: 'warn',
+      log: (niveau, message) =>
+        log[niveau === 'error' ? 'error' : 'warn']({ module: 'better-auth' }, message),
+    },
+  });
+}
+
+export type Auth = ReturnType<typeof creerAuth>;
+
+export function fournisseurBetterAuth(auth: Auth): FournisseurIdentite {
+  return {
+    async creerCompte(email, motDePasse) {
+      try {
+        const { user, token } = await auth.api.signUpEmail({
+          body: { email, password: motDePasse, name: '' },
+        });
+        if (!token) {
+          throw new Error('session non créée après l’inscription');
+        }
+        return { utilisateur: { id: user.id, email: user.email }, jeton: token };
+      } catch (err) {
+        if (err instanceof APIError && err.body?.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL') {
+          throw new EmailDejaUtilise();
+        }
+        throw err;
+      }
+    },
+    async utilisateurConnecte(headers) {
+      const session = await auth.api.getSession({ headers: fromNodeHeaders(headers) });
+      return session ? { id: session.user.id, email: session.user.email } : null;
+    },
+  };
+}
+
+function hoteDe(request?: Request): string {
+  return request?.headers.get('x-forwarded-host') ?? request?.headers.get('host') ?? '';
+}
+
+// Origines autorisées à appeler /auth avec des cookies, déduites de l'adresse appelée
+// (aucune URL écrite en dur, comme apiBase côté frontend) :
+//   gateway.<projet>.<env>.<domaine>  ->  https://frontend.<projet>.<env>.<domaine>
+//   localhost:5173 (relais du serveur de dev)  ->  http://localhost:5173
+export function originesDeConfiance(hote: string): string[] {
+  const [premier, ...reste] = hote.split('.');
+  if (premier === 'gateway' && reste.length > 0) {
+    return [`https://frontend.${reste.join('.')}`];
+  }
+  const nom = hote.split(':')[0];
+  if (nom === 'localhost' || /^[\d.]+$/.test(nom)) {
+    return [`http://${hote}`];
+  }
+  return [];
+}
