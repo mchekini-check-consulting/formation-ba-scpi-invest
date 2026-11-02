@@ -96,7 +96,7 @@ describe('création de compte (e2e)', () => {
   it('inscription directe de Better-Auth fermée : seules les règles de POST /comptes s’appliquent', async () => {
     await request(app)
       .post('/auth/sign-up/email')
-      .send({ email: 'autre@exemple.fr', password: 'motdepasse12', name: '' })
+      .send({ email: 'autre@exemple.fr', password: COMPTE.motDePasse, name: '' })
       .expect(404);
   });
 

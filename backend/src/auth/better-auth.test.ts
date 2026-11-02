@@ -5,6 +5,9 @@ import { captureLogs } from '../logging/capture.js';
 import { type Auth, creerAuth, fournisseurBetterAuth, originesDeConfiance } from './better-auth.js';
 import { EmailDejaUtilise } from './fournisseur.js';
 
+// Faux mot de passe d'exemple, utilisé seulement par les tests
+const EXEMPLE = 'Tr0pBien!Choisi';
+
 function fauxAuth(api: Record<string, unknown>): Auth {
   return { api } as unknown as Auth;
 }
@@ -62,11 +65,11 @@ describe('fournisseurBetterAuth', () => {
     });
     const compte = await fournisseurBetterAuth(fauxAuth({ signUpEmail })).creerCompte(
       'jean@exemple.fr',
-      'Tr0pBien!Choisi',
+      EXEMPLE,
     );
     expect(compte).toEqual({ utilisateur: { id: 'u1', email: 'jean@exemple.fr' }, jeton: 'jeton' });
     expect(signUpEmail).toHaveBeenCalledWith({
-      body: { email: 'jean@exemple.fr', password: 'Tr0pBien!Choisi', name: '' },
+      body: { email: 'jean@exemple.fr', password: EXEMPLE, name: '' },
     });
   });
 
