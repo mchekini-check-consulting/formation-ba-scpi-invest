@@ -12,7 +12,7 @@ applications:
     # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
     # remplace tout jusqu'à la fin de la ligne.
     tag:
-      dev: abf0969
+      dev: 1ac2cfa
       qualif: abf0969
       preprod: ""
       prod: ""
@@ -54,7 +54,7 @@ applications:
     # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
     # remplace tout jusqu'à la fin de la ligne.
     tag:
-      dev: fee5a1e
+      dev: 1ac2cfa
       qualif: fee5a1e
       preprod: ""
       prod: ""
