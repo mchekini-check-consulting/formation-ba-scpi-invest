@@ -37,6 +37,11 @@ describe('Routeur', () => {
     expect(titre()).toBe('Votre compte est créé');
   });
 
+  it('/indicateurs : définitions des indicateurs', () => {
+    afficher('/indicateurs');
+    expect(titre()).toBe('Les indicateurs des SCPI, expliqués simplement.');
+  });
+
   it('pages des autres US : bientôt disponibles', () => {
     afficher('/cgu');
     expect(titre()).toBe('Conditions générales d’utilisation');
