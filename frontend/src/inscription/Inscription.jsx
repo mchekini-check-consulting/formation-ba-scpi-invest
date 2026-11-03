@@ -92,10 +92,12 @@ export default function Inscription({ emailInitial = '', creer = creerCompte, al
           </div>
           <ul id="regles" className="regles" aria-label="Règles du mot de passe">
             {REGLES_A_COCHER.map((cle) => {
-              const ok = motDePasse !== '' && !nonRespectees.includes(cle);
+              const saisi = motDePasse !== '';
+              const ok = saisi && !nonRespectees.includes(cle);
+              const etat = ok ? 'regle--ok' : saisi ? 'regle--ko' : '';
               return (
-                <li key={cle} className={ok ? 'regle regle--ok' : 'regle'}>
-                  <span aria-hidden="true">{ok ? '✓' : '•'}</span> {REGLES[cle]}
+                <li key={cle} className={`regle ${etat}`.trim()}>
+                  <span aria-hidden="true">{ok ? '✓' : saisi ? '✗' : '•'}</span> {REGLES[cle]}
                   <span className="sr-only">{ok ? ' : respectée' : ' : non respectée'}</span>
                 </li>
               );

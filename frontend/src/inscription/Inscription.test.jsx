@@ -100,6 +100,10 @@ describe('Inscription', () => {
     const regles = screen.getByRole('list', { name: 'Règles du mot de passe' });
     expect(regles.textContent).toContain('Au moins 12 caractères : non respectée');
     expect(regles.textContent).toContain('Au moins une minuscule : respectée');
+    const regle = (libelle) =>
+      [...regles.querySelectorAll('li')].find((li) => li.textContent.includes(libelle));
+    expect(regle('Au moins 12 caractères').className).toBe('regle regle--ko');
+    expect(regle('Au moins une minuscule').className).toBe('regle regle--ok');
 
     saisir('Mot de passe', 'Tr0p Bien!Choisi');
     expect(texte()).toContain('Le mot de passe ne doit pas contenir d’espace');
