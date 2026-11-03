@@ -51,9 +51,9 @@ async function erreur(reponse) {
   return new ErreurApi(reponse.status, message);
 }
 
-// US-02a : crée le compte et ouvre la session (7 jours)
-export async function creerCompte(demande, base = apiBase()) {
-  const reponse = await fetch(`${base}/comptes`, {
+// Envoie la demande, mémorise la session (7 jours) renvoyée par le backend
+async function ouvrirSession(url, demande) {
+  const reponse = await fetch(url, {
     method: 'POST',
     headers: enTetes(true),
     body: JSON.stringify(demande),
@@ -64,6 +64,17 @@ export async function creerCompte(demande, base = apiBase()) {
   const { utilisateur, jeton: nouveau } = await reponse.json();
   memoriser(nouveau);
   return utilisateur;
+}
+
+// US-02a : crée le compte et ouvre la session
+export function creerCompte(demande, base = apiBase()) {
+  return ouvrirSession(`${base}/comptes`, demande);
+}
+
+// US-03a : connexion par email et mot de passe ; identifiants incorrects -> ErreurApi 401
+// « Email ou mot de passe incorrect »
+export function connecter(demande, base = apiBase()) {
+  return ouvrirSession(`${base}/connexions`, demande);
 }
 
 // Utilisateur de la session en cours, null si personne n'est connecté

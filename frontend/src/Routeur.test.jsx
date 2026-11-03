@@ -32,9 +32,20 @@ describe('Routeur', () => {
     expect(screen.getByLabelText('Adresse e-mail').value).toBe('');
   });
 
-  it('/kyc : écran qui suit la création de compte', () => {
+  it('/connexion : écran de connexion (US-03a)', () => {
+    afficher('/connexion', '?email=jean%40exemple.fr');
+    expect(titre()).toBe('Se connecter');
+    expect(screen.getByLabelText('Adresse e-mail').value).toBe('jean@exemple.fr');
+  });
+
+  it('/connexion sans email : champ vide', () => {
+    afficher('/connexion');
+    expect(screen.getByLabelText('Adresse e-mail').value).toBe('');
+  });
+
+  it('/kyc : écran qui suit la création de compte et la connexion', () => {
     afficher('/kyc');
-    expect(titre()).toBe('Votre compte est créé');
+    expect(titre()).toBe('Bienvenue dans votre espace');
   });
 
   it('/indicateurs : définitions des indicateurs', () => {

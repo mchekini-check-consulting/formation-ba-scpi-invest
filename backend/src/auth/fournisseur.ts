@@ -5,6 +5,7 @@ import type { RequestHandler } from 'express';
 // connaît que ce fichier : passer de Better-Auth à Keycloak (OIDC) revient à écrire une
 // autre implémentation de FournisseurIdentite (src/auth/better-auth.ts aujourd'hui) :
 //   - creerCompte : API d'administration Keycloak (ou inscription hébergée par Keycloak)
+//   - connecter : flux OIDC (page de connexion hébergée par Keycloak)
 //   - utilisateurConnecte : vérification du jeton "Authorization: Bearer" (JWT, clés JWKS)
 // Le frontend envoie déjà la session dans l'en-tête Authorization: Bearer, comme en OIDC.
 
@@ -14,6 +15,8 @@ export type CompteCree = { utilisateur: Utilisateur; jeton: string };
 
 export interface FournisseurIdentite {
   creerCompte(email: string, motDePasse: string): Promise<CompteCree>;
+  // Ouvre une session ; null si l'email ou le mot de passe est incorrect
+  connecter(email: string, motDePasse: string): Promise<CompteCree | null>;
   utilisateurConnecte(headers: IncomingHttpHeaders): Promise<Utilisateur | null>;
 }
 

@@ -97,6 +97,38 @@ describe('fournisseurBetterAuth', () => {
     await expect(sansJeton.creerCompte('a@b.fr', 'x')).rejects.toThrow('session non créée');
   });
 
+  it('connecter : connexion Better-Auth, renvoie l’utilisateur et le jeton', async () => {
+    const signInEmail = vi.fn().mockResolvedValue({
+      user: { id: 'u1', email: 'jean@exemple.fr', name: '' },
+      token: 'jeton',
+    });
+    const compte = await fournisseurBetterAuth(fauxAuth({ signInEmail })).connecter(
+      'jean@exemple.fr',
+      EXEMPLE,
+    );
+    expect(compte).toEqual({ utilisateur: { id: 'u1', email: 'jean@exemple.fr' }, jeton: 'jeton' });
+    expect(signInEmail).toHaveBeenCalledWith({
+      body: { email: 'jean@exemple.fr', password: EXEMPLE },
+    });
+  });
+
+  it('connecter : identifiants refusés -> null, autre erreur relancée', async () => {
+    const refus = (code: string) =>
+      new APIError('UNAUTHORIZED', { code, message: 'Invalid email or password' });
+    const signInEmail = vi
+      .fn()
+      .mockRejectedValueOnce(refus('INVALID_EMAIL_OR_PASSWORD'))
+      .mockRejectedValueOnce(refus('INVALID_EMAIL'))
+      .mockRejectedValueOnce(refus('PASSWORD_TOO_LONG'))
+      .mockRejectedValueOnce(refus('FAILED_TO_CREATE_SESSION'));
+    const fournisseur = fournisseurBetterAuth(fauxAuth({ signInEmail }));
+
+    expect(await fournisseur.connecter('a@b.fr', 'x')).toBeNull();
+    expect(await fournisseur.connecter('a', 'x')).toBeNull();
+    expect(await fournisseur.connecter('a@b.fr', 'x'.repeat(200))).toBeNull();
+    await expect(fournisseur.connecter('a@b.fr', 'x')).rejects.toBeInstanceOf(APIError);
+  });
+
   it('utilisateurConnecte : session lue depuis les en-têtes de la requête', async () => {
     const getSession = vi
       .fn()

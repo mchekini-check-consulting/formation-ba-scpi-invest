@@ -1,4 +1,5 @@
-// Destination après la création de compte (US-02a). Le formulaire KYC lui-même est
+// Destination après la création de compte (US-02a) et la connexion (US-03a), d'où un
+// titre qui convient aux deux. Le formulaire KYC lui-même est
 // porté par l'US-04a : en attendant, cet écran confirme la connexion et permet de se
 // déconnecter. Sans session valide (expirée, fermée) : retour à l'accueil.
 import { useQuery } from '@tanstack/react-query';
@@ -31,7 +32,7 @@ export default function Kyc({
   }
 
   return (
-    <PageCompte titre="Votre compte est créé">
+    <PageCompte titre="Bienvenue dans votre espace">
       {isError && (
         <p className="compte__alerte" role="alert">
           Le service est momentanément indisponible, réessayez dans quelques instants.

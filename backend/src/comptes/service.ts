@@ -18,6 +18,10 @@ export type DemandeCreation = {
   cguAcceptees?: unknown;
 };
 
+export type DemandeConnexion = { email?: unknown; motDePasse?: unknown };
+
+export const IDENTIFIANTS_INCORRECTS = 'Email ou mot de passe incorrect';
+
 export type DepotAcceptationsCgu = {
   enregistrer(utilisateurId: string, versionCgu: string, accepteeLe: Date): Promise<void>;
 };
@@ -61,7 +65,19 @@ export function creerCompteService(
     return compte;
   }
 
-  return loggable('CompteService', { creer });
+  // US-03a : ouvre une session. Un seul message, quel que soit le champ faux, pour ne
+  // pas révéler si un compte existe avec cet email.
+  async function connecter(demande: DemandeConnexion): Promise<CompteCree> {
+    const email = texte(demande.email).trim().toLowerCase();
+    const motDePasse = texte(demande.motDePasse);
+    const compte = email && motDePasse ? await fournisseur.connecter(email, motDePasse) : null;
+    if (!compte) {
+      throw new HttpError(401, IDENTIFIANTS_INCORRECTS);
+    }
+    return compte;
+  }
+
+  return loggable('CompteService', { creer, connecter });
 }
 
 export type CompteService = ReturnType<typeof creerCompteService>;
