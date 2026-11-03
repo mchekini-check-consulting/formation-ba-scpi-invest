@@ -2,6 +2,7 @@
 // visuel de la maquette « Landing_v3 · version photo » ;
 // présente la plateforme et donne accès à l'inscription et à la connexion
 import './App.css';
+import LogoIcone from './LogoIcone.jsx';
 
 // « Comment ça marche » décrit le parcours ; « Pourquoi choisir » ne garde que ce qui
 // distingue la plateforme, sans répéter les étapes
@@ -112,17 +113,6 @@ function Logo({ className = '' }) {
     <span className={`logo ${className}`}>
       SCPI INVEST<span className="logo__plus">+</span>
     </span>
-  );
-}
-
-// Pictogramme d'immeubles devant le logo de l'en-tête
-function LogoIcone() {
-  return (
-    <svg className="logo__icone" aria-hidden="true" viewBox="0 0 30 30">
-      <rect x="2" y="12" width="9" height="16" rx="1.5" fill="#1e3a8a" />
-      <rect x="12" y="4" width="9" height="24" rx="1.5" fill="#3b6fd4" />
-      <rect x="22" y="15" width="6" height="13" rx="1.5" fill="#1e3a8a" />
-    </svg>
   );
 }
 

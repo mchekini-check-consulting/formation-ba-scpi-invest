@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { THEMES, filtrerIndicateurs } from './contenus/indicateurs';
 import './Indicateurs.css';
+import LogoIcone from './LogoIcone.jsx';
 
 const FILTRES = [{ id: 'tous', titre: 'Tous' }, ...THEMES];
 
@@ -21,7 +22,10 @@ function Indicateurs() {
       <header className="ind-header">
         <div className="ind-conteneur ind-header__inner">
           <span className="ind-logo">
-            SCPI INVEST<span className="ind-logo__plus">+</span>
+            <LogoIcone />
+            <span>
+              SCPI INVEST<span className="ind-logo__plus">+</span>
+            </span>
           </span>
           <ul aria-label="Menu principal" className="ind-header__nav">
             <li>Comment ça marche</li>

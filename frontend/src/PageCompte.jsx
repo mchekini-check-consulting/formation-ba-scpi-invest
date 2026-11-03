@@ -1,13 +1,17 @@
 // Mise en page commune des écrans du compte (inscription, KYC, pages à venir) :
 // en-tête avec le logo, carte centrée
 import './compte.css';
+import LogoIcone from './LogoIcone.jsx';
 
 export default function PageCompte({ titre, children }) {
   return (
     <div className="compte">
       <header className="compte__entete">
         <a href="/" className="compte__logo" aria-label="SCPI Invest+ — accueil">
-          SCPI INVEST<span>+</span>
+          <LogoIcone />
+          <span>
+            SCPI INVEST<span className="compte__logo-plus">+</span>
+          </span>
         </a>
       </header>
       <main className="compte__contenu">

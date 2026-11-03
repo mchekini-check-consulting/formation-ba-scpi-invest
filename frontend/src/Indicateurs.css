@@ -1,17 +1,19 @@
-/* Charte de la maquette « Définitions des indicateurs » */
+/* Couleurs de la landing page (App.css), mise en page de la maquette « Définitions des indicateurs » */
 .indicateurs {
-  --fond: #f4f5f7;
+  --fond: #f5f7fa;
   --blanc: #fff;
-  --bordure: #e5e7eb;
-  --bordure-champ: #d1d5db;
-  --texte: #111827;
-  --texte-secondaire: #4b5563;
-  --texte-menu: #374151;
-  --texte-discret: #6b7280;
-  --accent: #b45309;
-  --accent-fonce: #92400e;
-  --sigle-fond: #fef3c7;
-  --pied-texte: #d1d5db;
+  --bordure: #e2e8f0;
+  --bordure-champ: #c2d0e4;
+  --texte: #0f172a;
+  --texte-secondaire: #475569;
+  --texte-menu: #1e293b;
+  --texte-discret: #64748b;
+  --accent: #1e3a8a;
+  --accent-fonce: #1e40af;
+  --accent-vif: #3b6fd4;
+  --sigle-fond: #dbe7fa;
+  --pied-fond: #0b1730;
+  --pied-texte: #cbd5e1;
   --font-titre: Manrope, sans-serif;
 
   min-height: 100vh;
@@ -51,6 +53,9 @@
 }
 
 .ind-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-titre);
   font-weight: 800;
   font-size: 22px;
@@ -58,7 +63,7 @@
 }
 
 .ind-logo__plus {
-  color: var(--accent);
+  color: var(--accent-vif);
 }
 
 .indicateurs .ind-header__nav {
@@ -96,7 +101,7 @@
 
 .ind-bouton--sombre,
 .ind-bouton--sombre:hover {
-  background: var(--texte);
+  background: var(--accent);
   color: var(--blanc);
 }
 
@@ -192,8 +197,8 @@
 }
 
 .ind-filtre[aria-pressed='true'] {
-  border-color: var(--texte);
-  background: var(--texte);
+  border-color: var(--accent);
+  background: var(--accent);
   color: var(--blanc);
   font-weight: 600;
 }
@@ -273,7 +278,7 @@
   padding: 3px 9px;
   border-radius: 999px;
   background: var(--sigle-fond);
-  color: var(--accent-fonce);
+  color: var(--accent);
   font-size: 12px;
   font-weight: 700;
 }
@@ -325,7 +330,7 @@
 }
 
 .ind-pied {
-  background: var(--texte);
+  background: var(--pied-fond);
   color: var(--pied-texte);
 }
 
