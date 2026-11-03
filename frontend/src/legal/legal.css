@@ -1,0 +1,70 @@
+/* Pages légales (US-01b) : texte long dans la carte des écrans du compte (compte.css) */
+.legal {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.legal section + section {
+  margin-top: 28px;
+}
+
+.legal h2 {
+  margin: 0 0 10px;
+  font-family: Manrope, sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--bleu);
+}
+
+.compte__carte .legal p {
+  margin: 0 0 10px;
+}
+
+.legal ul,
+.legal ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+
+.legal li + li {
+  margin-top: 4px;
+}
+
+.legal a {
+  overflow-wrap: anywhere;
+}
+
+.legal__tableau {
+  margin: 0 0 12px;
+  overflow-x: auto;
+}
+
+.legal table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.legal th,
+.legal td {
+  padding: 10px 12px;
+  border: 1px solid var(--bordure);
+  text-align: left;
+  vertical-align: top;
+}
+
+.legal th {
+  background: var(--fond);
+  font-weight: 600;
+  color: var(--texte-secondaire);
+}
+
+.compte__carte .legal .legal__maj {
+  margin-top: 28px;
+  color: var(--texte-secondaire);
+}
+
+.compte__carte .legal .legal__retour {
+  margin-top: 20px;
+  font-size: 14px;
+}

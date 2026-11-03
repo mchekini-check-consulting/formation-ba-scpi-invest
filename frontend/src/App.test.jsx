@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import App from './App';
 
 afterEach(cleanup);
@@ -20,7 +20,13 @@ describe('App', () => {
     const liens = screen.getAllByRole('link', { name: /Créer mon compte/ });
     expect(liens.length).toBeGreaterThan(0);
     liens.forEach((lien) => expect(lien.getAttribute('href')).toBe('/inscription'));
-    expect(screen.getByRole('form', { name: 'Inscription' })).toBeDefined();
+  });
+
+  it('n’affiche plus le bandeau « Prêt à investir plus sereinement ? »', () => {
+    render(<App />);
+    expect(document.body.textContent).not.toContain('Prêt à investir plus sereinement');
+    expect(screen.queryByRole('form', { name: 'Inscription' })).toBeNull();
+    expect(screen.queryByText(/Déjà inscrit/)).toBeNull();
   });
 
   it('donne accès à la connexion', () => {
@@ -87,21 +93,5 @@ describe('App', () => {
       'Puis-je suivre des SCPI achetées ailleurs ?',
       'Comment s’assurer que la plateforme est neutre ?',
     ]);
-  });
-
-  it('le formulaire du bas ouvre la création de compte, email déjà saisi', () => {
-    const allerA = vi.fn();
-    render(<App allerA={allerA} />);
-    const formulaire = screen.getByRole('form', { name: 'Inscription' });
-    const envoi = new Event('submit', { bubbles: true, cancelable: true });
-    fireEvent(formulaire, envoi);
-    expect(envoi.defaultPrevented).toBe(true);
-    expect(allerA).toHaveBeenLastCalledWith('/inscription');
-
-    fireEvent.change(screen.getByLabelText('Adresse e-mail'), {
-      target: { value: ' jean+scpi@exemple.fr ' },
-    });
-    fireEvent.submit(formulaire);
-    expect(allerA).toHaveBeenLastCalledWith('/inscription?email=jean%2Bscpi%40exemple.fr');
   });
 });

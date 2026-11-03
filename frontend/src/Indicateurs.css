@@ -60,21 +60,12 @@
   font-weight: 800;
   font-size: 22px;
   letter-spacing: -0.5px;
+  color: var(--texte-menu);
+  text-decoration: none;
 }
 
 .ind-logo__plus {
   color: var(--accent-vif);
-}
-
-.indicateurs .ind-header__nav {
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 28px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--texte-menu);
 }
 
 .ind-header__actions {

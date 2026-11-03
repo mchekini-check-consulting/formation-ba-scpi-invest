@@ -344,27 +344,9 @@
   border-top: 1px solid var(--bordure);
 }
 
-.section--bleu {
-  background: var(--bleu);
-  color: var(--blanc);
-  padding-bottom: 150px;
-}
-
-/* Couleurs des immeubles : blanc translucide sur le bandeau bleu, bleu pâle sur fond clair */
+/* Couleurs des immeubles : bleu pâle sur fond clair */
 .immeubles__antenne {
   stroke-width: 2;
-}
-
-.decor-ville .immeubles__facade {
-  fill: rgb(255 255 255 / 14%);
-}
-
-.decor-ville .immeubles__fenetre {
-  fill: rgb(255 255 255 / 32%);
-}
-
-.decor-ville .immeubles__antenne {
-  stroke: rgb(255 255 255 / 30%);
 }
 
 .decor-quartier .immeubles__facade {
@@ -377,14 +359,6 @@
 
 .decor-quartier .immeubles__antenne {
   stroke: var(--bleu-pale);
-}
-
-.decor-ville {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 200px;
 }
 
 .titre-section {
@@ -572,72 +546,6 @@
   color: var(--texte-secondaire);
 }
 
-/* --- Inscription (fond bleu, silhouettes d'immeubles) -------------------- */
-
-.inscription {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: center;
-  text-align: center;
-}
-
-.inscription__titre {
-  font-family: var(--font-titre);
-  font-size: 36px;
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.5px;
-}
-
-.inscription__texte,
-.inscription__connexion {
-  font-size: 17px;
-  line-height: 1.6;
-  color: var(--texte-sur-sombre);
-}
-
-.landing .inscription__connexion a {
-  color: var(--blanc);
-  font-weight: 600;
-  text-decoration: underline;
-}
-
-.inscription__form {
-  width: 100%;
-  max-width: 560px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.inscription__form input {
-  flex: 999 1 280px;
-  min-height: 54px;
-  border: 0;
-  border-radius: 12px;
-  padding: 0 16px;
-  font:
-    400 16px Inter,
-    sans-serif;
-  color: var(--texte);
-  background: var(--blanc);
-}
-
-.inscription__form button {
-  flex: 1 1 180px;
-  min-height: 54px;
-  border: 1px solid var(--blanc);
-  border-radius: 12px;
-  background: var(--blanc);
-  color: var(--bleu);
-  font:
-    700 16px Inter,
-    sans-serif;
-  cursor: pointer;
-}
-
 /* --- Pied de page -------------------------------------------------------- */
 
 .footer {
@@ -711,8 +619,7 @@
   }
 
   .titre-section,
-  .intro .titre-section,
-  .inscription__titre {
+  .intro .titre-section {
     font-size: 28px;
   }
 
