@@ -1,11 +1,13 @@
-/* Écrans du compte : même palette que la landing page (App.css) */
+/* Écrans du compte : mêmes couleurs que la landing page (App.css) */
 .compte {
-  --creme: #eee6d8;
-  --or: #daab3a;
-  --cuivre: #b67332;
-  --brun: #93441a;
-  --texte: #3a1d0e;
-  --texte-secondaire: #6b4a36;
+  --fond: #f5f7fa;
+  --bleu: #1e3a8a;
+  --bleu-fonce: #1e40af;
+  --bleu-vif: #3b6fd4;
+  --bordure: #e2e8f0;
+  --bordure-champ: #c2d0e4;
+  --texte: #0f172a;
+  --texte-secondaire: #475569;
   --erreur: #b3261e;
   --succes: #2e7d32;
 
@@ -14,32 +16,36 @@
   flex-direction: column;
   font-family: Inter, system-ui, sans-serif;
   color: var(--texte);
-  background: var(--creme);
+  background: var(--fond);
 }
 
 .compte a {
-  color: var(--cuivre);
+  color: var(--bleu);
 }
 
 .compte a:hover {
-  color: var(--brun);
+  color: var(--bleu-fonce);
 }
 
 .compte__entete {
-  background: var(--brun);
+  background: #fff;
+  border-bottom: 1px solid var(--bordure);
   padding: 18px 24px;
 }
 
 .compte .compte__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-family: Manrope, sans-serif;
   font-weight: 800;
   font-size: 22px;
-  color: #fff;
+  color: var(--texte);
   text-decoration: none;
 }
 
-.compte__logo span {
-  color: var(--or);
+.compte__logo-plus {
+  color: var(--bleu-vif);
 }
 
 .compte__contenu {
@@ -56,7 +62,8 @@
   background: #fff;
   border-radius: 16px;
   padding: 32px;
-  box-shadow: 0 10px 30px rgb(58 29 14 / 8%);
+  border: 1px solid var(--bordure);
+  box-shadow: 0 10px 30px rgb(15 23 42 / 6%);
 }
 
 .compte__carte h1 {
@@ -93,7 +100,7 @@
   width: 100%;
   min-height: 46px;
   padding: 0 14px;
-  border: 1px solid #d3c7b4;
+  border: 1px solid var(--bordure-champ);
   border-radius: 8px;
   font: inherit;
   color: inherit;
@@ -102,7 +109,7 @@
 }
 
 .champ input:focus-visible {
-  outline: 2px solid var(--or);
+  outline: 2px solid var(--bleu-vif);
   outline-offset: 1px;
 }
 
@@ -179,7 +186,7 @@
   height: 18px;
   margin: 2px 0 0;
   flex-shrink: 0;
-  accent-color: var(--brun);
+  accent-color: var(--bleu);
 }
 
 .compte__alerte {
@@ -194,8 +201,8 @@
   min-height: 50px;
   border: 0;
   border-radius: 10px;
-  background: var(--or);
-  color: var(--texte);
+  background: var(--bleu);
+  color: #fff;
   font: inherit;
   font-weight: 700;
   font-size: 16px;
@@ -209,8 +216,8 @@
 
 .compte__bouton--secondaire {
   background: none;
-  border: 1px solid var(--cuivre);
-  color: var(--cuivre);
+  border: 1px solid var(--bleu);
+  color: var(--bleu);
   padding: 0 20px;
 }
 

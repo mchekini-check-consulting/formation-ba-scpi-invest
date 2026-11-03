@@ -146,11 +146,6 @@
   text-decoration: none;
 }
 
-.logo__icone {
-  width: 30px;
-  height: 30px;
-}
-
 .logo {
   font-family: var(--font-titre);
   font-weight: 800;
