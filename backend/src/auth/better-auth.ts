@@ -52,6 +52,14 @@ export function creerAuth(db: Db, secret: string, log: Logger = loggerParDefaut)
 
 export type Auth = ReturnType<typeof creerAuth>;
 
+// Refus de Better-Auth à la connexion qui signifient « identifiants incorrects »
+// (compte inconnu, mauvais mot de passe, email mal formé, mot de passe trop long)
+const IDENTIFIANTS_REFUSES = new Set([
+  'INVALID_EMAIL_OR_PASSWORD',
+  'INVALID_EMAIL',
+  'PASSWORD_TOO_LONG',
+]);
+
 export function fournisseurBetterAuth(auth: Auth): FournisseurIdentite {
   return {
     async creerCompte(email, motDePasse) {
@@ -66,6 +74,19 @@ export function fournisseurBetterAuth(auth: Auth): FournisseurIdentite {
       } catch (err) {
         if (err instanceof APIError && err.body?.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL') {
           throw new EmailDejaUtilise();
+        }
+        throw err;
+      }
+    },
+    async connecter(email, motDePasse) {
+      try {
+        const { user, token } = await auth.api.signInEmail({
+          body: { email, password: motDePasse },
+        });
+        return { utilisateur: { id: user.id, email: user.email }, jeton: token };
+      } catch (err) {
+        if (err instanceof APIError && IDENTIFIANTS_REFUSES.has(String(err.body?.code))) {
+          return null;
         }
         throw err;
       }

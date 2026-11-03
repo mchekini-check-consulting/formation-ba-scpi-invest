@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ErreurApi, creerCompte, deconnecter, jeton, utilisateurConnecte } from './auth.js';
+import {
+  ErreurApi,
+  connecter,
+  creerCompte,
+  deconnecter,
+  jeton,
+  utilisateurConnecte,
+} from './auth.js';
 
 function reponse(status, corps) {
   return {
@@ -20,6 +27,29 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+describe('connecter (US-03a)', () => {
+  it('POST /connexions, mémorise le jeton de session', async () => {
+    const utilisateur = { id: 'u1', email: 'jean@exemple.fr' };
+    fetchMock.mockResolvedValue(reponse(200, { utilisateur, jeton: 'jeton-2' }));
+    const demande = { email: 'jean@exemple.fr', motDePasse: 'x' };
+
+    expect(await connecter(demande, '/api')).toEqual(utilisateur);
+
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/connexions');
+    expect(options.method).toBe('POST');
+    expect(JSON.parse(options.body)).toEqual(demande);
+    expect(jeton()).toBe('jeton-2');
+  });
+
+  it('identifiants incorrects : 401 avec le message du backend, pas de session', async () => {
+    fetchMock.mockResolvedValue(reponse(401, { message: 'Email ou mot de passe incorrect' }));
+    const err = await connecter({}, '/api').catch((e) => e);
+    expect([err.status, err.message]).toEqual([401, 'Email ou mot de passe incorrect']);
+    expect(jeton()).toBeNull();
+  });
 });
 
 describe('creerCompte', () => {

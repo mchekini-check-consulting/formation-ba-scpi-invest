@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EmailDejaUtilise, type FournisseurIdentite } from '../auth/fournisseur.js';
 import { HttpError } from '../logging/http-error.js';
-import { VERSION_CGU, creerCompteService } from './service.js';
+import { IDENTIFIANTS_INCORRECTS, VERSION_CGU, creerCompteService } from './service.js';
 
 const DEMANDE = {
   email: ' Jean@Exemple.fr ',
@@ -11,10 +11,14 @@ const DEMANDE = {
 };
 const LE = new Date('2026-11-02T10:00:00Z');
 
-function preparer(creerCompte = vi.fn()) {
-  const fournisseur: FournisseurIdentite = { creerCompte, utilisateurConnecte: vi.fn() };
+function preparer(creerCompte = vi.fn(), connecter = vi.fn()) {
+  const fournisseur: FournisseurIdentite = {
+    creerCompte,
+    connecter,
+    utilisateurConnecte: vi.fn(),
+  };
   const cgu = { enregistrer: vi.fn().mockResolvedValue(undefined) };
-  return { service: creerCompteService(fournisseur, cgu, () => LE), creerCompte, cgu };
+  return { service: creerCompteService(fournisseur, cgu, () => LE), creerCompte, connecter, cgu };
 }
 
 async function erreurDe(promesse: Promise<unknown>): Promise<HttpError> {
@@ -85,5 +89,39 @@ describe('CompteService.creer', () => {
     const panne = new Error('base indisponible');
     const { service } = preparer(vi.fn().mockRejectedValue(panne));
     await expect(service.creer(DEMANDE)).rejects.toBe(panne);
+  });
+});
+
+describe('CompteService.connecter (US-03a)', () => {
+  const compte = { utilisateur: { id: 'u1', email: 'jean@exemple.fr' }, jeton: 'jeton' };
+
+  it('identifiants corrects : session ouverte, email normalisé', async () => {
+    const { service, connecter } = preparer(vi.fn(), vi.fn().mockResolvedValue(compte));
+    expect(
+      await service.connecter({ email: ' Jean@Exemple.fr ', motDePasse: 'Tr0pBien!Choisi' }),
+    ).toEqual(compte);
+    expect(connecter).toHaveBeenCalledWith('jean@exemple.fr', 'Tr0pBien!Choisi');
+  });
+
+  it('identifiants refusés par le fournisseur : 401, message unique', async () => {
+    const { service } = preparer(vi.fn(), vi.fn().mockResolvedValue(null));
+    const err = await erreurDe(service.connecter({ email: 'jean@exemple.fr', motDePasse: 'x' }));
+    expect([err.status, err.message]).toEqual([401, IDENTIFIANTS_INCORRECTS]);
+    expect(IDENTIFIANTS_INCORRECTS).toBe('Email ou mot de passe incorrect');
+  });
+
+  it('champs vides ou d’un autre type : 401 sans interroger le fournisseur', async () => {
+    const { service, connecter } = preparer();
+    expect((await erreurDe(service.connecter({}))).status).toBe(401);
+    expect((await erreurDe(service.connecter({ email: 'a@b.fr', motDePasse: 42 }))).status).toBe(
+      401,
+    );
+    expect(connecter).not.toHaveBeenCalled();
+  });
+
+  it('autre erreur du fournisseur : relancée telle quelle', async () => {
+    const panne = new Error('base indisponible');
+    const { service } = preparer(vi.fn(), vi.fn().mockRejectedValue(panne));
+    await expect(service.connecter({ email: 'a@b.fr', motDePasse: 'x' })).rejects.toBe(panne);
   });
 });

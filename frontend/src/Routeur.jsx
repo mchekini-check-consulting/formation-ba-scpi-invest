@@ -1,6 +1,7 @@
 // Choix de l'écran selon l'adresse de la page (nginx renvoie index.html pour toute
 // adresse : nginx.conf). Navigation par liens classiques, sans bibliothèque de routage.
 import App from './App.jsx';
+import Connexion from './connexion/Connexion.jsx';
 import Indicateurs from './Indicateurs.jsx';
 import Inscription from './inscription/Inscription.jsx';
 import Kyc from './Kyc.jsx';
@@ -8,7 +9,6 @@ import PageCompte from './PageCompte.jsx';
 
 // Pages prévues par d'autres US, pas encore réalisées
 const A_VENIR = {
-  '/connexion': 'Connexion',
   '/mentions-legales': 'Mentions légales',
   '/contact': 'Contact',
   '/cgu': 'Conditions générales d’utilisation',
@@ -22,6 +22,9 @@ export default function Routeur({
   const page = chemin.replace(/\/+$/, '') || '/';
   if (page === '/inscription') {
     return <Inscription emailInitial={new URLSearchParams(recherche).get('email') ?? ''} />;
+  }
+  if (page === '/connexion') {
+    return <Connexion emailInitial={new URLSearchParams(recherche).get('email') ?? ''} />;
   }
   if (page === '/kyc') {
     return <Kyc />;
