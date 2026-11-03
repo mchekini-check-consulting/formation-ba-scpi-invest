@@ -5,14 +5,17 @@ import Connexion from './connexion/Connexion.jsx';
 import Indicateurs from './Indicateurs.jsx';
 import Inscription from './inscription/Inscription.jsx';
 import Kyc from './Kyc.jsx';
-import PageCompte from './PageCompte.jsx';
+import Cgu from './legal/Cgu.jsx';
+import Confidentialite from './legal/Confidentialite.jsx';
+import Contact from './legal/Contact.jsx';
+import MentionsLegales from './legal/MentionsLegales.jsx';
 
-// Pages prévues par d'autres US, pas encore réalisées
-const A_VENIR = {
-  '/mentions-legales': 'Mentions légales',
-  '/contact': 'Contact',
-  '/cgu': 'Conditions générales d’utilisation',
-  '/confidentialite': 'Politique de confidentialité',
+// Pages légales du pied de page (US-01b)
+const PAGES_LEGALES = {
+  '/mentions-legales': MentionsLegales,
+  '/contact': Contact,
+  '/cgu': Cgu,
+  '/confidentialite': Confidentialite,
 };
 
 export default function Routeur({
@@ -32,15 +35,9 @@ export default function Routeur({
   if (page === '/indicateurs') {
     return <Indicateurs />;
   }
-  if (A_VENIR[page]) {
-    return (
-      <PageCompte titre={A_VENIR[page]}>
-        <p className="compte__texte">Cette page sera bientôt disponible.</p>
-        <p className="compte__lien">
-          <a href="/">Retour à l’accueil</a>
-        </p>
-      </PageCompte>
-    );
+  const PageLegale = PAGES_LEGALES[page];
+  if (PageLegale) {
+    return <PageLegale />;
   }
   return <App />;
 }

@@ -53,18 +53,15 @@ describe('Routeur', () => {
     expect(titre()).toBe('Les indicateurs des SCPI, expliqués simplement.');
   });
 
-  it('pages des autres US : bientôt disponibles', () => {
-    afficher('/cgu');
-    expect(titre()).toBe('Conditions générales d’utilisation');
-    expect(document.body.textContent).toContain('bientôt disponible');
-  });
-
-  it('liens du pied de page : bientôt disponibles', () => {
-    afficher('/mentions-legales');
-    expect(titre()).toBe('Mentions légales');
-    cleanup();
-    afficher('/contact');
-    expect(titre()).toBe('Contact');
+  it.each([
+    ['/mentions-legales', 'Mentions légales'],
+    ['/confidentialite', 'Politique de confidentialité'],
+    ['/cgu', 'Conditions générales d’utilisation'],
+    ['/contact/', 'Contact'],
+  ])('%s : page légale du pied de page (US-01b)', (chemin, attendu) => {
+    afficher(chemin);
+    expect(titre()).toBe(attendu);
+    expect(document.body.textContent).not.toContain('bientôt disponible');
   });
 
   it('adresse inconnue : landing page', () => {

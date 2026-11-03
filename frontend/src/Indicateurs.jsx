@@ -18,20 +18,15 @@ function Indicateurs() {
 
   return (
     <div className="indicateurs">
-      {/* Menu affiché comme sur la maquette ; seuls les boutons de compte mènent à une page */}
+      {/* En-tête : logo vers l'accueil et boutons de compte (pas de menu sur cette page) */}
       <header className="ind-header">
         <div className="ind-conteneur ind-header__inner">
-          <span className="ind-logo">
+          <a href="/" className="ind-logo" aria-label="SCPI Invest+ — accueil">
             <LogoIcone />
             <span>
               SCPI INVEST<span className="ind-logo__plus">+</span>
             </span>
-          </span>
-          <ul aria-label="Menu principal" className="ind-header__nav">
-            <li>Comment ça marche</li>
-            <li>Avantages</li>
-            <li>FAQ</li>
-          </ul>
+          </a>
           <div className="ind-header__actions">
             <a href="/connexion" className="ind-bouton ind-bouton--contour">
               Se connecter

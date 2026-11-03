@@ -1,9 +1,9 @@
-// Mise en page commune des écrans du compte (inscription, KYC, pages à venir) :
+// Mise en page commune des écrans du compte (inscription, KYC, pages légales) :
 // en-tête avec le logo, carte centrée
 import './compte.css';
 import LogoIcone from './LogoIcone.jsx';
 
-export default function PageCompte({ titre, children }) {
+export default function PageCompte({ titre, large = false, children }) {
   return (
     <div className="compte">
       <header className="compte__entete">
@@ -15,7 +15,10 @@ export default function PageCompte({ titre, children }) {
         </a>
       </header>
       <main className="compte__contenu">
-        <section className="compte__carte" aria-labelledby="titre-page">
+        <section
+          className={large ? 'compte__carte compte__carte--large' : 'compte__carte'}
+          aria-labelledby="titre-page"
+        >
           <h1 id="titre-page">{titre}</h1>
           {children}
         </section>

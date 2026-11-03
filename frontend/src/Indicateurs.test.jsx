@@ -11,6 +11,18 @@ const rechercher = (texte) =>
   });
 
 describe('Indicateurs', () => {
+  it('en-tête : le logo ramène à l’accueil, sans menu Comment ça marche / Avantages / FAQ', () => {
+    render(<Indicateurs />);
+    expect(screen.getByRole('link', { name: 'SCPI Invest+ — accueil' }).getAttribute('href')).toBe(
+      '/',
+    );
+    const entete = document.querySelector('header').textContent;
+    expect(entete).not.toMatch(/Comment ça marche|Avantages|FAQ/);
+    expect(screen.getByRole('link', { name: 'Se connecter' }).getAttribute('href')).toBe(
+      '/connexion',
+    );
+  });
+
   it('affiche les 37 indicateurs répartis en 8 thèmes', () => {
     render(<Indicateurs />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(

@@ -98,16 +98,6 @@ const LIENS_LEGAUX = [
   { href: '/contact', texte: 'Contact' },
 ];
 
-function naviguer(url) {
-  window.location.assign(url);
-}
-
-// Ouvre l'écran de création de compte (US-02a), email déjà saisi
-function adresseInscription(email) {
-  const saisi = email.trim();
-  return saisi ? `/inscription?email=${encodeURIComponent(saisi)}` : '/inscription';
-}
-
 function Logo({ className = '' }) {
   return (
     <span className={`logo ${className}`}>
@@ -116,24 +106,8 @@ function Logo({ className = '' }) {
   );
 }
 
-// Immeubles décoratifs (fenêtres, porte, toits) : skyline du bandeau d'inscription
-// et groupe d'immeubles de la section « Pourquoi choisir » ; couleurs dans App.css
-const VILLE = {
-  largeur: 1440,
-  sol: 200,
-  immeubles: [
-    { x: 30, largeur: 84, hauteur: 110 },
-    { x: 122, largeur: 64, hauteur: 168, toit: 'antenne' },
-    { x: 194, largeur: 116, hauteur: 84 },
-    { x: 318, largeur: 56, hauteur: 124, toit: 'pointe' },
-    { x: 892, largeur: 72, hauteur: 128, toit: 'etage' },
-    { x: 972, largeur: 64, hauteur: 176, toit: 'antenne' },
-    { x: 1044, largeur: 124, hauteur: 96 },
-    { x: 1176, largeur: 84, hauteur: 146, toit: 'etage' },
-    { x: 1268, largeur: 140, hauteur: 88 },
-  ],
-};
-
+// Immeubles décoratifs (fenêtres, porte, toits) : groupe d'immeubles de la section
+// « Pourquoi choisir » ; couleurs dans App.css
 const QUARTIER = {
   largeur: 340,
   sol: 270,
@@ -172,14 +146,9 @@ function Toit({ x, largeur, hauteur, toit, sol }) {
   return null;
 }
 
-function Immeubles({ className, plan: { largeur, sol, immeubles }, recadrer = false }) {
+function Immeubles({ className, plan: { largeur, sol, immeubles } }) {
   return (
-    <svg
-      className={`immeubles ${className}`}
-      aria-hidden="true"
-      viewBox={`0 0 ${largeur} ${sol}`}
-      preserveAspectRatio={recadrer ? 'xMidYMax slice' : undefined}
-    >
+    <svg className={`immeubles ${className}`} aria-hidden="true" viewBox={`0 0 ${largeur} ${sol}`}>
       {immeubles.map((i) => (
         <g key={i.x}>
           <g className="immeubles__facade">
@@ -198,12 +167,7 @@ function Immeubles({ className, plan: { largeur, sol, immeubles }, recadrer = fa
   );
 }
 
-function App({ allerA = naviguer }) {
-  function inscrire(event) {
-    event.preventDefault();
-    allerA(adresseInscription(event.currentTarget.elements.email.value));
-  }
-
+function App() {
   return (
     <div className="landing">
       <header className="header">
@@ -353,33 +317,12 @@ function App({ allerA = naviguer }) {
             ))}
           </div>
         </section>
-
-        <section id="inscription" className="section section--bleu">
-          <Immeubles className="decor-ville" plan={VILLE} recadrer />
-          <div className="container container--etroit inscription">
-            <h2 className="inscription__titre">Prêt à investir plus sereinement ?</h2>
-            <p className="inscription__texte">
-              Créez votre compte en 2 minutes et importez votre premier relevé.
-            </p>
-            <form className="inscription__form" aria-label="Inscription" onSubmit={inscrire}>
-              <label htmlFor="email" className="sr-only">
-                Adresse e-mail
-              </label>
-              <input id="email" type="email" placeholder="Votre adresse e-mail" />
-              <button type="submit">Créer mon compte</button>
-            </form>
-            <p className="inscription__connexion">
-              Déjà inscrit ? <a href="/connexion">Se connecter</a>
-            </p>
-          </div>
-        </section>
       </main>
 
       <footer className="footer">
         <div className="container footer__inner">
           <div className="footer__haut">
             <Logo className="logo--footer" />
-            {/* Pages légales pas encore rédigées : elles affichent « bientôt disponible » (Routeur) */}
             <nav aria-label="Liens légaux">
               <ul className="footer__nav">
                 {LIENS_LEGAUX.map((l) => (
