@@ -93,6 +93,27 @@ describe('création de compte (e2e)', () => {
     expect(rows[0].n).toBe(1);
   });
 
+  it('connexion (US-03a) : nouvelle session avec les bons identifiants, sinon 401', async () => {
+    const connexion = await request(app)
+      .post('/connexions')
+      .send({ email: ' Jean.Dupont@Exemple.fr ', motDePasse: COMPTE.motDePasse })
+      .expect(200);
+    const { utilisateur, jeton } = connexion.body;
+    expect(utilisateur.email).toBe('jean.dupont@exemple.fr');
+    await request(app).get('/moi').set('Authorization', `Bearer ${jeton}`).expect(200, utilisateur);
+
+    // Même message pour un mauvais mot de passe et un email inconnu
+    const message = { message: 'Email ou mot de passe incorrect' };
+    await request(app)
+      .post('/connexions')
+      .send({ email: 'jean.dupont@exemple.fr', motDePasse: 'Mauvais!Mdp123' })
+      .expect(401, message);
+    await request(app)
+      .post('/connexions')
+      .send({ email: 'inconnu@exemple.fr', motDePasse: COMPTE.motDePasse })
+      .expect(401, message);
+  });
+
   it('inscription directe de Better-Auth fermée : seules les règles de POST /comptes s’appliquent', async () => {
     await request(app)
       .post('/auth/sign-up/email')
