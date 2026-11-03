@@ -173,6 +173,10 @@
   color: var(--succes);
 }
 
+.regle--ko {
+  color: var(--erreur);
+}
+
 .case {
   display: flex;
   gap: 10px;
