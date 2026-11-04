@@ -4,6 +4,7 @@ import type { RequestHandler } from 'express';
 import { createApp } from './app.js';
 import { creerAuth, fournisseurBetterAuth } from './auth/better-auth.js';
 import { routesComptes } from './comptes/routes.js';
+import { demarrerImportNocturne } from './csv/planification.js';
 import { creerCompteService } from './comptes/service.js';
 import { depotAcceptationsCgu, secretDesSessions } from './db/depots.js';
 import { createDb, createPool } from './db/index.js';
@@ -20,6 +21,9 @@ const auth = creerAuth(db, await secretDesSessions(db));
 const fournisseur = fournisseurBetterAuth(auth);
 const betterAuth: RequestHandler = toNodeHandler(auth);
 const comptes = creerCompteService(fournisseur, depotAcceptationsCgu(db));
+
+// US-07a : import du catalogue chaque nuit à 2h (désactivé sans les variables R2)
+demarrerImportNocturne(pool, db);
 
 const port = Number(process.env.PORT ?? 8080);
 createApp(() => db.execute(sql`select 1`), logger, {

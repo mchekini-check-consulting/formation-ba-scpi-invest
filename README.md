@@ -102,6 +102,7 @@ Disponible sur http://localhost:8081/ ; `docker compose --profile full down` pou
 2. `npm run db:generate` dans `backend/` : nouveau fichier SQL dans `backend/drizzle/`.
 3. Relire ce fichier : idempotent (`IF NOT EXISTS`) et compatible avec la version précédente.
 4. Le backend l'applique à son démarrage (en local avec `npm run dev`, puis sur chaque environnement).
+   Sans démarrer le backend (par exemple avant un import manuel) : `npm run db:migrate` dans `backend/`.
 
 Une migration déjà appliquée ne se modifie plus : en créer une nouvelle. Les tables de
 l'ancien backend (`item`, `flyway_schema_history`) restent en base, Drizzle les ignore.
