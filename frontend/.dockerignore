@@ -1,6 +1,5 @@
 node_modules
 dist
-.angular
 coverage
 .vscode
 *.log
