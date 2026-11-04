@@ -34,6 +34,11 @@ applications:
     envList:
       - key: LOG_LEVEL
         value: {dev: debug, qualif: info, preprod: info, prod: warn}
+    # Variables S3 : toutes les clés du Secret backend-s3 du namespace (créé hors
+    # de ce dépôt). optional : le pod démarre aussi là où le Secret n'existe pas.
+    envFrom:
+      - secret: backend-s3
+        optional: true
   - name: gateway
     type: gateway
     # Pas d'image/tag : fourni par la plateforme (petit Traefik autonome),
