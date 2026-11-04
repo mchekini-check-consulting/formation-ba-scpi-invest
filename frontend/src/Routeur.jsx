@@ -5,7 +5,9 @@ import { Route, Routes, useSearchParams } from 'react-router';
 import App from './App.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import Indicateurs from './Indicateurs.jsx';
+import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
 import Inscription from './inscription/Inscription.jsx';
+import ExigerKycComplete from './kyc/ExigerKycComplete.jsx';
 import Kyc from './kyc/Kyc.jsx';
 import Cgu from './legal/Cgu.jsx';
 import Confidentialite from './legal/Confidentialite.jsx';
@@ -32,6 +34,15 @@ export default function Routeur() {
       <Route path="/inscription" element={<PageInscription />} />
       <Route path="/connexion" element={<PageConnexion />} />
       <Route path="/kyc" element={<Kyc />} />
+      {/* Écrans de l'application : session et KYC validé exigés (US-04b) */}
+      <Route
+        path="/formulaire-investisseur"
+        element={
+          <ExigerKycComplete>
+            <FormulaireInvestisseur />
+          </ExigerKycComplete>
+        }
+      />
       <Route path="/indicateurs" element={<Indicateurs />} />
       {/* Pages légales du pied de page (US-01b) */}
       <Route path="/mentions-legales" element={<MentionsLegales />} />

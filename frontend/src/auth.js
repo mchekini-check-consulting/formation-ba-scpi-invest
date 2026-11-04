@@ -100,3 +100,18 @@ export async function deconnecter(base = apiBase()) {
     memoriser(null);
   }
 }
+
+// Appel d'une route réservée aux utilisateurs connectés (session dans l'en-tête
+// Authorization), corps JSON ; erreur -> ErreurApi avec le message du backend
+export async function appelConnecte(chemin, { methode = 'GET', corps } = {}, base = apiBase()) {
+  const avecCorps = corps !== undefined;
+  const reponse = await fetch(`${base}${chemin}`, {
+    method: methode,
+    headers: enTetes(avecCorps),
+    body: avecCorps ? JSON.stringify(corps) : undefined,
+  });
+  if (!reponse.ok) {
+    throw await erreur(reponse);
+  }
+  return reponse.json();
+}

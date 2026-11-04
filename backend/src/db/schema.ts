@@ -111,6 +111,24 @@ export const acceptationCgu = pgTable(
   (t) => [index('acceptation_cgu_utilisateur_id_idx').on(t.utilisateurId)],
 );
 
+// US-04b : formulaire KYC d'un utilisateur (une ligne par utilisateur). Réponses
+// enregistrées à chaque « Suivant » (reprise), figées à la validation (statut complete).
+// etape = étape atteinte : 1 à 4, 5 = récapitulatif.
+export const statutKyc = pgEnum('statut_kyc', ['en_cours', 'complete']);
+
+export type ReponsesKyc = Record<string, string | string[]>;
+
+export const kyc = pgTable('kyc', {
+  id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+  utilisateurId: text('utilisateur_id').notNull().unique(),
+  etape: integer('etape').notNull().default(1),
+  reponses: jsonb('reponses').$type<ReponsesKyc>().notNull().default({}),
+  statut: statutKyc('statut').notNull().default('en_cours'),
+  valideLe: horodatage('valide_le'),
+  creeLe: horodatage('cree_le').notNull().defaultNow(),
+  modifieLe: horodatage('modifie_le').notNull().defaultNow(),
+});
+
 // ---- Catalogue SCPI (import CSV, src/csv/)
 
 export const frequence = pgEnum('frequence', [

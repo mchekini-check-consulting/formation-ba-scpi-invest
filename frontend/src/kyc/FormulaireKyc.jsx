@@ -1,9 +1,11 @@
 // Formulaire KYC en 4 étapes avec barre de progression (US-04a, SCPI-21) :
 // « Suivant » contrôle l'étape (champs manquants signalés en rouge), « Précédent »
-// revient en arrière sans perdre les réponses. Les réponses restent dans la page :
-// enregistrement, reprise, récapitulatif et validation sont portés par l'US-04b.
+// revient en arrière sans perdre les réponses.
+// US-04b (SCPI-37) : réponses enregistrées à chaque « Suivant » (reprise à l'étape
+// atteinte), puis récapitulatif et « Valider ». Étapes numérotées 1 à 4, 5 = récapitulatif.
 import { useEffect, useRef, useState } from 'react';
-import { ETAPES, champsVisibles, erreursEtape } from './etapes.js';
+import { ETAPES, champsVisibles, erreursEtape, reponsesAEnregistrer } from './etapes.js';
+import Recapitulatif from './Recapitulatif.jsx';
 import './kyc.css';
 
 const idChamp = (nom) => `kyc-${nom}`;
@@ -121,12 +123,18 @@ function Champ({ champ, valeur, erreur, changer }) {
   );
 }
 
+export const MESSAGE_ENREGISTREMENT =
+  'Vos réponses n’ont pas pu être enregistrées. Veuillez réessayer.';
+export const MESSAGE_VALIDATION = 'Votre KYC n’a pas pu être validé. Veuillez réessayer.';
+
 function Progression({ index }) {
   const total = ETAPES.length;
+  const recapitulatif = index === total;
+  const position = Math.min(index, total - 1);
   return (
     <div className="kyc-progression">
       <p className="kyc-progression__texte">
-        Étape {index + 1}/{total}
+        {recapitulatif ? 'Récapitulatif' : `Étape ${index + 1}/${total}`}
       </p>
       <div
         className="kyc-progression__barre"
@@ -134,10 +142,14 @@ function Progression({ index }) {
         aria-label="Progression du formulaire KYC"
         aria-valuemin={1}
         aria-valuemax={total}
-        aria-valuenow={index + 1}
-        aria-valuetext={`Étape ${index + 1} sur ${total} : ${ETAPES[index].titre}`}
+        aria-valuenow={position + 1}
+        aria-valuetext={
+          recapitulatif
+            ? 'Toutes les étapes sont remplies : récapitulatif'
+            : `Étape ${index + 1} sur ${total} : ${ETAPES[index].titre}`
+        }
       >
-        <span style={{ width: `${((index + 1) / total) * 100}%` }} />
+        <span style={{ width: `${((position + 1) / total) * 100}%` }} />
       </div>
       <ol className="kyc-progression__etapes">
         {ETAPES.map((e, i) => {
@@ -157,21 +169,35 @@ function Progression({ index }) {
   );
 }
 
-export default function FormulaireKyc({ email = '', aujourdhui }) {
-  const [index, setIndex] = useState(0);
-  const [reponses, setReponses] = useState({ email });
+export default function FormulaireKyc({
+  email = '',
+  aujourdhui,
+  etapeInitiale = 1,
+  reponsesInitiales = {},
+  enregistrer = async () => {},
+  valider = async () => {},
+  apresValidation = () => {},
+}) {
+  const recap = ETAPES.length; // index du récapitulatif
+  const [index, setIndex] = useState(Math.min(Math.max(etapeInitiale, 1), recap + 1) - 1);
+  const [reponses, setReponses] = useState({ ...reponsesInitiales, email });
   const [erreurs, setErreurs] = useState({});
-  const [termine, setTermine] = useState(false);
+  const [envoi, setEnvoi] = useState(false);
+  const [erreurServeur, setErreurServeur] = useState('');
   const titreEtape = useRef(null);
   const aBouge = useRef(false);
-
-  const etape = ETAPES[index];
-  const derniere = index === ETAPES.length - 1;
 
   // Après un changement d'étape : focus sur son titre (lecteurs d'écran, défilement)
   useEffect(() => {
     if (aBouge.current) titreEtape.current?.focus();
-  }, [index, termine]);
+  }, [index]);
+
+  function aller(nouvelIndex) {
+    aBouge.current = true;
+    setErreurs({});
+    setErreurServeur('');
+    setIndex(nouvelIndex);
+  }
 
   function changer(nom, valeur) {
     setReponses((r) => ({ ...r, [nom]: valeur }));
@@ -182,52 +208,62 @@ export default function FormulaireKyc({ email = '', aujourdhui }) {
     });
   }
 
-  function suivant(event) {
+  async function suivant(event) {
     event.preventDefault();
+    if (envoi) return;
+    const etape = ETAPES[index];
     const trouvees = erreursEtape(etape, reponses, aujourdhui);
     setErreurs(trouvees);
+    setErreurServeur('');
     const premier = champsVisibles(etape, reponses).find((c) => trouvees[c.nom]);
     if (premier) {
       document.getElementById(idChamp(premier.nom))?.focus();
       return;
     }
-    aBouge.current = true;
-    if (derniere) {
-      setTermine(true);
-    } else {
-      setIndex(index + 1);
+    setEnvoi(true);
+    try {
+      await enregistrer(index + 2, reponsesAEnregistrer(reponses));
+      aller(index + 1);
+    } catch {
+      setErreurServeur(MESSAGE_ENREGISTREMENT);
+    } finally {
+      setEnvoi(false);
     }
   }
 
-  function precedent() {
-    aBouge.current = true;
-    setErreurs({});
-    setIndex(index - 1);
+  async function validerKyc() {
+    if (envoi) return;
+    setEnvoi(true);
+    setErreurServeur('');
+    try {
+      await valider();
+      apresValidation();
+    } catch (err) {
+      setErreurServeur(
+        err?.status === 400 || err?.status === 409 ? err.message : MESSAGE_VALIDATION,
+      );
+      setEnvoi(false);
+    }
   }
 
-  if (termine) {
+  if (index === recap) {
     return (
       <div className="kyc">
-        <h2 ref={titreEtape} tabIndex={-1} className="kyc__titre-etape">
-          Vos réponses sont complètes
-        </h2>
-        <p className="compte__texte">
-          Merci, les 4 étapes du formulaire KYC sont remplies. Le récapitulatif et la validation de
-          votre dossier arrivent prochainement.
-        </p>
-        <div className="kyc__boutons">
-          <button
-            type="button"
-            className="compte__bouton compte__bouton--secondaire"
-            onClick={() => setTermine(false)}
-          >
-            Revenir au formulaire
-          </button>
-        </div>
+        <Progression index={index} />
+        <Recapitulatif
+          titreRef={titreEtape}
+          reponses={reponses}
+          modifier={aller}
+          precedent={() => aller(recap - 1)}
+          valider={validerKyc}
+          envoi={envoi}
+          erreur={erreurServeur}
+        />
       </div>
     );
   }
 
+  const etape = ETAPES[index];
   const nbErreurs = Object.keys(erreurs).length;
 
   return (
@@ -260,18 +296,23 @@ export default function FormulaireKyc({ email = '', aujourdhui }) {
             />
           ))}
         </div>
+        {erreurServeur && (
+          <p className="compte__alerte" role="alert">
+            {erreurServeur}
+          </p>
+        )}
         <div className="kyc__boutons">
           {index > 0 && (
             <button
               type="button"
               className="compte__bouton compte__bouton--secondaire"
-              onClick={precedent}
+              onClick={() => aller(index - 1)}
             >
               Précédent
             </button>
           )}
-          <button type="submit" className="compte__bouton kyc__suivant">
-            {derniere ? 'Terminer' : 'Suivant'}
+          <button type="submit" className="compte__bouton kyc__suivant" disabled={envoi}>
+            {envoi ? 'Enregistrement…' : 'Suivant'}
           </button>
         </div>
       </form>

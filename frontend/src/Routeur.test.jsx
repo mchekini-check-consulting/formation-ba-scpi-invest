@@ -51,6 +51,12 @@ describe('Routeur', () => {
     expect(titre()).toBe('Connaissance client (KYC)');
   });
 
+  it('/formulaire-investisseur : écran protégé, rien sans session ni KYC validé', () => {
+    localStorage.clear();
+    afficher('/formulaire-investisseur');
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
+  });
+
   it('/indicateurs : définitions des indicateurs', () => {
     afficher('/indicateurs');
     expect(titre()).toBe('Les indicateurs des SCPI, expliqués simplement.');
