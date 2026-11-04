@@ -46,6 +46,10 @@ export default function Kyc({
           <p className="compte__texte">
             Prochaine étape : le formulaire KYC (connaissance client), bientôt disponible.
           </p>
+          {/* En attendant le KYC (US-04a), accès direct au formulaire investisseur (US-05a) */}
+          <a className="compte__bouton" href="/profil-investisseur">
+            Remplir mon profil investisseur
+          </a>
           <button
             type="button"
             className="compte__bouton compte__bouton--secondaire"

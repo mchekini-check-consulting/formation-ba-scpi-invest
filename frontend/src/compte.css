@@ -217,6 +217,18 @@
   cursor: pointer;
 }
 
+.compte a.compte__bouton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-decoration: none;
+}
+
+.compte__bouton + .compte__bouton {
+  margin-top: 12px;
+}
+
 .compte__bouton:disabled {
   opacity: 0.5;
   cursor: not-allowed;

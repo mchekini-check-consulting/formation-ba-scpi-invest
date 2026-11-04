@@ -48,6 +48,11 @@ describe('Routeur', () => {
     expect(titre()).toBe('Bienvenue dans votre espace');
   });
 
+  it('/profil-investisseur : formulaire investisseur (US-05a)', () => {
+    afficher('/profil-investisseur');
+    expect(titre()).toBe('Formulaire investisseur');
+  });
+
   it('/indicateurs : définitions des indicateurs', () => {
     afficher('/indicateurs');
     expect(titre()).toBe('Les indicateurs des SCPI, expliqués simplement.');

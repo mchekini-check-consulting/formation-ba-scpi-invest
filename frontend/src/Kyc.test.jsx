@@ -22,6 +22,13 @@ describe('Kyc (après la création de compte)', () => {
     expect(document.body.textContent).toContain('formulaire KYC');
   });
 
+  it('accès au formulaire investisseur (US-05a) en attendant le KYC', async () => {
+    const lireUtilisateur = vi.fn().mockResolvedValue({ id: 'u1', email: 'jean@exemple.fr' });
+    afficher({ lireUtilisateur, allerA: vi.fn() });
+    const lien = await screen.findByRole('link', { name: 'Remplir mon profil investisseur' });
+    expect(lien.getAttribute('href')).toBe('/profil-investisseur');
+  });
+
   it('sans session : retour à l’accueil', async () => {
     const allerA = vi.fn();
     afficher({ lireUtilisateur: vi.fn().mockResolvedValue(null), allerA });

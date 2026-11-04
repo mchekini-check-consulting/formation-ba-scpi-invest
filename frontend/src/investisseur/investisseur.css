@@ -1,0 +1,118 @@
+/* Formulaire investisseur (US-05a) : couleurs de compte.css (variables de .compte) */
+
+.progression {
+  margin: 4px 0 24px;
+}
+
+.progression__texte {
+  margin: 0 0 8px;
+  font-weight: 600;
+  color: var(--bleu);
+}
+
+.progression__barre {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bordure);
+  overflow: hidden;
+}
+
+.progression__barre span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bleu-vif);
+  transition: width 0.3s ease;
+}
+
+.question {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.question legend {
+  margin-bottom: 10px;
+  padding: 0;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--texte);
+}
+
+.question__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--bordure-champ);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.option:has(input:checked) {
+  border-color: var(--bleu);
+  background: #eef3fc;
+}
+
+.option:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.option input {
+  margin: 0;
+  accent-color: var(--bleu);
+}
+
+.question[aria-invalid='true'] .option {
+  border-color: var(--erreur);
+}
+
+.montant {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.montant input {
+  flex: 1;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--bordure-champ);
+  border-radius: 10px;
+  font: inherit;
+}
+
+.montant input[aria-invalid='true'] {
+  border-color: var(--erreur);
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.navigation .compte__bouton {
+  flex: 1;
+}
+
+.lien-bouton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--bleu);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

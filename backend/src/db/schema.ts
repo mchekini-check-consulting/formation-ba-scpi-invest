@@ -111,6 +111,22 @@ export const acceptationCgu = pgTable(
   (t) => [index('acceptation_cgu_utilisateur_id_idx').on(t.utilisateurId)],
 );
 
+// US-05a : réponses du formulaire investisseur (MIF2), une ligne par utilisateur,
+// enregistrées à chaque étape pour la reprise. etape_courante = première étape non
+// complétée (1 à 5), 6 = les 5 étapes sont complétées. reponses = { "1": {...}, ... }
+// (une entrée par étape) ; version_questionnaire pour la traçabilité (US-05b).
+export type ReponsesQuestionnaire = Record<string, Record<string, unknown>>;
+
+export const questionnaireInvestisseur = pgTable('questionnaire_investisseur', {
+  id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+  utilisateurId: text('utilisateur_id').notNull().unique(),
+  etapeCourante: integer('etape_courante').notNull().default(1),
+  reponses: jsonb('reponses').$type<ReponsesQuestionnaire>().notNull().default({}),
+  versionQuestionnaire: text('version_questionnaire').notNull(),
+  creeLe: horodatage('cree_le').notNull().defaultNow(),
+  misAJourLe: horodatage('mis_a_jour_le').notNull().defaultNow(),
+});
+
 // ---- Catalogue SCPI (import CSV, src/csv/)
 
 export const frequence = pgEnum('frequence', [

@@ -4,6 +4,7 @@ import App from './App.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import Indicateurs from './Indicateurs.jsx';
 import Inscription from './inscription/Inscription.jsx';
+import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
 import Kyc from './Kyc.jsx';
 import Cgu from './legal/Cgu.jsx';
 import Confidentialite from './legal/Confidentialite.jsx';
@@ -31,6 +32,9 @@ export default function Routeur({
   }
   if (page === '/kyc') {
     return <Kyc />;
+  }
+  if (page === '/profil-investisseur') {
+    return <FormulaireInvestisseur />;
   }
   if (page === '/indicateurs') {
     return <Indicateurs />;

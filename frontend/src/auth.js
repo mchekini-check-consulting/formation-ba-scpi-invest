@@ -77,6 +77,21 @@ export function connecter(demande, base = apiBase()) {
   return ouvrirSession(`${base}/connexions`, demande);
 }
 
+// Appel d'une route réservée aux utilisateurs connectés (session dans l'en-tête
+// Authorization) : réponse JSON, ou ErreurApi (401 si la session est absente ou expirée)
+export async function appelAuthentifie(url, { method = 'GET', corps } = {}) {
+  const avecCorps = corps !== undefined;
+  const reponse = await fetch(url, {
+    method,
+    headers: enTetes(avecCorps),
+    body: avecCorps ? JSON.stringify(corps) : undefined,
+  });
+  if (!reponse.ok) {
+    throw await erreur(reponse);
+  }
+  return reponse.json();
+}
+
 // Utilisateur de la session en cours, null si personne n'est connecté
 export async function utilisateurConnecte(base = apiBase()) {
   if (!jeton()) {

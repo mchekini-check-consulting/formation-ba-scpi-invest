@@ -6,8 +6,10 @@ import { creerAuth, fournisseurBetterAuth } from './auth/better-auth.js';
 import { routesComptes } from './comptes/routes.js';
 import { demarrerImportNocturne } from './csv/planification.js';
 import { creerCompteService } from './comptes/service.js';
-import { depotAcceptationsCgu, secretDesSessions } from './db/depots.js';
+import { depotAcceptationsCgu, depotQuestionnaires, secretDesSessions } from './db/depots.js';
 import { createDb, createPool } from './db/index.js';
+import { routesQuestionnaire } from './investisseur/routes.js';
+import { creerQuestionnaireService } from './investisseur/service.js';
 import { logger } from './logging/logger.js';
 import { migrate } from './migrate.js';
 
@@ -21,6 +23,7 @@ const auth = creerAuth(db, await secretDesSessions(db));
 const fournisseur = fournisseurBetterAuth(auth);
 const betterAuth: RequestHandler = toNodeHandler(auth);
 const comptes = creerCompteService(fournisseur, depotAcceptationsCgu(db));
+const questionnaires = creerQuestionnaireService(depotQuestionnaires(db));
 
 // US-07a : import du catalogue au démarrage puis chaque nuit à 2h (désactivé sans les variables R2)
 demarrerImportNocturne(pool, db);
@@ -28,5 +31,5 @@ demarrerImportNocturne(pool, db);
 const port = Number(process.env.PORT ?? 8080);
 createApp(() => db.execute(sql`select 1`), logger, {
   auth: betterAuth,
-  routeurs: [routesComptes(comptes, fournisseur)],
+  routeurs: [routesComptes(comptes, fournisseur), routesQuestionnaire(questionnaires, fournisseur)],
 }).listen(port, () => logger.info({ port }, 'backend démarré'));
