@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
 import Routeur from './Routeur.jsx';
 
@@ -8,7 +9,9 @@ afterEach(cleanup);
 function afficher(chemin, recherche = '') {
   return render(
     <QueryClientProvider client={new QueryClient()}>
-      <Routeur chemin={chemin} recherche={recherche} />
+      <MemoryRouter initialEntries={[chemin + recherche]}>
+        <Routeur />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }

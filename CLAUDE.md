@@ -14,7 +14,7 @@ déploiement, vérification du déploiement.
 | -------------------------- | ---------------------------- | ------------------------------------------------------ | ----------------- | ----------------------------------------------------------------------------------------------- |
 | backend(s) `type: backend` | `<name>/` (ex. `backend/`)   | Java 21 / Spring Boot / JPA / Flyway (Maven, `./mvnw`) | 8080              | `SERVER_PORT=<port> ./mvnw spring-boot:run`, port 8080 pour `backend/`, suivant pour les autres |
 | gateway `type: gateway`    | — (fourni par la plateforme) | Traefik, routes dans `gateway.yaml`                    | 80                | pas de gateway : relais du serveur de dev du frontend                                           |
-| frontend `type: frontend`  | `frontend/`                  | Angular                                                | 8080              | http://localhost:4200 (`npm start`)                                                             |
+| frontend `type: frontend`  | `frontend/`                  | React / Vite / React Router                            | 8080              | http://localhost:5173 (`npm run dev`)                                                           |
 
 URLs, identiques dans les 4 environnements (`dev`, `qualif`, `preprod`, `prod`) :
 
@@ -47,11 +47,11 @@ l'intégrer dans la branche avant d'envoyer (skill `deploy`).
 
 **Frontend**
 
-- Adresse d'un backend : `apiBase(...)` dans `frontend/src/app/api.ts` (un service par ressource, ex. `items.ts`), calculée depuis
+- Adresse d'un backend : `apiBase(...)` dans `frontend/src/api.js` (une fonction par appel), calculée depuis
   l'adresse de la page. Elle vise encore `/backend` en dur : pour appeler un autre backend, la généraliser en `apiBase('<backend>')` (skill `appeler-un-backend`). Jamais d'URL, d'environnement,
   de `localhost` ou de nom de dépôt écrits en dur.
 - En local, `/api/<backend>` est relayé vers le backend du poste par
-  `frontend/proxy.conf.json` : une entrée par backend.
+  `server.proxy` de `frontend/vite.config.js` : une entrée par backend.
 
 **`helm.yaml`** (lu par la plateforme)
 

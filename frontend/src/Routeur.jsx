@@ -1,5 +1,7 @@
-// Choix de l'écran selon l'adresse de la page (nginx renvoie index.html pour toute
-// adresse : nginx.conf). Navigation par liens classiques, sans bibliothèque de routage.
+// Choix de l'écran selon l'adresse de la page, avec React Router (nginx renvoie
+// index.html pour toute adresse : nginx.conf). Le routeur (BrowserRouter) est posé
+// dans main.jsx ; les tests utilisent MemoryRouter.
+import { Route, Routes, useSearchParams } from 'react-router';
 import App from './App.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import Indicateurs from './Indicateurs.jsx';
@@ -10,34 +12,34 @@ import Confidentialite from './legal/Confidentialite.jsx';
 import Contact from './legal/Contact.jsx';
 import MentionsLegales from './legal/MentionsLegales.jsx';
 
-// Pages légales du pied de page (US-01b)
-const PAGES_LEGALES = {
-  '/mentions-legales': MentionsLegales,
-  '/contact': Contact,
-  '/cgu': Cgu,
-  '/confidentialite': Confidentialite,
-};
+// Email pré-rempli transmis par l'adresse (?email=...)
+function useEmailDeLAdresse() {
+  const [parametres] = useSearchParams();
+  return parametres.get('email') ?? '';
+}
 
-export default function Routeur({
-  chemin = window.location.pathname,
-  recherche = window.location.search,
-}) {
-  const page = chemin.replace(/\/+$/, '') || '/';
-  if (page === '/inscription') {
-    return <Inscription emailInitial={new URLSearchParams(recherche).get('email') ?? ''} />;
-  }
-  if (page === '/connexion') {
-    return <Connexion emailInitial={new URLSearchParams(recherche).get('email') ?? ''} />;
-  }
-  if (page === '/kyc') {
-    return <Kyc />;
-  }
-  if (page === '/indicateurs') {
-    return <Indicateurs />;
-  }
-  const PageLegale = PAGES_LEGALES[page];
-  if (PageLegale) {
-    return <PageLegale />;
-  }
-  return <App />;
+function PageInscription() {
+  return <Inscription emailInitial={useEmailDeLAdresse()} />;
+}
+
+function PageConnexion() {
+  return <Connexion emailInitial={useEmailDeLAdresse()} />;
+}
+
+export default function Routeur() {
+  return (
+    <Routes>
+      <Route path="/inscription" element={<PageInscription />} />
+      <Route path="/connexion" element={<PageConnexion />} />
+      <Route path="/kyc" element={<Kyc />} />
+      <Route path="/indicateurs" element={<Indicateurs />} />
+      {/* Pages légales du pied de page (US-01b) */}
+      <Route path="/mentions-legales" element={<MentionsLegales />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/cgu" element={<Cgu />} />
+      <Route path="/confidentialite" element={<Confidentialite />} />
+      {/* Accueil, et toute adresse inconnue */}
+      <Route path="*" element={<App />} />
+    </Routes>
+  );
 }
