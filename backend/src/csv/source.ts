@@ -1,5 +1,13 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import type { Readable } from 'node:stream';
+import {
+  CopyObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { parse } from 'csv-parse';
+// pipeline de Node : transmet les erreurs du flux au parseur
+import { pipeline, type Readable } from 'node:stream';
+import type { SourceCsv } from './service.js';
 
 // Lecture du CSV des SCPI dans un stockage compatible S3 (Cloudflare R2 aujourd'hui).
 // Configuration par variables d'environnement (.env.example), jamais dans le code.
@@ -10,6 +18,8 @@ export type S3Config = {
   key: string;
   accessKeyId: string;
   secretAccessKey: string;
+  // Interrupteur : supprimer le fichier déposé après l'avoir archivé (sinon, copie seule)
+  supprimerSource: boolean;
 };
 
 const REQUIRED = ['S3_URL', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'] as const;
@@ -32,6 +42,7 @@ export function s3Config(env: NodeJS.ProcessEnv = process.env): S3Config {
     key: path.join('/'),
     accessKeyId: env.S3_ACCESS_KEY_ID!,
     secretAccessKey: env.S3_SECRET_ACCESS_KEY!,
+    supprimerSource: env.CSV_ARCHIVE_DELETE_SOURCE === 'true',
   };
 }
 
@@ -67,4 +78,71 @@ export async function streamCsv(
     throw new Error(`fichier vide ou introuvable : ${bucket}/${key}`);
   }
   return response.Body as Readable; // en Node.js, Body est un flux Readable
+}
+
+// ---- Archivage (US-07a, scénario 4)
+
+// AAAAMMJJ du jour à Paris (le serveur peut être à l'heure universelle)
+export function dateFichier(date: Date): string {
+  return new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .format(date)
+    .replaceAll('-', '');
+}
+
+// R2 n'a pas de vrais dossiers : "archives/" est le début du nom du fichier
+export function cleArchive(date: Date): string {
+  return `archives/scpi_catalogue_${dateFichier(date)}.csv`;
+}
+
+// R2 ne sait pas déplacer : copie sous le nouveau nom, puis suppression si demandée
+export async function archiverCsv(
+  client: Pick<S3Client, 'send'>,
+  bucket: string,
+  key: string,
+  archive: string,
+  supprimerSource: boolean,
+): Promise<void> {
+  const source = `${bucket}/${key.split('/').map(encodeURIComponent).join('/')}`;
+  await client.send(new CopyObjectCommand({ Bucket: bucket, Key: archive, CopySource: source }));
+  if (supprimerSource) {
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+  }
+}
+
+// Lignes du CSV (en-tête = noms des colonnes), lues au fil du flux
+export function lignesCsv(body: Readable): AsyncIterable<Record<string, string>> {
+  return pipeline(
+    body,
+    parse({ columns: true, trim: true, skip_empty_lines: true, bom: true }),
+    () => {},
+  ) as AsyncIterable<Record<string, string>>;
+}
+
+// Source du service d'import : le fichier fixe de S3_URL dans R2
+export function sourceR2(
+  client: Pick<S3Client, 'send'>,
+  config: S3Config,
+  maintenant: () => Date = () => new Date(),
+): SourceCsv {
+  return {
+    fichier: config.key,
+    async lire() {
+      try {
+        return lignesCsv(await streamCsv(client, config.bucket, config.key));
+      } catch (err) {
+        if (err instanceof Error && err.name === 'NoSuchKey') return null; // aucun fichier déposé
+        throw err;
+      }
+    },
+    async archiver() {
+      const archive = cleArchive(maintenant());
+      await archiverCsv(client, config.bucket, config.key, archive, config.supprimerSource);
+      return archive;
+    },
+  };
 }

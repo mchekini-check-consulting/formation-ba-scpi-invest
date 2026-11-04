@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -155,6 +156,9 @@ export const TABLE_SCPI_CATALOG = pgTable('scpi_catalog', {
   versement_programme: boolean(),
   publicite: text(),
   mise_a_jour: timestamp('mise_a_jour').notNull().defaultNow(),
+  // US-07a : empreinte sha256 des valeurs converties de la ligne CSV ; même empreinte au
+  // prochain import = SCPI inchangée, rien n'est écrit. Vide pour les SCPI importées avant.
+  empreinte: text(),
 });
 
 export const TABLE_TAUX_DISTRIBUTION = pgTable(
@@ -234,6 +238,34 @@ export const TABLE_DECOTE_DEMEMBREMENT = pgTable(
   },
   (table) => [index('scpi_decote_demembrement_scpi_id_idx').on(table.scpi_id)],
 );
+
+// US-07a : une ligne par exécution de l'import (rapport d'exécution). La date du dernier
+// import réussi (US-08) = fin de la dernière ligne au statut "reussi".
+export const statutImport = pgEnum('statut_import', [
+  'en_cours',
+  'reussi',
+  'echec',
+  'aucun_fichier',
+]);
+
+// Motif de rejet d'une ligne du CSV (rempli par les contrôles de l'US-07b)
+export type RejetImport = { ligne: number; nom: string | null; motif: string };
+
+export const TABLE_IMPORT_RAPPORT = pgTable('import_rapport', {
+  id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+  debut: horodatage('debut').notNull().defaultNow(),
+  fin: horodatage('fin'),
+  fichier: text('fichier'), // vide quand aucun fichier n'a été trouvé
+  statut: statutImport('statut').notNull().default('en_cours'),
+  lues: integer('lues').notNull().default(0),
+  ajoutees: integer('ajoutees').notNull().default(0),
+  mises_a_jour: integer('mises_a_jour').notNull().default(0),
+  inchangees: integer('inchangees').notNull().default(0),
+  supprimees: integer('supprimees').notNull().default(0), // en base, absentes du fichier
+  rejetees: integer('rejetees').notNull().default(0),
+  rejets: jsonb('rejets').$type<RejetImport[]>().notNull().default([]),
+  erreur: text('erreur'), // motif d'un échec du fichier entier
+});
 
 // DRIZZLE RELATIONS : pour simplifier les appels one-to-many avec une seule requête drizzle
 // simplifie le code, améliore typescript def, le SQL final est le même

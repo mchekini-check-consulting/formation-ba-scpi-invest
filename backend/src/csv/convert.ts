@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { frequence as FREQUENCES, secteur as SECTEURS } from '../db/schema.js';
 
 export type Frequence = (typeof FREQUENCES.enumValues)[number];
@@ -105,4 +106,45 @@ export function toSecteur(value: string, colonne: string) {
     if (!secteur) throw new Error(`${colonne} : secteur inconnu "${libelle}"`);
     return { secteur, pourcentage: nombre };
   });
+}
+
+// Une ligne du CSV convertie : la fiche de la SCPI et ses valeurs multiples
+export function convertirLigne(row: Record<string, string>) {
+  return {
+    fiche: {
+      nom: row.Nom,
+      minimum_souscription: toInteger(row.minimum_souscription, 'minimum_souscription'),
+      capitalisation: toInteger(row.capitalisation, 'capitalisation'),
+      gerant: row.Gerant,
+      frais_souscription: toNumber(row.frais_souscription, 'frais_souscription'),
+      frais_gestion: toNumber(row.frais_gestion, 'frais_gestion'),
+      delai_jouissance: toInteger(row.delai_jouissance, 'delai_jouissance'),
+      frequence: toFrequence(row.frequence_loyers),
+      iban: row.iban,
+      bic: row.bic,
+      demembrement: toBoolean(row.demembrement, 'demembrement'),
+      cashback: toInteger(row.cashback, 'cashback'),
+      versement_programme: toBoolean(row.versement_programme, 'versement_programme'),
+      publicite: row.publicite,
+    },
+    taux: toValeursAnnuelles(row.taux_distribution, 'taux_distribution'),
+    prix: toValeursAnnuelles(row.prix_part, 'prix_part'),
+    valeurs: toValeursAnnuelles(row.valeur_reconstitution, 'valeur_reconstitution'),
+    localisations: toLocalisation(row.localisation, 'localisation'),
+    secteurs: toSecteur(row.secteurs, 'secteurs'),
+    // "3,90,4,85" : durée du démembrement (nombre d'années) -> décote, deux entiers
+    decotes: toPaires(row.decote_demembrement, 'decote_demembrement').map((d) => ({
+      duree: toInteger(d.libelle, 'decote_demembrement')!,
+      decote: toInteger(String(d.nombre), 'decote_demembrement')!,
+    })),
+  };
+}
+
+export type ScpiConvertie = ReturnType<typeof convertirLigne>;
+
+// Empreinte sha256 des valeurs converties (et non du texte brut) : les années des taux et
+// prix sont déduites de l'année en cours, une même ligne change donc au 1er janvier.
+// Clés toujours produites dans le même ordre par convertirLigne : JSON stable.
+export function empreinte(scpi: ScpiConvertie): string {
+  return createHash('sha256').update(JSON.stringify(scpi)).digest('hex');
 }

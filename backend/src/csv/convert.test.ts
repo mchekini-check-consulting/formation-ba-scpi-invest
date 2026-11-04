@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  convertirLigne,
+  empreinte,
   toBoolean,
   toFrequence,
   toInteger,
@@ -201,5 +203,88 @@ describe('toSecteur', () => {
     expect(() => toSecteur(`${libelle},100`, 'secteurs')).toThrow(
       `secteurs : secteur inconnu "${libelle}"`,
     );
+  });
+});
+
+describe('convertirLigne', () => {
+  const ligne = {
+    Nom: 'Transitions Europe',
+    taux_distribution: '8.35',
+    minimum_souscription: '5000',
+    localisation: 'Pays-Bas,100',
+    secteurs: 'Bureaux,100',
+    prix_part: '200',
+    capitalisation: '289000000',
+    Gerant: 'Arkea REIM',
+    frais_souscription: '10',
+    frais_gestion: '10.5',
+    delai_jouissance: '5',
+    frequence_loyers: 'Trimestrielle',
+    valeur_reconstitution: '',
+    iban: '',
+    bic: '',
+    decote_demembrement: '3,90',
+    demembrement: 'Oui',
+    cashback: '',
+    versement_programme: 'Non',
+    publicite: '',
+  };
+  const annee = new Date().getFullYear();
+
+  it('fiche convertie et valeurs multiples', () => {
+    expect(convertirLigne(ligne)).toEqual({
+      fiche: {
+        nom: 'Transitions Europe',
+        minimum_souscription: 5000,
+        capitalisation: 289000000,
+        gerant: 'Arkea REIM',
+        frais_souscription: 10,
+        frais_gestion: 10.5,
+        delai_jouissance: 5,
+        frequence: 'Trimestrielle',
+        iban: '',
+        bic: '',
+        demembrement: true,
+        cashback: null,
+        versement_programme: false,
+        publicite: '',
+      },
+      taux: [{ valeur: 8.35, annee: annee - 1 }],
+      prix: [{ valeur: 200, annee: annee - 1 }],
+      valeurs: [],
+      localisations: [{ pays: 'Pays-Bas', pourcentage: 100 }],
+      secteurs: [{ secteur: 'Bureaux', pourcentage: 100 }],
+      decotes: [{ duree: 3, decote: 90 }],
+    });
+  });
+
+  it('erreur qui nomme la colonne', () => {
+    expect(() => convertirLigne({ ...ligne, capitalisation: '1.5' })).toThrow(
+      'capitalisation : nombre entier attendu, reçu "1.5"',
+    );
+  });
+
+  describe('empreinte', () => {
+    it('sha256 en hexadécimal, identique pour une même ligne', () => {
+      const e = empreinte(convertirLigne(ligne));
+      expect(e).toMatch(/^[0-9a-f]{64}$/);
+      expect(empreinte(convertirLigne({ ...ligne }))).toBe(e);
+    });
+
+    it('même valeur écrite autrement (200 / 200.00, espaces) : même empreinte', () => {
+      expect(empreinte(convertirLigne({ ...ligne, prix_part: '200.00 ' }))).toBe(
+        empreinte(convertirLigne(ligne)),
+      );
+    });
+
+    it.each([
+      ['prix_part', '201'],
+      ['localisation', 'Pays-Bas,60,Espagne,40'],
+      ['Gerant', 'Autre gérant'],
+    ])('change si %s change', (colonne, valeur) => {
+      expect(empreinte(convertirLigne({ ...ligne, [colonne]: valeur }))).not.toBe(
+        empreinte(convertirLigne(ligne)),
+      );
+    });
   });
 });
