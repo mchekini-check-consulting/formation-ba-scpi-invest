@@ -68,8 +68,11 @@ export function planifierImport(
   );
 }
 
-// Câblage au démarrage du backend (server.ts). Variables R2 absentes (poste de dev,
-// environnement pas encore configuré) : planification désactivée, le backend démarre.
+// Câblage au démarrage du backend (server.ts) : un import tout de suite, sans attendre
+// (le backend écoute pendant ce temps), puis chaque nuit. Plusieurs réplicas qui
+// démarrent ensemble, ou un redémarrage moins d'une heure après un import : un seul
+// import (lancerSurUnSeulReplica). Variables R2 absentes (poste de dev, environnement
+// pas encore configuré) : import désactivé, le backend démarre.
 export function demarrerImportNocturne(
   pool: Pick<Pool, 'connect'>,
   db: Db,
@@ -93,5 +96,6 @@ export function demarrerImportNocturne(
     { horaire, fuseau: FUSEAU, prochain: tache.nextRun()?.toISOString() },
     'import nocturne du catalogue planifié',
   );
+  void tache.trigger(); // erreurs journalisées par planifierImport, jamais propagées
   return tache;
 }

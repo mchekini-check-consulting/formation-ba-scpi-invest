@@ -158,7 +158,7 @@ describe('demarrerImportNocturne', () => {
   it('variables R2 présentes : planifié à 2h, prochain lancement journalisé', () => {
     const { log, lignes } = captureLogs();
 
-    tache = demarrerImportNocturne(fauxPool().pool, {} as Db, log, env);
+    tache = demarrerImportNocturne(fauxPool({ recent: true }).pool, {} as Db, log, env);
 
     expect(tache?.getPattern()).toBe('0 2 * * *');
     expect(lignes[0]).toMatchObject({
@@ -170,8 +170,25 @@ describe('demarrerImportNocturne', () => {
     });
   });
 
+  it('au démarrage : import lancé tout de suite, sans attendre 2h', async () => {
+    const { log, lignes } = captureLogs();
+    const { pool, requetes } = fauxPool({ recent: true });
+
+    tache = demarrerImportNocturne(pool, {} as Db, log, env);
+
+    await vi.waitFor(() =>
+      expect(lignes).toContainEqual(
+        expect.objectContaining({
+          issue: 'deja_fait',
+          msg: 'import planifié du catalogue : deja_fait',
+        }),
+      ),
+    );
+    expect(requetes.some((r) => r.includes('pg_try_advisory_lock'))).toBe(true);
+  });
+
   it('CSV_IMPORT_CRON : autre horaire', () => {
-    tache = demarrerImportNocturne(fauxPool().pool, {} as Db, captureLogs().log, {
+    tache = demarrerImportNocturne(fauxPool({ recent: true }).pool, {} as Db, captureLogs().log, {
       ...env,
       CSV_IMPORT_CRON: '*/5 * * * *',
     });

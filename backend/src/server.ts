@@ -22,7 +22,7 @@ const fournisseur = fournisseurBetterAuth(auth);
 const betterAuth: RequestHandler = toNodeHandler(auth);
 const comptes = creerCompteService(fournisseur, depotAcceptationsCgu(db));
 
-// US-07a : import du catalogue chaque nuit à 2h (désactivé sans les variables R2)
+// US-07a : import du catalogue au démarrage puis chaque nuit à 2h (désactivé sans les variables R2)
 demarrerImportNocturne(pool, db);
 
 const port = Number(process.env.PORT ?? 8080);

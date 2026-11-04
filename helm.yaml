@@ -34,6 +34,14 @@ applications:
     envList:
       - key: LOG_LEVEL
         value: {dev: debug, qualif: info, preprod: info, prod: warn}
+      - key: S3_URL
+        value:
+          dev: https://bf34dc064589166d409f8c98a44d39ea.r2.cloudflarestorage.com/scpi/scpi.csv
+          qualif: https://bf34dc064589166d409f8c98a44d39ea.r2.cloudflarestorage.com/scpi/scpi.csv
+          prepod: https://bf34dc064589166d409f8c98a44d39ea.r2.cloudflarestorage.com/scpi/scpi.csv
+          prod: https://bf34dc064589166d409f8c98a44d39ea.r2.cloudflarestorage.com/scpi/scpi.csv
+      - key: CSV_ARCHIVE_DELETE_SOURCE
+        value: {dev: false, qualif: false, preprod: false, prod: false}
     # Variables S3 : toutes les clés du Secret backend-s3 du namespace (créé hors
     # de ce dépôt). optional : le pod démarre aussi là où le Secret n'existe pas.
     envFrom:
