@@ -44,6 +44,14 @@ describe('Pages légales (US-01b)', () => {
     expect(document.body.textContent).toContain('5 € TTC par mois');
   });
 
+  it('CGU : comptes ouverts aux non-résidents, date de mise à jour du 4 novembre 2026', () => {
+    render(<Cgu />);
+    const article4 = document.getElementById('article-4').textContent;
+    expect(article4).toContain('résidentes fiscales en France ou à l’étranger');
+    expect(article4).toContain('contribuables américains (US Persons)');
+    expect(document.body.textContent).toContain('Dernière mise à jour : 4 novembre 2026');
+  });
+
   it('Politique de confidentialité : 8 sections et tableaux des finalités et des durées', () => {
     render(<Confidentialite />);
     expect(titresSections()).toHaveLength(8);

@@ -89,8 +89,11 @@ const SECTIONS = [
     contenu: (
       <>
         <p>
-          Le compte est réservé aux personnes physiques majeures, résidentes fiscales en France. Un
-          seul compte est autorisé par personne.
+          Le compte est réservé aux personnes physiques majeures, résidentes fiscales en France ou à
+          l’étranger. Un seul compte est autorisé par personne. Un investisseur non-résident reste
+          imposé en France sur les revenus de ses parts de SCPI. Certaines SCPI peuvent refuser les
+          souscriptions de résidents de certains pays ou de contribuables américains (US Persons) :
+          cette information figure sur leur fiche.
         </p>
         <p>À la première connexion, l’utilisateur complète :</p>
         <ol>
@@ -334,7 +337,7 @@ export default function Cgu() {
     <PageLegale
       titre="Conditions générales d’utilisation"
       sections={SECTIONS}
-      miseAJour="3 novembre 2026"
+      miseAJour="4 novembre 2026"
     />
   );
 }
