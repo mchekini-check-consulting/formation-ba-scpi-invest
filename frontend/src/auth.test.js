@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ErreurApi,
+  appelConnecte,
   connecter,
   creerCompte,
   deconnecter,
@@ -147,5 +148,14 @@ describe('stockage indisponible', () => {
     expect(jeton()).toBeNull();
     fetchMock.mockResolvedValue(reponse(201, { utilisateur: { id: 'u1' }, jeton: 'j' }));
     await expect(creerCompte({}, '/api')).resolves.toEqual({ id: 'u1' });
+  });
+});
+
+describe('appelConnecte', () => {
+  it('erreur serveur (5xx) : message générique', async () => {
+    fetchMock.mockResolvedValue(reponse(500, { message: 'détail interne' }));
+    const err = await appelConnecte('/kyc', {}, '/api').catch((e) => e);
+    expect(err).toBeInstanceOf(ErreurApi);
+    expect(err.message).toContain('momentanément indisponible');
   });
 });

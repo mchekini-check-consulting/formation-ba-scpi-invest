@@ -205,6 +205,32 @@ export function telephoneValide(valeur) {
   return /^\+?[\d\s.()-]+$/.test(valeur.trim()) && chiffres.length >= 10 && chiffres.length <= 15;
 }
 
+// Réponses à enregistrer (US-04b) : seulement les champs affichés (un pays de résidence
+// fiscale saisi puis masqué n'est pas gardé), sans l'email, qui est celui du compte
+export function reponsesAEnregistrer(reponses) {
+  const aGarder = {};
+  for (const etape of ETAPES) {
+    for (const champ of champsVisibles(etape, reponses)) {
+      if (champ.nom !== 'email' && reponses[champ.nom] !== undefined) {
+        aGarder[champ.nom] = reponses[champ.nom];
+      }
+    }
+  }
+  return aGarder;
+}
+
+// Libellé d'une réponse pour le récapitulatif : date en JJ/MM/AAAA, choix multiples
+// séparés par des virgules, « Non renseigné » si vide
+export function reponseLisible(champ, valeur) {
+  if (Array.isArray(valeur)) return valeur.length ? valeur.join(', ') : 'Non renseigné';
+  if (!valeur || valeur.toString().trim() === '') return 'Non renseigné';
+  if (champ.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(valeur)) {
+    const [annee, mois, jour] = valeur.split('-');
+    return `${jour}/${mois}/${annee}`;
+  }
+  return valeur;
+}
+
 // Erreurs de l'étape, par nom de champ ; objet vide si l'étape est complète
 export function erreursEtape(etape, reponses, aujourdhui = new Date()) {
   const erreurs = {};

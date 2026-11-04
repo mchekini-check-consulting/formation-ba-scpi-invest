@@ -1,0 +1,22 @@
+// Exemple de KYC entièrement rempli (données fictives), partagé par les tests
+export const KYC_COMPLET = {
+  civilite: 'Madame',
+  nom: 'Martin',
+  prenom: 'Claire',
+  dateNaissance: '1980-01-15',
+  lieuNaissance: 'Lyon, France',
+  nationalite: 'Française',
+  adresse: '12 rue des Lilas',
+  codePostal: '69003',
+  ville: 'Lyon',
+  pays: 'France',
+  telephone: '06 12 34 56 78',
+  situationFamiliale: 'Marié(e)',
+  profession: 'Ingénieure',
+  categorie: 'Cadre, profession intellectuelle supérieure',
+  secteur: 'Industrie',
+  origineFonds: ['Épargne issue de mes revenus'],
+  ppe: 'Non',
+  residenceFiscale: 'France',
+  usPerson: 'Non',
+};

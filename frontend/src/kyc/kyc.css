@@ -202,3 +202,70 @@
     flex-direction: column-reverse;
   }
 }
+
+/* Récapitulatif (US-04b) */
+.kyc-recap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kyc-recap__intro {
+  margin-top: 0;
+}
+
+.kyc-recap__etape {
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.kyc-recap__entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.kyc-recap__entete h3 {
+  margin: 0;
+  font-family: Manrope, sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.kyc-recap__liste {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.kyc-recap__ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 12px;
+  font-size: 14px;
+}
+
+.kyc-recap__ligne dt {
+  color: var(--texte-secondaire);
+}
+
+.kyc-recap__ligne dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.kyc__chargement {
+  font-size: 15px;
+  color: var(--texte-secondaire);
+}
+
+@media (max-width: 640px) {
+  .kyc-recap__ligne {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

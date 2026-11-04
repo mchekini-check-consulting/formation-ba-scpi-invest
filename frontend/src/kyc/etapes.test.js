@@ -8,6 +8,8 @@ import {
   age,
   champsVisibles,
   erreursEtape,
+  reponseLisible,
+  reponsesAEnregistrer,
   telephoneValide,
 } from './etapes.js';
 
@@ -100,5 +102,31 @@ describe('Règles de saisie', () => {
     expect(
       erreursEtape(declarations, { residenceFiscale: 'Autre pays' }).paysResidenceFiscale,
     ).toBe(MESSAGE_OBLIGATOIRE);
+  });
+});
+
+describe('Réponses enregistrées et récapitulatif (US-04b)', () => {
+  it('enregistre les champs affichés seulement, sans l’email', () => {
+    const reponses = {
+      nom: 'Martin',
+      email: 'jean@exemple.fr',
+      residenceFiscale: 'France',
+      paysResidenceFiscale: 'Belgique',
+      inconnu: 'x',
+    };
+    expect(reponsesAEnregistrer(reponses)).toEqual({ nom: 'Martin', residenceFiscale: 'France' });
+    expect(
+      reponsesAEnregistrer({ residenceFiscale: 'Autre pays', paysResidenceFiscale: 'Belgique' }),
+    ).toEqual({ residenceFiscale: 'Autre pays', paysResidenceFiscale: 'Belgique' });
+  });
+
+  it('réponses lisibles : date, choix multiples, champ vide', () => {
+    const [date, texte] = [{ type: 'date' }, { type: 'texte' }];
+    expect(reponseLisible(date, '1980-01-15')).toBe('15/01/1980');
+    expect(reponseLisible(texte, 'Martin')).toBe('Martin');
+    expect(reponseLisible(texte, ['Donation', 'Gains au jeu'])).toBe('Donation, Gains au jeu');
+    expect(reponseLisible(texte, [])).toBe('Non renseigné');
+    expect(reponseLisible(texte, '  ')).toBe('Non renseigné');
+    expect(reponseLisible(texte, undefined)).toBe('Non renseigné');
   });
 });
