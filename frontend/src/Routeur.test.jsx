@@ -48,7 +48,7 @@ describe('Routeur', () => {
 
   it('/kyc : écran qui suit la création de compte et la connexion', () => {
     afficher('/kyc');
-    expect(titre()).toBe('Bienvenue dans votre espace');
+    expect(titre()).toBe('Connaissance client (KYC)');
   });
 
   it('/indicateurs : définitions des indicateurs', () => {

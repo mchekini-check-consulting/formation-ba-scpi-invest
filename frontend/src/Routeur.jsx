@@ -6,7 +6,7 @@ import App from './App.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import Indicateurs from './Indicateurs.jsx';
 import Inscription from './inscription/Inscription.jsx';
-import Kyc from './Kyc.jsx';
+import Kyc from './kyc/Kyc.jsx';
 import Cgu from './legal/Cgu.jsx';
 import Confidentialite from './legal/Confidentialite.jsx';
 import Contact from './legal/Contact.jsx';

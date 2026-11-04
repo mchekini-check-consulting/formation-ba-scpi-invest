@@ -1,0 +1,204 @@
+/* Formulaire KYC (US-04a) : complète compte.css (mêmes couleurs, mêmes champs) */
+.kyc__intro {
+  margin-bottom: 24px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--texte-secondaire);
+}
+
+/* Barre de progression */
+.kyc-progression {
+  margin-bottom: 28px;
+}
+
+.kyc-progression__texte {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bleu);
+}
+
+.kyc-progression__barre {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bordure);
+  overflow: hidden;
+}
+
+.kyc-progression__barre span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bleu-vif);
+  transition: width 0.3s ease;
+}
+
+.kyc-progression__etapes {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  font-size: 13px;
+  color: var(--texte-secondaire);
+}
+
+.kyc-progression__etape--courante {
+  font-weight: 700;
+  color: var(--texte);
+}
+
+.kyc-progression__etape--faite {
+  color: var(--succes);
+}
+
+.kyc-progression__etape--faite::before {
+  content: '✓ ';
+}
+
+/* Étape */
+.kyc__titre-etape {
+  margin: 0;
+  font-family: Manrope, sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.kyc__titre-etape:focus {
+  outline: none;
+}
+
+.kyc__champs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+}
+
+.kyc__champs > fieldset {
+  grid-column: 1 / -1;
+}
+
+/* Champs absents de compte.css */
+.kyc .champ input[type='date'],
+.kyc .champ input[type='tel'],
+.kyc .champ select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--bordure-champ);
+  border-radius: 8px;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.kyc .champ select:focus-visible {
+  outline: 2px solid var(--bleu-vif);
+  outline-offset: 1px;
+}
+
+.kyc .champ select[aria-invalid='true'] {
+  border-color: var(--erreur);
+}
+
+.kyc .champ input[readonly] {
+  background: var(--fond);
+  color: var(--texte-secondaire);
+}
+
+.champ__aide {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--texte-secondaire);
+}
+
+.champ__facultatif {
+  font-weight: 400;
+  color: var(--texte-secondaire);
+}
+
+/* Groupes de boutons radio et de cases à cocher */
+.kyc-groupe {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.kyc-groupe legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kyc-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-top: 4px;
+}
+
+.kyc-options--colonnes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.kyc-groupe--erreur .case input {
+  outline: 2px solid var(--erreur);
+  outline-offset: 1px;
+}
+
+.kyc-groupe--erreur legend {
+  color: var(--erreur);
+}
+
+.kyc__boutons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.kyc__boutons .compte__bouton {
+  padding: 0 28px;
+}
+
+.kyc__suivant {
+  min-width: 160px;
+}
+
+.kyc__deconnexion {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--bordure);
+  font-size: 14px;
+  color: var(--texte-secondaire);
+}
+
+.kyc__lien-bouton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--bleu);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .kyc__champs,
+  .kyc-options--colonnes {
+    grid-template-columns: 1fr;
+  }
+
+  .kyc-progression__etapes {
+    display: none;
+  }
+
+  .kyc__boutons {
+    flex-direction: column-reverse;
+  }
+}
