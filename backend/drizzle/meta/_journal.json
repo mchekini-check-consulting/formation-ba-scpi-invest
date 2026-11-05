@@ -50,6 +50,13 @@
       "when": 1793893968769,
       "tag": "0006_kyc_pieces",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793903650761,
+      "tag": "0007_formulaire_investisseur",
+      "breakpoints": true
     }
   ]
 }

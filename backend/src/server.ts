@@ -6,8 +6,17 @@ import { creerAuth, fournisseurBetterAuth } from './auth/better-auth.js';
 import { routesComptes } from './comptes/routes.js';
 import { demarrerImportNocturne } from './csv/planification.js';
 import { creerCompteService } from './comptes/service.js';
-import { depotAcceptationsCgu, depotKyc, depotPieces, secretDesSessions } from './db/depots.js';
+import {
+  depotAcceptationsCgu,
+  depotKyc,
+  depotPieces,
+  depotProfils,
+  depotQuestionnaires,
+  secretDesSessions,
+} from './db/depots.js';
 import { createDb, createPool } from './db/index.js';
+import { routesQuestionnaire } from './investisseur/routes.js';
+import { creerQuestionnaireService } from './investisseur/service.js';
 import { routesPiecesKyc } from './kyc/pieces-routes.js';
 import { creerPiecesService } from './kyc/pieces-service.js';
 import { routesKyc } from './kyc/routes.js';
@@ -26,6 +35,7 @@ const auth = creerAuth(db, await secretDesSessions(db));
 const fournisseur = fournisseurBetterAuth(auth);
 const betterAuth: RequestHandler = toNodeHandler(auth);
 const comptes = creerCompteService(fournisseur, depotAcceptationsCgu(db));
+const questionnaires = creerQuestionnaireService(depotQuestionnaires(db), depotProfils(db));
 const kyc = creerKycService(depotKyc(db));
 // US-04c : fichiers des pièces dans R2 (dépôt indisponible, 503, sans les variables R2)
 const pieces = creerPiecesService(depotKyc(db), depotPieces(db), stockagePieces());
@@ -40,5 +50,6 @@ createApp(() => db.execute(sql`select 1`), logger, {
     routesComptes(comptes, fournisseur),
     routesKyc(kyc, fournisseur),
     routesPiecesKyc(pieces, fournisseur),
+    routesQuestionnaire(questionnaires, fournisseur),
   ],
 }).listen(port, () => logger.info({ port }, 'backend démarré'));

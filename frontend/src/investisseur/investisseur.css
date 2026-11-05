@@ -1,0 +1,148 @@
+/* Formulaire investisseur (US-05a) : couleurs de compte.css (variables de .compte) */
+
+.progression {
+  margin: 4px 0 24px;
+}
+
+.progression__texte {
+  margin: 0 0 8px;
+  font-weight: 600;
+  color: var(--bleu);
+}
+
+.progression__barre {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bordure);
+  overflow: hidden;
+}
+
+.progression__barre span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bleu-vif);
+  transition: width 0.3s ease;
+}
+
+.question {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.question legend {
+  margin-bottom: 10px;
+  padding: 0;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--texte);
+}
+
+.question__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--bordure-champ);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.option:has(input:checked) {
+  border-color: var(--bleu);
+  background: #eef3fc;
+}
+
+.option:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.option input {
+  margin: 0;
+  accent-color: var(--bleu);
+}
+
+.question[aria-invalid='true'] .option {
+  border-color: var(--erreur);
+}
+
+.montant {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.montant input {
+  flex: 1;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--bordure-champ);
+  border-radius: 10px;
+  font: inherit;
+}
+
+.montant input[aria-invalid='true'] {
+  border-color: var(--erreur);
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Boutons alignés, même largeur et même hauteur (l'espacement vertical entre
+   boutons empilés de compte.css ne s'applique pas sur une ligne) */
+.navigation .compte__bouton {
+  flex: 1 1 0;
+  margin-top: 0;
+  padding: 0 12px;
+}
+
+/* Résultat du profil (US-05b) */
+.profil {
+  padding: 20px;
+  border-radius: 12px;
+  background: #eef3fc;
+  text-align: center;
+}
+
+.compte__carte .profil__intro {
+  margin: 0;
+  font-size: 14px;
+  color: var(--texte-secondaire);
+}
+
+.compte__carte .profil__nom {
+  margin: 4px 0 10px;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--bleu);
+}
+
+.compte__carte .profil__explication {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.avertissement {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 4px solid #d97706;
+  border-radius: 8px;
+  background: #fff7ed;
+  font-size: 14px;
+  line-height: 1.5;
+}

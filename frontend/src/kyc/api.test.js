@@ -16,8 +16,8 @@ function reponse(status, corps) {
 let fetchMock;
 
 beforeEach(() => {
-  localStorage.clear();
-  localStorage.setItem('scpi-invest.session', 'jeton-1');
+  sessionStorage.clear();
+  sessionStorage.setItem('scpi-invest.session', 'jeton-1');
   fetchMock = vi.fn();
   vi.stubGlobal('fetch', fetchMock);
 });

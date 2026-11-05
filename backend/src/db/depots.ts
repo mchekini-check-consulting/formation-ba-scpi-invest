@@ -4,7 +4,15 @@ import type { Db } from './index.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
 import type { DepotKyc, EtatKyc } from '../kyc/service.js';
-import { acceptationCgu, kyc, kycPiece, parametre } from './schema.js';
+import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.js';
+import {
+  acceptationCgu,
+  kyc,
+  kycPiece,
+  parametre,
+  profilInvestisseur,
+  questionnaireInvestisseur,
+} from './schema.js';
 
 // Accès aux données (testé par test/*.e2e-test.ts sur une vraie base)
 
@@ -25,6 +33,55 @@ export async function secretDesSessions(
     .onConflictDoNothing();
   const [ligne] = await db.select().from(parametre).where(eq(parametre.cle, cle));
   return ligne.valeur;
+}
+
+// US-05a : une ligne par utilisateur, créée à la première étape puis mise à jour
+export function depotQuestionnaires(db: Db): DepotQuestionnaires {
+  return {
+    async lire(utilisateurId) {
+      const [ligne] = await db
+        .select({
+          etapeCourante: questionnaireInvestisseur.etapeCourante,
+          reponses: questionnaireInvestisseur.reponses,
+        })
+        .from(questionnaireInvestisseur)
+        .where(eq(questionnaireInvestisseur.utilisateurId, utilisateurId));
+      return ligne ?? null;
+    },
+    async enregistrer(utilisateurId, { etapeCourante, reponses }, versionQuestionnaire) {
+      await db
+        .insert(questionnaireInvestisseur)
+        .values({ utilisateurId, etapeCourante, reponses, versionQuestionnaire })
+        .onConflictDoUpdate({
+          target: questionnaireInvestisseur.utilisateurId,
+          set: { etapeCourante, reponses, versionQuestionnaire, misAJourLe: new Date() },
+        });
+    },
+  };
+}
+
+// US-05b : profils validés, jamais modifiés (une mise à jour ajoute une ligne, US-05d)
+export function depotProfils(db: Db): DepotProfils {
+  return {
+    async existe(utilisateurId) {
+      const lignes = await db
+        .select({ id: profilInvestisseur.id })
+        .from(profilInvestisseur)
+        .where(eq(profilInvestisseur.utilisateurId, utilisateurId))
+        .limit(1);
+      return lignes.length > 0;
+    },
+    async enregistrer(utilisateurId, p) {
+      await db.insert(profilInvestisseur).values({
+        utilisateurId,
+        profil: p.profil,
+        score: p.score,
+        reponses: p.reponses,
+        avertissements: p.avertissements,
+        versionQuestionnaire: p.versionQuestionnaire,
+      });
+    },
+  };
 }
 
 export function depotAcceptationsCgu(db: Db) {

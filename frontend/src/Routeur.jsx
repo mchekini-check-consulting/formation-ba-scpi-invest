@@ -1,10 +1,12 @@
 // Choix de l'écran selon l'adresse de la page, avec React Router (nginx renvoie
 // index.html pour toute adresse : nginx.conf). Le routeur (BrowserRouter) est posé
 // dans main.jsx ; les tests utilisent MemoryRouter.
-import { ViewTransition } from 'react';
+import { useEffect, ViewTransition } from 'react';
 import { Route, Routes, useLocation, useSearchParams } from 'react-router';
 import App from './App.jsx';
+import Catalogue from './catalogue/Catalogue.jsx';
 import Connexion from './connexion/Connexion.jsx';
+import { memoriserPage } from './connexion/destination.js';
 import Indicateurs from './Indicateurs.jsx';
 import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
 import Inscription from './inscription/Inscription.jsx';
@@ -39,6 +41,10 @@ export default function Routeur() {
   // Changement d'écran animé (<ViewTransition>, réglages dans index.css) : l'écran
   // quitté s'efface, le nouveau apparaît ; un écran par adresse (key)
   const { pathname } = useLocation();
+  // Dernier écran du parcours, pour y revenir après une reconnexion (destination.js)
+  useEffect(() => {
+    memoriserPage(pathname.replace(/\/+$/, '') || '/');
+  }, [pathname]);
   return (
     <ViewTransition key={pathname} enter="ecran-entre" exit="ecran-sort" default="none">
       <Routes>
@@ -51,6 +57,15 @@ export default function Routeur() {
           element={
             <ExigerKycComplete>
               <FormulaireInvestisseur />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Catalogue : profil investisseur validé exigé en plus (Catalogue.jsx, US-05b) */}
+        <Route
+          path="/catalogue"
+          element={
+            <ExigerKycComplete>
+              <Catalogue />
             </ExigerKycComplete>
           }
         />

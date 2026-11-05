@@ -112,6 +112,41 @@ export const acceptationCgu = pgTable(
   (t) => [index('acceptation_cgu_utilisateur_id_idx').on(t.utilisateurId)],
 );
 
+// US-05a : réponses du formulaire investisseur (MIF2), une ligne par utilisateur,
+// enregistrées à chaque étape pour la reprise. etape_courante = première étape non
+// complétée (1 à 5), 6 = les 5 étapes sont complétées. reponses = { "1": {...}, ... }
+// (une entrée par étape) ; version_questionnaire pour la traçabilité (US-05b).
+export type ReponsesQuestionnaire = Record<string, Record<string, unknown>>;
+
+export const questionnaireInvestisseur = pgTable('questionnaire_investisseur', {
+  id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+  utilisateurId: text('utilisateur_id').notNull().unique(),
+  etapeCourante: integer('etape_courante').notNull().default(1),
+  reponses: jsonb('reponses').$type<ReponsesQuestionnaire>().notNull().default({}),
+  versionQuestionnaire: text('version_questionnaire').notNull(),
+  creeLe: horodatage('cree_le').notNull().defaultNow(),
+  misAJourLe: horodatage('mis_a_jour_le').notNull().defaultNow(),
+});
+
+// US-05b : profil investisseur validé (traçabilité réglementaire MIF2) : profil, score,
+// réponses, avertissements affichés, date et heure de validation, version du
+// questionnaire. Plusieurs lignes possibles par utilisateur : une mise à jour (US-05d)
+// ajoute une ligne, l'ancienne est conservée (jamais écrasée).
+export const profilInvestisseur = pgTable(
+  'profil_investisseur',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+    utilisateurId: text('utilisateur_id').notNull(),
+    profil: text('profil').notNull(),
+    score: integer('score').notNull(),
+    reponses: jsonb('reponses').$type<ReponsesQuestionnaire>().notNull(),
+    avertissements: jsonb('avertissements').$type<string[]>().notNull().default([]),
+    versionQuestionnaire: text('version_questionnaire').notNull(),
+    valideLe: horodatage('valide_le').notNull().defaultNow(),
+  },
+  (t) => [index('profil_investisseur_utilisateur_id_idx').on(t.utilisateurId)],
+);
+
 // US-04b : formulaire KYC d'un utilisateur (une ligne par utilisateur). Réponses
 // enregistrées à chaque « Suivant » (reprise), figées à la validation (statut complete).
 // etape = étape atteinte : 1 à 4, 5 = pièces justificatives (US-04c), 6 = récapitulatif.

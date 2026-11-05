@@ -7,6 +7,7 @@
 // passent par startTransition (BrowserRouter useTransitions, main.jsx).
 import { ViewTransition } from 'react';
 import { Link, useInRouterContext } from 'react-router';
+import BoutonDeconnexion from './BoutonDeconnexion.jsx';
 import LogoIcone from './LogoIcone.jsx';
 
 export function Logo({ clair = false }) {
@@ -60,8 +61,9 @@ export function LienCompte({ vers, origine, className, fleche = false, children 
 }
 
 // En-tête : logo vers l'accueil, menu facultatif au centre, boutons de compte à droite
-// (masqués sur les écrans du compte)
-export function EnTete({ menu, actions = true }) {
+// (masqués sur les écrans du compte) ; écrans connectés : bouton de déconnexion à la
+// place (seDeconnecter)
+export function EnTete({ menu, actions = true, seDeconnecter }) {
   return (
     <header className={menu ? 'entete entete--avec-menu' : 'entete'}>
       <ViewTransition name="logo" share="au-premier-plan">
@@ -78,7 +80,12 @@ export function EnTete({ menu, actions = true }) {
           ))}
         </nav>
       )}
-      {actions && (
+      {seDeconnecter && (
+        <div className="entete__actions">
+          <BoutonDeconnexion onClick={seDeconnecter} />
+        </div>
+      )}
+      {actions && !seDeconnecter && (
         <div className="entete__actions">
           <LienCompte vers="connexion" origine="entete-connexion" className="btn btn--clair">
             Se connecter

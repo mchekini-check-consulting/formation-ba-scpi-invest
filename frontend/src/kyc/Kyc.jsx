@@ -74,7 +74,11 @@ export default function Kyc({
   const indisponible = utilisateurQuery.isError || kycQuery.isError || piecesQuery.isError;
 
   return (
-    <PageCompte titre="Connaissance client (KYC)" large>
+    <PageCompte
+      titre="Connaissance client (KYC)"
+      large
+      seDeconnecter={utilisateur ? quitter : undefined}
+    >
       {indisponible && (
         <p className="compte__alerte" role="alert">
           Le service est momentanément indisponible, réessayez dans quelques instants.
@@ -105,10 +109,7 @@ export default function Kyc({
             />
           )}
           <p className="kyc__deconnexion">
-            Connecté avec l’adresse <strong>{utilisateur.email}</strong>.{' '}
-            <button type="button" className="kyc__lien-bouton" onClick={quitter}>
-              Se déconnecter
-            </button>
+            Connecté avec l’adresse <strong>{utilisateur.email}</strong>.
           </p>
         </>
       )}

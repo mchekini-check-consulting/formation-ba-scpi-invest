@@ -4,11 +4,12 @@
 import './compte.css';
 import { EnTete, TitreCompte } from './MiseEnPage.jsx';
 
-// origine : bouton cliqué pour arriver ici (Routeur.jsx) ; son texte glisse jusqu'au titre
-export default function PageCompte({ titre, large = false, origine, children }) {
+// origine : bouton cliqué pour arriver ici (Routeur.jsx) ; son texte glisse jusqu'au titre.
+// seDeconnecter : écrans connectés, bouton « Se déconnecter » dans l'en-tête
+export default function PageCompte({ titre, large = false, origine, seDeconnecter, children }) {
   return (
     <div className="cadre compte">
-      <EnTete actions={false} />
+      <EnTete actions={false} seDeconnecter={seDeconnecter} />
       <main className="panneau compte__contenu">
         <section
           className={large ? 'compte__carte compte__carte--large' : 'compte__carte'}
