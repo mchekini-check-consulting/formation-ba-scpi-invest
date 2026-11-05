@@ -1,4 +1,5 @@
-/* Pages légales (US-01b) : texte long dans la carte des écrans du compte (compte.css) */
+/* Pages légales (US-01b) : texte long dans la carte des écrans du compte (compte.css),
+   modèle « bleu éditorial » */
 .legal {
   font-size: 15px;
   line-height: 1.6;
@@ -6,13 +7,16 @@
 
 .legal section + section {
   margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--bordure);
 }
 
 .legal h2 {
-  margin: 0 0 10px;
-  font-family: Manrope, sans-serif;
-  font-size: 20px;
-  font-weight: 800;
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
   color: var(--bleu);
 }
 
@@ -54,7 +58,7 @@
 }
 
 .legal th {
-  background: var(--fond);
+  background: var(--papier);
   font-weight: 600;
   color: var(--texte-secondaire);
 }

@@ -1,7 +1,8 @@
 // Choix de l'écran selon l'adresse de la page, avec React Router (nginx renvoie
 // index.html pour toute adresse : nginx.conf). Le routeur (BrowserRouter) est posé
 // dans main.jsx ; les tests utilisent MemoryRouter.
-import { Route, Routes, useSearchParams } from 'react-router';
+import { ViewTransition } from 'react';
+import { Route, Routes, useLocation, useSearchParams } from 'react-router';
 import App from './App.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import Indicateurs from './Indicateurs.jsx';
@@ -20,37 +21,48 @@ function useEmailDeLAdresse() {
   return parametres.get('email') ?? '';
 }
 
+// Bouton cliqué pour arriver sur la page (LienCompte, MiseEnPage.jsx) : son texte
+// glisse jusqu'au titre du formulaire
+function useOrigine() {
+  return useLocation().state?.origine;
+}
+
 function PageInscription() {
-  return <Inscription emailInitial={useEmailDeLAdresse()} />;
+  return <Inscription emailInitial={useEmailDeLAdresse()} origine={useOrigine()} />;
 }
 
 function PageConnexion() {
-  return <Connexion emailInitial={useEmailDeLAdresse()} />;
+  return <Connexion emailInitial={useEmailDeLAdresse()} origine={useOrigine()} />;
 }
 
 export default function Routeur() {
+  // Changement d'écran animé (<ViewTransition>, réglages dans index.css) : l'écran
+  // quitté s'efface, le nouveau apparaît ; un écran par adresse (key)
+  const { pathname } = useLocation();
   return (
-    <Routes>
-      <Route path="/inscription" element={<PageInscription />} />
-      <Route path="/connexion" element={<PageConnexion />} />
-      <Route path="/kyc" element={<Kyc />} />
-      {/* Écrans de l'application : session et KYC validé exigés (US-04b) */}
-      <Route
-        path="/formulaire-investisseur"
-        element={
-          <ExigerKycComplete>
-            <FormulaireInvestisseur />
-          </ExigerKycComplete>
-        }
-      />
-      <Route path="/indicateurs" element={<Indicateurs />} />
-      {/* Pages légales du pied de page (US-01b) */}
-      <Route path="/mentions-legales" element={<MentionsLegales />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/cgu" element={<Cgu />} />
-      <Route path="/confidentialite" element={<Confidentialite />} />
-      {/* Accueil, et toute adresse inconnue */}
-      <Route path="*" element={<App />} />
-    </Routes>
+    <ViewTransition key={pathname} enter="ecran-entre" exit="ecran-sort" default="none">
+      <Routes>
+        <Route path="/inscription" element={<PageInscription />} />
+        <Route path="/connexion" element={<PageConnexion />} />
+        <Route path="/kyc" element={<Kyc />} />
+        {/* Écrans de l'application : session et KYC validé exigés (US-04b) */}
+        <Route
+          path="/formulaire-investisseur"
+          element={
+            <ExigerKycComplete>
+              <FormulaireInvestisseur />
+            </ExigerKycComplete>
+          }
+        />
+        <Route path="/indicateurs" element={<Indicateurs />} />
+        {/* Pages légales du pied de page (US-01b) */}
+        <Route path="/mentions-legales" element={<MentionsLegales />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/cgu" element={<Cgu />} />
+        <Route path="/confidentialite" element={<Confidentialite />} />
+        {/* Accueil, et toute adresse inconnue */}
+        <Route path="*" element={<App />} />
+      </Routes>
+    </ViewTransition>
   );
 }
