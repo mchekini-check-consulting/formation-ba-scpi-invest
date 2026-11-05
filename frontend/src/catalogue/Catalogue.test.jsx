@@ -29,7 +29,7 @@ describe('Catalogue (accès après validation du profil, US-05b)', () => {
     const { allerA } = await afficher({
       lire: vi.fn().mockResolvedValue({ etapeCourante: 6, reponses: {}, valide: false }),
     });
-    expect(allerA).toHaveBeenCalledWith('/profil-investisseur');
+    expect(allerA).toHaveBeenCalledWith('/formulaire-investisseur');
     expect(texte()).not.toContain('Votre profil investisseur est validé.');
   });
 

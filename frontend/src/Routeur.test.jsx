@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
 import Routeur from './Routeur.jsx';
 
@@ -8,7 +9,9 @@ afterEach(cleanup);
 function afficher(chemin, recherche = '') {
   return render(
     <QueryClientProvider client={new QueryClient()}>
-      <Routeur chemin={chemin} recherche={recherche} />
+      <MemoryRouter initialEntries={[chemin + recherche]}>
+        <Routeur />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -45,17 +48,19 @@ describe('Routeur', () => {
 
   it('/kyc : écran qui suit la création de compte et la connexion', () => {
     afficher('/kyc');
-    expect(titre()).toBe('Bienvenue dans votre espace');
+    expect(titre()).toBe('Connaissance client (KYC)');
   });
 
-  it('/profil-investisseur : formulaire investisseur (US-05a)', () => {
-    afficher('/profil-investisseur');
-    expect(titre()).toBe('Formulaire investisseur');
+  it('/formulaire-investisseur : écran protégé, rien sans session ni KYC validé', () => {
+    sessionStorage.clear();
+    afficher('/formulaire-investisseur');
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
   });
 
-  it('/catalogue : écran du Catalogue (accès vérifié par Catalogue.jsx), mémorisé', () => {
+  it('/catalogue : écran protégé (KYC puis profil validés), dernier écran mémorisé', () => {
+    sessionStorage.clear();
     afficher('/catalogue');
-    expect(titre()).toBe('Catalogue des SCPI');
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
     expect(localStorage.getItem('scpi-invest.derniere-page')).toBe('/catalogue');
   });
 

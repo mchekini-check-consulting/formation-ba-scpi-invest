@@ -31,11 +31,18 @@ describe('App', () => {
 
   it('donne accès à la connexion', () => {
     render(<App />);
-    const liens = [
-      ...screen.getAllByRole('link', { name: 'Se connecter' }),
-      screen.getByRole('link', { name: 'J’ai déjà un compte' }),
-    ];
-    liens.forEach((lien) => expect(lien.getAttribute('href')).toBe('/connexion'));
+    const lien = screen.getByRole('link', { name: 'Se connecter' });
+    expect(lien.getAttribute('href')).toBe('/connexion');
+  });
+
+  // « Créer mon compte » : dans l'en-tête et en bouton d'appel à l'action du héros ;
+  // « J'ai déjà un compte » n'est plus répété, la connexion passe par l'en-tête
+  it('affiche « Créer mon compte » dans l’en-tête et dans le héros', () => {
+    render(<App />);
+    expect(screen.getAllByRole('link', { name: /Créer mon compte/ })).toHaveLength(2);
+    expect(document.querySelector('header').textContent).toContain('Créer mon compte');
+    expect(document.querySelector('.heros').textContent).toContain('Créer mon compte');
+    expect(screen.queryByRole('link', { name: 'J’ai déjà un compte' })).toBeNull();
   });
 
   it('donne accès aux définitions des indicateurs', () => {

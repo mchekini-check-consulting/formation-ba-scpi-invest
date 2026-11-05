@@ -28,7 +28,7 @@ export default function Catalogue({
         if (avancement.valide) {
           setEtat('valide');
         } else {
-          allerA('/profil-investisseur');
+          allerA('/formulaire-investisseur');
         }
       })
       .catch((err) => {

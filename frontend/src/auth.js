@@ -44,13 +44,15 @@ export class ErreurApi extends Error {
   }
 }
 
+const INDISPONIBLE = 'Le service est momentanément indisponible, réessayez dans quelques instants.';
+
+function erreurDe(status, corps) {
+  const message = status > 0 && status < 500 && corps?.message ? corps.message : INDISPONIBLE;
+  return new ErreurApi(status, message);
+}
+
 async function erreur(reponse) {
-  const corps = await reponse.json().catch(() => ({}));
-  const message =
-    reponse.status < 500 && corps.message
-      ? corps.message
-      : 'Le service est momentanément indisponible, réessayez dans quelques instants.';
-  return new ErreurApi(reponse.status, message);
+  return erreurDe(reponse.status, await reponse.json().catch(() => ({})));
 }
 
 // Envoie la demande, mémorise la session renvoyée par le backend (jusqu'à la fermeture
@@ -117,4 +119,53 @@ export async function deconnecter(base = apiBase()) {
   } finally {
     memoriser(null);
   }
+}
+
+// Appel d'une route réservée aux utilisateurs connectés (session dans l'en-tête
+// Authorization), corps JSON ; erreur -> ErreurApi avec le message du backend
+export async function appelConnecte(chemin, { methode = 'GET', corps } = {}, base = apiBase()) {
+  const avecCorps = corps !== undefined;
+  const reponse = await fetch(`${base}${chemin}`, {
+    method: methode,
+    headers: enTetes(avecCorps),
+    body: avecCorps ? JSON.stringify(corps) : undefined,
+  });
+  if (!reponse.ok) {
+    throw await erreur(reponse);
+  }
+  return reponse.status === 204 ? null : reponse.json();
+}
+
+// Envoi d'un fichier (US-04c) à une route réservée aux utilisateurs connectés : corps =
+// le fichier tel quel, avec son type ; erreur -> ErreurApi avec le message du backend.
+// XMLHttpRequest plutôt que fetch : lui seul indique l'avancement de l'envoi.
+// progression(part) : part envoyée, de 0 à 1
+export function envoyerFichierConnecte(
+  chemin,
+  fichier,
+  { progression = () => {} } = {},
+  base = apiBase(),
+) {
+  const entetes = enTetes();
+  entetes['Content-Type'] = fichier.type || 'application/octet-stream';
+  return new Promise((resoudre, rejeter) => {
+    const requete = new XMLHttpRequest();
+    requete.open('PUT', `${base}${chemin}`);
+    for (const [nom, valeur] of Object.entries(entetes)) requete.setRequestHeader(nom, valeur);
+    requete.upload.onprogress = (e) => {
+      if (e.lengthComputable && e.total > 0) progression(e.loaded / e.total);
+    };
+    requete.onload = () => {
+      let corps = {};
+      try {
+        corps = JSON.parse(requete.responseText);
+      } catch {
+        // réponse vide ou illisible : message générique
+      }
+      if (requete.status >= 200 && requete.status < 300) resoudre(corps);
+      else rejeter(erreurDe(requete.status, corps));
+    };
+    requete.onerror = () => rejeter(erreurDe(0, {}));
+    requete.send(fichier);
+  });
 }

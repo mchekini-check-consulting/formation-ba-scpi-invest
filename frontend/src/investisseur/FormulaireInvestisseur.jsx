@@ -1,6 +1,8 @@
 // Formulaire investisseur (US-05a) : questionnaire MIF2 en 5 étapes, réponses enregistrées
 // à chaque « Suivant » et reprise à la première étape non complétée ; à la fin, profil
 // calculé, certification et validation (US-05b, ResultatProfil.jsx).
+// Écran /formulaire-investisseur, destination après la validation du KYC (US-04b) :
+// accessible seulement avec un KYC validé (ExigerKycComplete, Routeur.jsx).
 import { useEffect, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import PageCompte from '../PageCompte.jsx';
@@ -114,6 +116,10 @@ export default function FormulaireInvestisseur({
   const [erreurs, setErreurs] = useState({});
   const [alerte, setAlerte] = useState('');
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
+
+  useEffect(() => {
+    document.title = 'SCPI Invest+ · Formulaire investisseur';
+  }, []);
 
   useEffect(() => {
     let actif = true;

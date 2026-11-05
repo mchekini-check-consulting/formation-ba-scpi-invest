@@ -111,7 +111,7 @@ describe('Connexion', () => {
   });
 
   it('reconnexion : retour sur le dernier écran ouvert (formulaire investisseur)', async () => {
-    localStorage.setItem('scpi-invest.derniere-page', '/profil-investisseur');
+    localStorage.setItem('scpi-invest.derniere-page', '/formulaire-investisseur');
     const allerA = vi.fn();
     render(
       <Connexion
@@ -123,7 +123,7 @@ describe('Connexion', () => {
     saisir('Adresse e-mail', 'jean@exemple.fr');
     saisir('Mot de passe', MDP);
     await envoyer();
-    expect(allerA).toHaveBeenCalledWith('/profil-investisseur');
+    expect(allerA).toHaveBeenCalledWith('/formulaire-investisseur');
   });
 
   it('US-05b scénario 11 : profil investisseur validé -> directement le Catalogue', async () => {

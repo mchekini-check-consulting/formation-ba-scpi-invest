@@ -58,6 +58,7 @@ describe('FormulaireInvestisseur (US-05a)', () => {
   it('scénario 1 : s’affiche à l’étape 1, barre « Étape 1/5 »', async () => {
     await afficher();
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Formulaire investisseur');
+    expect(document.title).toBe('SCPI Invest+ · Formulaire investisseur');
     expect(texte()).toContain('Étape 1/5 — Situation financière');
     expect(progression()).toBe('1');
     expect(screen.queryByRole('button', { name: 'Précédent' })).toBeNull();

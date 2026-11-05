@@ -12,6 +12,7 @@ function naviguer(url) {
 
 export default function Connexion({
   emailInitial = '',
+  origine,
   connecter = connecterParDefaut,
   lireAvancement = lireQuestionnaire,
   allerA = naviguer,
@@ -48,7 +49,7 @@ export default function Connexion({
   }
 
   return (
-    <PageCompte titre="Se connecter">
+    <PageCompte titre="Se connecter" origine={origine}>
       <form className="compte__form" aria-label="Connexion" onSubmit={envoyer} noValidate>
         <div className="champ">
           <label htmlFor="email">Adresse e-mail</label>

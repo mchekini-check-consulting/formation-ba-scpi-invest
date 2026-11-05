@@ -8,23 +8,23 @@ afterEach(() => {
 
 describe('retour sur le dernier écran après reconnexion', () => {
   it('seuls les écrans du parcours sont mémorisés, gardés après fermeture du navigateur', () => {
-    memoriserPage('/profil-investisseur');
+    memoriserPage('/formulaire-investisseur');
     memoriserPage('/mentions-legales');
     memoriserPage('/connexion');
-    expect(pageMemorisee()).toBe('/profil-investisseur');
-    expect(localStorage.getItem('scpi-invest.derniere-page')).toBe('/profil-investisseur');
+    expect(pageMemorisee()).toBe('/formulaire-investisseur');
+    expect(localStorage.getItem('scpi-invest.derniere-page')).toBe('/formulaire-investisseur');
   });
 
   it('dernier écran = formulaire investisseur -> retour au formulaire', () => {
-    memoriserPage('/profil-investisseur');
+    memoriserPage('/formulaire-investisseur');
     expect(destinationApresConnexion({ etapeCourante: 3, valide: false })).toBe(
-      '/profil-investisseur',
+      '/formulaire-investisseur',
     );
   });
 
   it('dernier écran = Catalogue mais profil non validé -> formulaire investisseur', () => {
     expect(destinationApresConnexion({ valide: false }, '/catalogue')).toBe(
-      '/profil-investisseur',
+      '/formulaire-investisseur',
     );
   });
 

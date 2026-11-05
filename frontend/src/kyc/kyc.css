@@ -1,0 +1,460 @@
+/* Formulaire KYC (US-04a) : complète compte.css (modèle « bleu éditorial ») */
+.kyc__intro {
+  margin-bottom: 24px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--texte-secondaire);
+}
+
+/* Barre de progression */
+.kyc-progression {
+  margin-bottom: 28px;
+}
+
+.kyc-progression__texte {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bleu-vif);
+}
+
+.kyc-progression__barre {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--papier);
+  overflow: hidden;
+}
+
+.kyc-progression__barre span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bleu-vif);
+  transition: width 0.3s ease;
+}
+
+.kyc-progression__etapes {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  font-size: 13px;
+  color: var(--texte-secondaire);
+}
+
+.kyc-progression__etape--courante {
+  font-weight: 700;
+  color: var(--texte);
+}
+
+.kyc-progression__etape--faite {
+  color: var(--succes);
+}
+
+.kyc-progression__etape--faite::before {
+  content: '✓ ';
+}
+
+/* Étape */
+.kyc__titre-etape {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+.kyc__titre-etape:focus {
+  outline: none;
+}
+
+.kyc__champs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+}
+
+.kyc__champs > fieldset {
+  grid-column: 1 / -1;
+}
+
+.kyc .champ input[readonly] {
+  background: var(--sable);
+  color: var(--texte-secondaire);
+}
+
+.champ__aide {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--texte-secondaire);
+}
+
+.champ__facultatif {
+  font-weight: 400;
+  color: var(--texte-secondaire);
+}
+
+/* Groupes de boutons radio et de cases à cocher */
+.kyc-groupe {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.kyc-groupe legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kyc-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-top: 4px;
+}
+
+.kyc-options--colonnes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.kyc-groupe--erreur .case input {
+  outline: 2px solid var(--erreur);
+  outline-offset: 1px;
+}
+
+.kyc-groupe--erreur legend {
+  color: var(--erreur);
+}
+
+.kyc__boutons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.kyc__suivant {
+  min-width: 160px;
+}
+
+.kyc__deconnexion {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--bordure);
+  font-size: 14px;
+  color: var(--texte-secondaire);
+}
+
+.kyc__lien-bouton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--bleu-vif);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .kyc__champs,
+  .kyc-options--colonnes {
+    grid-template-columns: 1fr;
+  }
+
+  .kyc-progression__etapes {
+    display: none;
+  }
+
+  .kyc__boutons {
+    flex-direction: column-reverse;
+  }
+}
+
+/* Récapitulatif (US-04b) */
+.kyc-recap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kyc-recap__intro {
+  margin-top: 0;
+}
+
+.kyc-recap__etape {
+  background: var(--cadre);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+  padding: 20px 24px;
+}
+
+.kyc-recap__entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.kyc-recap__entete h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.kyc-recap__liste {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.kyc-recap__ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 12px;
+  font-size: 14px;
+}
+
+.kyc-recap__ligne dt {
+  color: var(--texte-secondaire);
+}
+
+.kyc-recap__ligne dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.kyc__chargement {
+  font-size: 15px;
+  color: var(--texte-secondaire);
+}
+
+@media (max-width: 640px) {
+  .kyc-recap__ligne {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* Pièces justificatives (US-04c) */
+.kyc-pieces {
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.kyc-piece {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--cadre);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+}
+
+.kyc-piece--erreur {
+  border-color: var(--erreur);
+}
+
+.kyc-piece__texte {
+  flex: 1;
+  min-width: 0;
+}
+
+.kyc-piece__libelle {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.kyc-piece__fichier {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.kyc-piece__nom {
+  overflow-wrap: anywhere;
+}
+
+.kyc-piece__statut {
+  color: var(--succes);
+  font-weight: 600;
+}
+
+.kyc-piece__actions {
+  position: relative; /* repère du champ fichier masqué */
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  font-size: 14px;
+}
+
+/* Champ fichier natif masqué (mais focusable) ; à sa place, le bouton .kyc-piece__bouton,
+   comme les boutons secondaires (compte__bouton--secondaire) */
+.kyc-piece__champ {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.kyc-piece__bouton {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border: 1.5px solid var(--encre);
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--encre);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.kyc-piece__bouton:hover {
+  background: var(--papier);
+}
+
+.kyc-piece__champ:focus-visible + .kyc-piece__bouton {
+  box-shadow: 0 0 0 2px var(--bleu-vif);
+}
+
+.kyc-piece__champ--masque {
+  display: none;
+}
+
+/* Avancement de l'envoi (barre comme celle des étapes) */
+.kyc-piece__avancement {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--texte-secondaire);
+}
+
+.kyc-piece__avancement-texte {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+
+.kyc-piece__barre {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--papier);
+  overflow: hidden;
+}
+
+.kyc-piece__barre span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bleu-vif);
+  transition: width 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kyc-piece__barre span {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .kyc-piece {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .kyc-piece__actions {
+    align-items: flex-start;
+  }
+}
+
+/* Liste de pays avec drapeau (nationalité) */
+.choix-pays {
+  position: relative;
+}
+
+.choix-pays__saisie {
+  position: relative;
+}
+
+.choix-pays__saisie .choix-pays__drapeau {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.kyc .champ .choix-pays__champ--drapeau {
+  padding-left: 48px;
+}
+
+.choix-pays__drapeau {
+  flex: none;
+  width: 22px;
+  height: 16px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--bordure);
+}
+
+.choix-pays__liste {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 264px;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--cadre);
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgb(14 26 51 / 12%);
+}
+
+.choix-pays__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.choix-pays__option[data-actif='true'] {
+  background: var(--papier);
+}
+
+.choix-pays__option[aria-selected='true'] {
+  font-weight: 600;
+  color: var(--bleu-vif);
+}
+
+.choix-pays__vide {
+  padding: 8px 12px;
+  color: var(--texte-secondaire);
+}

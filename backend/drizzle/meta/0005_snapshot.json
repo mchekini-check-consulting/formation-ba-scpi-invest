@@ -1,5 +1,5 @@
 {
-  "id": "ff196c39-83ef-4729-bcc3-3cee70c8be24",
+  "id": "96e8bbf5-6103-4036-92fa-0eb03e7fb2fe",
   "prevId": "d4c5b217-fa87-4133-aa96-73c13baa74ce",
   "version": "7",
   "dialect": "postgresql",
@@ -1066,6 +1066,92 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.kyc": {
+      "name": "kyc",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "kyc_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "utilisateur_id": {
+          "name": "utilisateur_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "etape": {
+          "name": "etape",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "reponses": {
+          "name": "reponses",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_kyc",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'en_cours'"
+        },
+        "valide_le": {
+          "name": "valide_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "modifie_le": {
+          "name": "modifie_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "kyc_utilisateur_id_unique": {
+          "name": "kyc_utilisateur_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "utilisateur_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.parametre": {
       "name": "parametre",
       "schema": "",
@@ -1087,84 +1173,6 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.questionnaire_investisseur": {
-      "name": "questionnaire_investisseur",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigint",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "byDefault",
-            "name": "questionnaire_investisseur_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "9223372036854775807",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "utilisateur_id": {
-          "name": "utilisateur_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "etape_courante": {
-          "name": "etape_courante",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
-        },
-        "reponses": {
-          "name": "reponses",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        },
-        "version_questionnaire": {
-          "name": "version_questionnaire",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "cree_le": {
-          "name": "cree_le",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "mis_a_jour_le": {
-          "name": "mis_a_jour_le",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "questionnaire_investisseur_utilisateur_id_unique": {
-          "name": "questionnaire_investisseur_utilisateur_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "utilisateur_id"
-          ]
-        }
-      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1205,6 +1213,14 @@
         "reussi",
         "echec",
         "aucun_fichier"
+      ]
+    },
+    "public.statut_kyc": {
+      "name": "statut_kyc",
+      "schema": "public",
+      "values": [
+        "en_cours",
+        "complete"
       ]
     }
   },

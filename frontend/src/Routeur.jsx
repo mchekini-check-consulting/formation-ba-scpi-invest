@@ -1,54 +1,83 @@
-// Choix de l'écran selon l'adresse de la page (nginx renvoie index.html pour toute
-// adresse : nginx.conf). Navigation par liens classiques, sans bibliothèque de routage.
+// Choix de l'écran selon l'adresse de la page, avec React Router (nginx renvoie
+// index.html pour toute adresse : nginx.conf). Le routeur (BrowserRouter) est posé
+// dans main.jsx ; les tests utilisent MemoryRouter.
+import { useEffect, ViewTransition } from 'react';
+import { Route, Routes, useLocation, useSearchParams } from 'react-router';
 import App from './App.jsx';
 import Catalogue from './catalogue/Catalogue.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import { memoriserPage } from './connexion/destination.js';
 import Indicateurs from './Indicateurs.jsx';
-import Inscription from './inscription/Inscription.jsx';
 import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
-import Kyc from './Kyc.jsx';
+import Inscription from './inscription/Inscription.jsx';
+import ExigerKycComplete from './kyc/ExigerKycComplete.jsx';
+import Kyc from './kyc/Kyc.jsx';
 import Cgu from './legal/Cgu.jsx';
 import Confidentialite from './legal/Confidentialite.jsx';
 import Contact from './legal/Contact.jsx';
 import MentionsLegales from './legal/MentionsLegales.jsx';
 
-// Pages légales du pied de page (US-01b)
-const PAGES_LEGALES = {
-  '/mentions-legales': MentionsLegales,
-  '/contact': Contact,
-  '/cgu': Cgu,
-  '/confidentialite': Confidentialite,
-};
+// Email pré-rempli transmis par l'adresse (?email=...)
+function useEmailDeLAdresse() {
+  const [parametres] = useSearchParams();
+  return parametres.get('email') ?? '';
+}
 
-export default function Routeur({
-  chemin = window.location.pathname,
-  recherche = window.location.search,
-}) {
-  const page = chemin.replace(/\/+$/, '') || '/';
+// Bouton cliqué pour arriver sur la page (LienCompte, MiseEnPage.jsx) : son texte
+// glisse jusqu'au titre du formulaire
+function useOrigine() {
+  return useLocation().state?.origine;
+}
+
+function PageInscription() {
+  return <Inscription emailInitial={useEmailDeLAdresse()} origine={useOrigine()} />;
+}
+
+function PageConnexion() {
+  return <Connexion emailInitial={useEmailDeLAdresse()} origine={useOrigine()} />;
+}
+
+export default function Routeur() {
+  // Changement d'écran animé (<ViewTransition>, réglages dans index.css) : l'écran
+  // quitté s'efface, le nouveau apparaît ; un écran par adresse (key)
+  const { pathname } = useLocation();
   // Dernier écran du parcours, pour y revenir après une reconnexion (destination.js)
-  memoriserPage(page);
-  if (page === '/inscription') {
-    return <Inscription emailInitial={new URLSearchParams(recherche).get('email') ?? ''} />;
-  }
-  if (page === '/connexion') {
-    return <Connexion emailInitial={new URLSearchParams(recherche).get('email') ?? ''} />;
-  }
-  if (page === '/kyc') {
-    return <Kyc />;
-  }
-  if (page === '/profil-investisseur') {
-    return <FormulaireInvestisseur />;
-  }
-  if (page === '/catalogue') {
-    return <Catalogue />;
-  }
-  if (page === '/indicateurs') {
-    return <Indicateurs />;
-  }
-  const PageLegale = PAGES_LEGALES[page];
-  if (PageLegale) {
-    return <PageLegale />;
-  }
-  return <App />;
+  useEffect(() => {
+    memoriserPage(pathname.replace(/\/+$/, '') || '/');
+  }, [pathname]);
+  return (
+    <ViewTransition key={pathname} enter="ecran-entre" exit="ecran-sort" default="none">
+      <Routes>
+        <Route path="/inscription" element={<PageInscription />} />
+        <Route path="/connexion" element={<PageConnexion />} />
+        <Route path="/kyc" element={<Kyc />} />
+        {/* Écrans de l'application : session et KYC validé exigés (US-04b) */}
+        <Route
+          path="/formulaire-investisseur"
+          element={
+            <ExigerKycComplete>
+              <FormulaireInvestisseur />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Catalogue : profil investisseur validé exigé en plus (Catalogue.jsx, US-05b) */}
+        <Route
+          path="/catalogue"
+          element={
+            <ExigerKycComplete>
+              <Catalogue />
+            </ExigerKycComplete>
+          }
+        />
+        <Route path="/indicateurs" element={<Indicateurs />} />
+        {/* Pages légales du pied de page (US-01b) */}
+        <Route path="/mentions-legales" element={<MentionsLegales />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/cgu" element={<Cgu />} />
+        <Route path="/confidentialite" element={<Confidentialite />} />
+        {/* Accueil, et toute adresse inconnue */}
+        <Route path="*" element={<App />} />
+      </Routes>
+    </ViewTransition>
+  );
 }

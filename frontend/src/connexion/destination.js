@@ -4,11 +4,11 @@
 // - sinon, dernier écran du parcours ouvert avant la déconnexion (fermeture du
 //   navigateur comprise) : KYC ou formulaire investisseur (le Catalogue n'est
 //   accessible qu'une fois le profil validé : formulaire investisseur à la place) ;
-// - à défaut -> /kyc. Le KYC (US-04a) n'est pas encore réalisé : /kyc mène pour
-//   l'instant au formulaire investisseur.
+// - à défaut -> /kyc (qui renvoie au formulaire investisseur une fois le KYC validé ;
+//   les écrans suivants exigent un KYC validé : ExigerKycComplete, US-04b).
 // avancement = réponse de lireQuestionnaire, null si indisponible.
 const CLE_PAGE = 'scpi-invest.derniere-page';
-export const PAGES_DU_PARCOURS = ['/kyc', '/profil-investisseur', '/catalogue'];
+export const PAGES_DU_PARCOURS = ['/kyc', '/formulaire-investisseur', '/catalogue'];
 
 // Gardé après la fermeture du navigateur (localStorage) : seulement une adresse
 // d'écran, aucune donnée personnelle
@@ -31,8 +31,8 @@ export function pageMemorisee() {
 
 export function destinationApresConnexion(avancement, derniere = pageMemorisee()) {
   if (avancement?.valide) return '/catalogue';
-  if (derniere === '/profil-investisseur' || derniere === '/catalogue') {
-    return '/profil-investisseur';
+  if (derniere === '/formulaire-investisseur' || derniere === '/catalogue') {
+    return '/formulaire-investisseur';
   }
   return '/kyc';
 }

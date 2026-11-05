@@ -11,6 +11,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -144,6 +145,63 @@ export const profilInvestisseur = pgTable(
     valideLe: horodatage('valide_le').notNull().defaultNow(),
   },
   (t) => [index('profil_investisseur_utilisateur_id_idx').on(t.utilisateurId)],
+);
+
+// US-04b : formulaire KYC d'un utilisateur (une ligne par utilisateur). Réponses
+// enregistrées à chaque « Suivant » (reprise), figées à la validation (statut complete).
+// etape = étape atteinte : 1 à 4, 5 = pièces justificatives (US-04c), 6 = récapitulatif.
+export const statutKyc = pgEnum('statut_kyc', ['en_cours', 'complete']);
+
+export type ReponsesKyc = Record<string, string | string[]>;
+
+export const kyc = pgTable('kyc', {
+  id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+  utilisateurId: text('utilisateur_id').notNull().unique(),
+  etape: integer('etape').notNull().default(1),
+  reponses: jsonb('reponses').$type<ReponsesKyc>().notNull().default({}),
+  statut: statutKyc('statut').notNull().default('en_cours'),
+  valideLe: horodatage('valide_le'),
+  creeLe: horodatage('cree_le').notNull().defaultNow(),
+  modifieLe: horodatage('modifie_le').notNull().defaultNow(),
+});
+
+// US-04c : pièces justificatives du KYC, une ligne par pièce déposée (au plus une par
+// type et par utilisateur : un nouveau dépôt remplace l'ancien). Le fichier est dans R2
+// sous la clé `cle` (kyc/<utilisateur>/<type>), jamais en base.
+// Statut : deposee (KYC en cours, modifiable) -> en_verification (à la validation du KYC)
+// -> validee ou refusee, écrits par l'agent de vérification asynchrone (hors backend).
+export const typePieceKyc = pgEnum('type_piece_kyc', [
+  'identite',
+  'identite_verso',
+  'titre_sejour',
+  'domicile',
+  'rib',
+  'origine_fonds',
+  'ppe',
+]);
+
+export const statutPieceKyc = pgEnum('statut_piece_kyc', [
+  'deposee',
+  'en_verification',
+  'validee',
+  'refusee',
+]);
+
+export const kycPiece = pgTable(
+  'kyc_piece',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+    utilisateurId: text('utilisateur_id').notNull(),
+    type: typePieceKyc('type').notNull(),
+    nomFichier: text('nom_fichier').notNull(),
+    format: text('format').notNull(), // application/pdf, image/jpeg ou image/png
+    taille: integer('taille').notNull(), // en octets
+    cle: text('cle').notNull(),
+    statut: statutPieceKyc('statut').notNull().default('deposee'),
+    deposeLe: horodatage('depose_le').notNull().defaultNow(),
+    modifieLe: horodatage('modifie_le').notNull().defaultNow(),
+  },
+  (t) => [unique('kyc_piece_utilisateur_type_unique').on(t.utilisateurId, t.type)],
 );
 
 // ---- Catalogue SCPI (import CSV, src/csv/)

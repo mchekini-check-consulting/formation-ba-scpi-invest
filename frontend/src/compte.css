@@ -1,125 +1,77 @@
-/* Écrans du compte : mêmes couleurs que la landing page (App.css) */
+/* Écrans du compte : modèle « bleu éditorial ». Charte commune dans index.css ;
+   les noms ci-dessous sont repris par kyc.css et legal.css. */
 .compte {
-  --fond: #f5f7fa;
-  --bleu: #1e3a8a;
-  --bleu-fonce: #1e40af;
-  --bleu-vif: #3b6fd4;
-  --bordure: #e2e8f0;
-  --bordure-champ: #c2d0e4;
-  --texte: #0f172a;
-  --texte-secondaire: #475569;
-  --erreur: #b3261e;
-  --succes: #2e7d32;
+  --fond: var(--papier);
+  --bordure: var(--ligne);
+  --bordure-champ: #d6cfc0;
+  --texte: var(--encre);
+  --texte-secondaire: var(--encre-douce);
 
-  min-height: 100vh;
+  min-height: calc(100vh - 56px);
   display: flex;
   flex-direction: column;
-  font-family: Inter, system-ui, sans-serif;
-  color: var(--texte);
-  background: var(--fond);
 }
 
-.compte a {
-  color: var(--bleu);
-}
-
-.compte a:hover {
-  color: var(--bleu-fonce);
-}
-
-.compte__entete {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: #fff;
-  border-bottom: 1px solid var(--bordure);
-  padding: 18px 24px;
-}
-
-/* Déconnexion mise en évidence : bouton rouge avec pictogramme (BoutonDeconnexion.jsx) */
-.bouton-deconnexion {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 42px;
-  padding: 0 16px;
-  border: 1px solid var(--erreur);
-  border-radius: 10px;
-  background: #fff;
-  color: var(--erreur);
-  font: inherit;
-  font-weight: 700;
-  font-size: 15px;
-  cursor: pointer;
-}
-
-.bouton-deconnexion:hover,
-.bouton-deconnexion:focus-visible {
-  background: var(--erreur);
-  color: #fff;
-}
-
-.bouton-deconnexion svg {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-@media (max-width: 480px) {
-  .compte__entete {
-    padding: 14px 16px;
-  }
-
-  .bouton-deconnexion {
-    padding: 0 12px;
-  }
-}
-
-.compte .compte__logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-family: Manrope, sans-serif;
-  font-weight: 800;
-  font-size: 22px;
-  color: var(--texte);
-  text-decoration: none;
-}
-
-.compte__logo-plus {
+.compte a:not(.logo) {
   color: var(--bleu-vif);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.compte a:not(.logo):hover {
+  color: var(--bleu);
 }
 
 .compte__contenu {
   flex: 1;
   display: flex;
   justify-content: center;
-  padding: 40px 16px;
+  padding: 64px 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Halo bleu discret, comme le héros de l'accueil */
+.compte__contenu::after {
+  content: '';
+  position: absolute;
+  right: -120px;
+  top: -160px;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(59 111 212 / 16%), transparent 65%);
+  pointer-events: none;
 }
 
 .compte__carte {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  max-width: 480px;
+  max-width: 500px;
   align-self: flex-start;
   background: #fff;
-  border-radius: 16px;
-  padding: 32px;
-  border: 1px solid var(--bordure);
-  box-shadow: 0 10px 30px rgb(15 23 42 / 6%);
+  border-radius: var(--r-l);
+  padding: 40px;
+  border: 1px solid var(--ligne);
+  box-shadow: 0 30px 70px -40px rgb(15 31 69 / 40%);
 }
 
 .compte__carte--large {
-  max-width: 820px;
+  max-width: 860px;
 }
 
 .compte__carte h1 {
-  margin: 0 0 24px;
-  font-family: Manrope, sans-serif;
-  font-size: 28px;
-  font-weight: 800;
+  /* Largeur du texte seulement : le bouton cliqué glisse vers le mot
+     (<ViewTransition>, PageCompte.jsx) */
+  width: fit-content;
+  margin: 0 0 28px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(32px, 3.4vw, 42px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 144;
 }
 
 .compte__carte p {
@@ -129,13 +81,13 @@
 .compte__form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .champ {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
 .champ > label {
@@ -145,24 +97,33 @@
 
 .champ input[type='email'],
 .champ input[type='password'],
-.champ input[type='text'] {
+.champ input[type='text'],
+.champ input[type='date'],
+.champ input[type='tel'],
+.champ select {
   width: 100%;
-  min-height: 46px;
-  padding: 0 14px;
-  border: 1px solid var(--bordure-champ);
-  border-radius: 8px;
+  min-height: 50px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 14px;
   font: inherit;
   color: inherit;
-  background: #fff;
+  background: var(--papier);
   box-sizing: border-box;
+  transition:
+    box-shadow 0.2s,
+    background 0.2s;
 }
 
-.champ input:focus-visible {
-  outline: 2px solid var(--bleu-vif);
-  outline-offset: 1px;
+.champ input:focus-visible,
+.champ select:focus-visible {
+  outline: none;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--bleu-vif);
 }
 
-.champ input[aria-invalid='true'] {
+.champ input[aria-invalid='true'],
+.champ select[aria-invalid='true'] {
   border-color: var(--erreur);
 }
 
@@ -171,21 +132,21 @@
 }
 
 .champ__mdp input {
-  padding-right: 48px;
+  padding-right: 50px;
 }
 
 .champ__oeil {
   position: absolute;
   top: 0;
-  right: 0;
-  width: 46px;
-  height: 46px;
+  right: 2px;
+  width: 50px;
+  height: 50px;
   display: grid;
   place-items: center;
   border: 0;
   background: none;
   cursor: pointer;
-  color: var(--texte-secondaire);
+  color: var(--encre-douce);
 }
 
 .champ__oeil svg {
@@ -199,7 +160,6 @@
 }
 
 .champ__erreur {
-  min-height: 0;
   font-size: 13px;
   color: var(--erreur);
 }
@@ -215,7 +175,7 @@
   display: grid;
   gap: 2px;
   font-size: 13px;
-  color: var(--texte-secondaire);
+  color: var(--encre-douce);
 }
 
 .regle--ok {
@@ -239,27 +199,37 @@
   height: 18px;
   margin: 2px 0 0;
   flex-shrink: 0;
-  accent-color: var(--bleu);
+  accent-color: var(--bleu-vif);
 }
 
 .compte__alerte {
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: #fbe9e7;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #fbe9e5;
   color: var(--erreur);
   font-size: 14px;
 }
 
+/* Boutons en pilule, comme ceux de l'accueil */
 .compte__bouton {
-  min-height: 50px;
+  min-height: 52px;
+  padding: 0 26px;
   border: 0;
-  border-radius: 10px;
-  background: var(--bleu);
+  border-radius: 999px;
+  background: var(--nuit);
   color: #fff;
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 16px;
   cursor: pointer;
+  transition:
+    transform 0.2s,
+    background 0.2s;
+}
+
+.compte__bouton:hover:not(:disabled) {
+  background: var(--bleu);
+  transform: translateY(-1px);
 }
 
 .compte a.compte__bouton {
@@ -275,31 +245,91 @@
 }
 
 .compte__bouton:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .compte__bouton--secondaire {
   background: none;
-  border: 1px solid var(--bleu);
-  color: var(--bleu);
-  padding: 0 20px;
+  border: 1.5px solid var(--encre);
+  color: var(--encre);
+}
+
+.compte__bouton--secondaire:hover:not(:disabled) {
+  background: var(--papier);
 }
 
 .compte__lien,
 .compte__texte {
   margin-top: 20px;
-  font-size: 14px;
-  color: var(--texte-secondaire);
-  line-height: 1.5;
+  font-size: 14.5px;
+  color: var(--encre-douce);
+  line-height: 1.55;
 }
 
 .compte__texte + .compte__bouton {
   margin-top: 24px;
 }
 
+.compte__pied {
+  padding: 28px 70px;
+}
+
+@media (max-width: 960px) {
+  .compte__pied {
+    padding: 24px 26px;
+  }
+}
+
 @media (max-width: 640px) {
+  .compte__contenu {
+    padding: 28px 10px;
+  }
+
   .compte__carte {
-    padding: 24px 20px;
+    padding: 28px 20px;
+    border-radius: var(--r-m);
+  }
+}
+
+/* Déconnexion mise en évidence dans l'en-tête des écrans connectés : bouton rouge
+   avec pictogramme (BoutonDeconnexion.jsx), même forme que les boutons du modèle */
+.bouton-deconnexion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1.5px solid var(--erreur);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--erreur);
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.bouton-deconnexion:hover,
+.bouton-deconnexion:focus-visible {
+  background: var(--erreur);
+  color: #fff;
+}
+
+.bouton-deconnexion svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 480px) {
+  .bouton-deconnexion {
+    padding: 0 12px;
   }
 }
