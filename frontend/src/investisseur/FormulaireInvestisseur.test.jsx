@@ -12,6 +12,9 @@ async function afficher({
   avancement = { etapeCourante: 1, reponses: {} },
   lire = vi.fn().mockResolvedValue(avancement),
   enregistrer = vi.fn().mockResolvedValue({}),
+  effacer = vi.fn().mockResolvedValue({}),
+  calculerProfil = vi.fn().mockResolvedValue({ profil: 'equilibre', avertissements: [] }),
+  valider = vi.fn().mockResolvedValue({ profil: 'equilibre', avertissements: [] }),
   allerA = vi.fn(),
   seDeconnecter = vi.fn().mockResolvedValue(undefined),
 } = {}) {
@@ -20,12 +23,15 @@ async function afficher({
       <FormulaireInvestisseur
         lire={lire}
         enregistrer={enregistrer}
+        effacer={effacer}
+        calculerProfil={calculerProfil}
+        valider={valider}
         allerA={allerA}
         seDeconnecter={seDeconnecter}
       />,
     );
   });
-  return { enregistrer, allerA, seDeconnecter };
+  return { enregistrer, effacer, calculerProfil, valider, allerA, seDeconnecter };
 }
 
 const texte = () => document.body.textContent;
@@ -88,11 +94,20 @@ describe('FormulaireInvestisseur (US-05a)', () => {
 
   it('scénario 4 : montant invalide -> message du montant, reste à l’étape 1', async () => {
     const { enregistrer } = await afficher();
-    remplirEtape1('-200');
+    remplirEtape1('0');
     await cliquer('Suivant');
     expect(texte()).toContain('Merci de saisir un montant en euros supérieur à 0.');
     expect(texte()).toContain('Étape 1/5');
     expect(enregistrer).not.toHaveBeenCalled();
+  });
+
+  it('montant : lettres et autres caractères bloqués, seuls les chiffres sont saisis', async () => {
+    await afficher();
+    const epargne = screen.getByLabelText('Épargne disponible à investir');
+    fireEvent.change(epargne, { target: { value: 'abc' } });
+    expect(epargne.value).toBe('');
+    fireEvent.change(epargne, { target: { value: '-1 5e0,0€0' } });
+    expect(epargne.value).toBe('15000');
   });
 
   it('scénario 5 : « Aucun » décoche et désactive les autres placements', async () => {
@@ -122,7 +137,7 @@ describe('FormulaireInvestisseur (US-05a)', () => {
 
     await cliquer('Suivant');
     expect(enregistrer).toHaveBeenCalledWith(5, { esg: 'non' });
-    expect(texte()).toContain('vos réponses aux 5 étapes sont enregistrées');
+    expect(texte()).toContain('Votre profil investisseur');
   });
 
   it('scénario 7 : reprise à la première étape non complétée, réponses conservées', async () => {
@@ -130,6 +145,46 @@ describe('FormulaireInvestisseur (US-05a)', () => {
     expect(texte()).toContain('Étape 3/5 — Objectifs');
     await cliquer('Précédent');
     await cliquer('Précédent');
+    expect(screen.getByLabelText('Épargne disponible à investir').value).toBe('15000');
+  });
+
+  it.each([1, 2, 3, 4, 5])('« Réinitialiser » présent à l’étape %i', async (etape) => {
+    await afficher({ avancement: { etapeCourante: etape, reponses: {} } });
+    expect(screen.getByRole('button', { name: 'Réinitialiser' })).toBeDefined();
+  });
+
+  it('« Réinitialiser » efface l’étape en base, vide ses champs et ses messages', async () => {
+    const { enregistrer, effacer } = await afficher();
+    remplirEtape1('0');
+    await cliquer('Suivant');
+    expect(texte()).toContain('Merci de saisir un montant en euros supérieur à 0.');
+
+    await cliquer('Réinitialiser');
+    expect(screen.getByRole('radio', { name: '30 à 60 k€' }).checked).toBe(false);
+    expect(screen.getByLabelText('Épargne disponible à investir').value).toBe('');
+    expect(texte()).not.toContain('Merci de saisir un montant');
+    expect(texte()).toContain('Étape 1/5');
+    expect(effacer).toHaveBeenCalledWith(1);
+    expect(enregistrer).not.toHaveBeenCalled();
+  });
+
+  it('« Réinitialiser » en échec : message, les saisies restent à l’écran', async () => {
+    const effacer = vi.fn().mockRejectedValue(new ErreurApi(503, 'indisponible'));
+    await afficher({ effacer });
+    remplirEtape1();
+    await cliquer('Réinitialiser');
+    expect(texte()).toContain('Vos réponses n’ont pas pu être réinitialisées. Veuillez réessayer.');
+    expect(screen.getByRole('radio', { name: '30 à 60 k€' }).checked).toBe(true);
+  });
+
+  it('« Réinitialiser » ne touche pas aux réponses des autres étapes', async () => {
+    await afficher({ avancement: { etapeCourante: 2, reponses: { 1: ETAPE_1 } } });
+    cocher('Livrets');
+    await cliquer('Réinitialiser');
+    expect(screen.getByRole('checkbox', { name: 'Livrets' }).checked).toBe(false);
+
+    await cliquer('Précédent');
+    expect(screen.getByRole('radio', { name: '30 à 60 k€' }).checked).toBe(true);
     expect(screen.getByLabelText('Épargne disponible à investir').value).toBe('15000');
   });
 
@@ -145,11 +200,65 @@ describe('FormulaireInvestisseur (US-05a)', () => {
     expect(screen.getByRole('button', { name: 'Suivant' }).disabled).toBe(false);
   });
 
-  it('questionnaire déjà complété : confirmation, puis « Revoir mes réponses »', async () => {
-    await afficher({ avancement: { etapeCourante: 6, reponses: { 1: ETAPE_1 } } });
-    expect(texte()).toContain('vos réponses aux 5 étapes sont enregistrées');
-    await cliquer('Revoir mes réponses');
+  it('US-05b scénario 1 : les 5 étapes complétées -> profil affiché, sans score', async () => {
+    const { calculerProfil } = await afficher({
+      avancement: { etapeCourante: 6, reponses: { 1: ETAPE_1 } },
+    });
+    expect(calculerProfil).toHaveBeenCalled();
+    expect(texte()).toContain('Équilibré');
+    expect(texte()).toContain('compromis entre sécurité et rendement');
+    expect(texte()).not.toMatch(/score|\/8/i);
+  });
+
+  it('US-05b scénario 7 : « Modifier mes réponses » -> étape 1, réponses conservées, profil recalculé', async () => {
+    const toutes = {
+      1: ETAPE_1,
+      2: {
+        revente: 'vrai',
+        capitalGaranti: 'faux',
+        frais: 'vrai',
+        revenusGarantis: 'faux',
+        placements: ['livrets'],
+        dejaScpi: 'non',
+      },
+      3: { objectifs: ['retraite'] },
+      4: { horizon: '8-15', reactionBaisse: 'attendre', perteAcceptee: '<10' },
+      5: { esg: 'non' },
+    };
+    const { calculerProfil, enregistrer } = await afficher({
+      avancement: { etapeCourante: 6, reponses: toutes },
+    });
+    expect(calculerProfil).toHaveBeenCalledTimes(1);
+
+    await cliquer('Modifier mes réponses');
     expect(texte()).toContain('Étape 1/5');
+    expect(screen.getByLabelText('Épargne disponible à investir').value).toBe('15000');
+
+    // repasser les 5 étapes (réponses conservées) : le profil est recalculé à la fin
+    for (let etape = 1; etape <= 5; etape += 1) {
+      await cliquer('Suivant');
+    }
+    expect(enregistrer).toHaveBeenCalledTimes(5);
+    expect(enregistrer).toHaveBeenCalledWith(1, ETAPE_1);
+    expect(calculerProfil).toHaveBeenCalledTimes(2);
+    expect(texte()).toContain('Votre profil investisseur');
+  });
+
+  it('US-05b scénario 9 : validation -> redirection vers le Catalogue', async () => {
+    const { valider, allerA } = await afficher({ avancement: { etapeCourante: 6, reponses: {} } });
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Je certifie l’exactitude de mes réponses' }),
+    );
+    await cliquer('Valider');
+    expect(valider).toHaveBeenCalled();
+    expect(allerA).toHaveBeenCalledWith('/catalogue');
+  });
+
+  it('US-05b scénario 11 : formulaire déjà validé -> plus proposé, Catalogue', async () => {
+    const { allerA } = await afficher({
+      avancement: { etapeCourante: 6, reponses: {}, valide: true },
+    });
+    expect(allerA).toHaveBeenCalledWith('/catalogue');
   });
 
   it('pendant l’enregistrement : bouton désactivé « Enregistrement… »', async () => {

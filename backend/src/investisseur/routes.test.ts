@@ -64,11 +64,67 @@ describe('routes du questionnaire investisseur', () => {
     expect(enregistrerEtape).toHaveBeenCalledWith('u1', 1, {});
   });
 
+  it('DELETE : « Réinitialiser » efface l’étape de l’utilisateur connecté', async () => {
+    const reinitialiserEtape = vi.fn().mockResolvedValue({ etapeCourante: 2, reponses: {} });
+    const { app, lignes } = application({ reinitialiserEtape });
+
+    await request(app)
+      .delete('/questionnaire-investisseur/etapes/2')
+      .set('Authorization', 'Bearer jeton')
+      .expect(200, { etapeCourante: 2, reponses: {} });
+
+    expect(reinitialiserEtape).toHaveBeenCalledWith('u1', 2);
+    expect(lignes.at(-1)).toMatchObject({ layer: 'controller', method: 'reinitialiserEtape' });
+  });
+
+  it('DELETE sans session : 401', async () => {
+    const reinitialiserEtape = vi.fn();
+    const { app } = application({ reinitialiserEtape }, false);
+    await request(app).delete('/questionnaire-investisseur/etapes/1').expect(401);
+    expect(reinitialiserEtape).not.toHaveBeenCalled();
+  });
+
+  it('GET profil : profil calculé de l’utilisateur connecté (US-05b)', async () => {
+    const profil = vi.fn().mockResolvedValue({ profil: 'prudent', avertissements: ['horizon'] });
+    const { app } = application({ profil });
+    await request(app)
+      .get('/questionnaire-investisseur/profil')
+      .set('Authorization', 'Bearer jeton')
+      .expect(200, { profil: 'prudent', avertissements: ['horizon'] });
+    expect(profil).toHaveBeenCalledWith('u1');
+  });
+
+  it('POST validation : 201 avec le profil validé (US-05b)', async () => {
+    const valider = vi.fn().mockResolvedValue({ profil: 'dynamique', avertissements: [] });
+    const { app, lignes } = application({ valider });
+    await request(app)
+      .post('/questionnaire-investisseur/validation')
+      .set('Authorization', 'Bearer jeton')
+      .send({ certification: true })
+      .expect(201, { profil: 'dynamique', avertissements: [] });
+    expect(valider).toHaveBeenCalledWith('u1', { certification: true });
+    expect(lignes.at(-1)).toMatchObject({ layer: 'controller', method: 'validerProfil' });
+  });
+
+  it('POST validation sans corps : demande vide transmise au service', async () => {
+    const valider = vi
+      .fn()
+      .mockRejectedValue(new HttpError(400, 'Merci de certifier l’exactitude de vos réponses.'));
+    const { app } = application({ valider });
+    await request(app)
+      .post('/questionnaire-investisseur/validation')
+      .set('Authorization', 'Bearer jeton')
+      .expect(400);
+    expect(valider).toHaveBeenCalledWith('u1', {});
+  });
+
   it('sans session : 401, le service n’est pas appelé', async () => {
     const lire = vi.fn();
     const { app } = application({ lire }, false);
     await request(app).get('/questionnaire-investisseur').expect(401);
     await request(app).put('/questionnaire-investisseur/etapes/1').expect(401);
+    await request(app).get('/questionnaire-investisseur/profil').expect(401);
+    await request(app).post('/questionnaire-investisseur/validation').expect(401);
     expect(lire).not.toHaveBeenCalled();
   });
 });

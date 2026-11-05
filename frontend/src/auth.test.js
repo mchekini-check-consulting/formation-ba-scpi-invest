@@ -19,7 +19,7 @@ function reponse(status, corps) {
 let fetchMock;
 
 beforeEach(() => {
-  localStorage.clear();
+  sessionStorage.clear();
   fetchMock = vi.fn();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -96,7 +96,7 @@ describe('utilisateurConnecte', () => {
   });
 
   it('GET /moi avec le jeton en Authorization: Bearer', async () => {
-    localStorage.setItem('scpi-invest.session', 'jeton-1');
+    sessionStorage.setItem('scpi-invest.session', 'jeton-1');
     fetchMock.mockResolvedValue(reponse(200, { id: 'u1', email: 'jean@exemple.fr' }));
     expect(await utilisateurConnecte('/api')).toEqual({ id: 'u1', email: 'jean@exemple.fr' });
     expect(fetchMock).toHaveBeenCalledWith('/api/moi', {
@@ -105,14 +105,14 @@ describe('utilisateurConnecte', () => {
   });
 
   it('session expirée (401) : jeton oublié', async () => {
-    localStorage.setItem('scpi-invest.session', 'jeton-1');
+    sessionStorage.setItem('scpi-invest.session', 'jeton-1');
     fetchMock.mockResolvedValue(reponse(401, { message: 'connexion requise' }));
     expect(await utilisateurConnecte('/api')).toBeNull();
     expect(jeton()).toBeNull();
   });
 
   it('panne : erreur', async () => {
-    localStorage.setItem('scpi-invest.session', 'jeton-1');
+    sessionStorage.setItem('scpi-invest.session', 'jeton-1');
     fetchMock.mockResolvedValue(reponse(503, {}));
     await expect(utilisateurConnecte('/api')).rejects.toBeInstanceOf(ErreurApi);
   });
@@ -120,7 +120,7 @@ describe('utilisateurConnecte', () => {
 
 describe('deconnecter', () => {
   it('ferme la session côté serveur et oublie le jeton', async () => {
-    localStorage.setItem('scpi-invest.session', 'jeton-1');
+    sessionStorage.setItem('scpi-invest.session', 'jeton-1');
     fetchMock.mockResolvedValue(reponse(200, { success: true }));
     await deconnecter('/api');
     expect(fetchMock.mock.calls[0][0]).toBe('/api/auth/sign-out');
@@ -129,7 +129,7 @@ describe('deconnecter', () => {
   });
 
   it('serveur injoignable : jeton oublié quand même', async () => {
-    localStorage.setItem('scpi-invest.session', 'jeton-1');
+    sessionStorage.setItem('scpi-invest.session', 'jeton-1');
     fetchMock.mockRejectedValue(new TypeError('réseau'));
     await expect(deconnecter('/api')).rejects.toThrow('réseau');
     expect(jeton()).toBeNull();

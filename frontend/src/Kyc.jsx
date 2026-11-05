@@ -32,7 +32,7 @@ export default function Kyc({
   }
 
   return (
-    <PageCompte titre="Bienvenue dans votre espace">
+    <PageCompte titre="Bienvenue dans votre espace" seDeconnecter={utilisateur ? quitter : undefined}>
       {isError && (
         <p className="compte__alerte" role="alert">
           Le service est momentanément indisponible, réessayez dans quelques instants.
@@ -50,13 +50,6 @@ export default function Kyc({
           <a className="compte__bouton" href="/profil-investisseur">
             Remplir mon profil investisseur
           </a>
-          <button
-            type="button"
-            className="compte__bouton compte__bouton--secondaire"
-            onClick={quitter}
-          >
-            Se déconnecter
-          </button>
         </>
       )}
     </PageCompte>

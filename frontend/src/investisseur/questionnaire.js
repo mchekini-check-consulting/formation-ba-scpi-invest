@@ -7,6 +7,7 @@ export const MESSAGES = {
   obligatoire: 'Merci de répondre à cette question.',
   montant: 'Merci de saisir un montant en euros supérieur à 0.',
   echec: 'Vos réponses n’ont pas pu être enregistrées. Veuillez réessayer.',
+  echecReinitialisation: 'Vos réponses n’ont pas pu être réinitialisées. Veuillez réessayer.',
 };
 
 const VRAI_FAUX = [

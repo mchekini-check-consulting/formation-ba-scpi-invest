@@ -2,6 +2,7 @@
 // Le blocage après 5 échecs et l'expiration de session relèvent de l'US-03b.
 import { useState } from 'react';
 import { connecter as connecterParDefaut } from '../auth.js';
+import { lireQuestionnaire } from '../investisseur/api.js';
 import PageCompte from '../PageCompte.jsx';
 import { destinationApresConnexion } from './destination.js';
 
@@ -12,6 +13,7 @@ function naviguer(url) {
 export default function Connexion({
   emailInitial = '',
   connecter = connecterParDefaut,
+  lireAvancement = lireQuestionnaire,
   allerA = naviguer,
 }) {
   const [email, setEmail] = useState(emailInitial);
@@ -28,8 +30,10 @@ export default function Connexion({
     setEnvoiEnCours(true);
     setErreur('');
     try {
-      const utilisateur = await connecter({ email: email.trim(), motDePasse });
-      allerA(destinationApresConnexion(utilisateur));
+      await connecter({ email: email.trim(), motDePasse });
+      // Avancement du formulaire investisseur ; indisponible : parcours par défaut
+      const avancement = await lireAvancement().catch(() => null);
+      allerA(destinationApresConnexion(avancement));
     } catch (err) {
       setErreur(err.message);
       setEnvoiEnCours(false);

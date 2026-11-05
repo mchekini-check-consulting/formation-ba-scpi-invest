@@ -103,16 +103,46 @@
   margin-top: 8px;
 }
 
+/* Boutons alignés, même largeur et même hauteur (l'espacement vertical entre
+   boutons empilés de compte.css ne s'applique pas sur une ligne) */
 .navigation .compte__bouton {
-  flex: 1;
+  flex: 1 1 0;
+  margin-top: 0;
+  padding: 0 12px;
 }
 
-.lien-bouton {
-  padding: 0;
-  border: 0;
-  background: none;
+/* Résultat du profil (US-05b) */
+.profil {
+  padding: 20px;
+  border-radius: 12px;
+  background: #eef3fc;
+  text-align: center;
+}
+
+.compte__carte .profil__intro {
+  margin: 0;
+  font-size: 14px;
+  color: var(--texte-secondaire);
+}
+
+.compte__carte .profil__nom {
+  margin: 4px 0 10px;
+  font-size: 28px;
+  font-weight: 800;
   color: var(--bleu);
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
+}
+
+.compte__carte .profil__explication {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.avertissement {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 4px solid #d97706;
+  border-radius: 8px;
+  background: #fff7ed;
+  font-size: 14px;
+  line-height: 1.5;
 }

@@ -1,10 +1,16 @@
 // Formulaire investisseur (US-05a) : questionnaire MIF2 en 5 étapes, réponses enregistrées
-// à chaque « Suivant » et reprise à la première étape non complétée. Le calcul du profil,
-// la certification et la validation relèvent de l'US-05b.
+// à chaque « Suivant » et reprise à la première étape non complétée ; à la fin, profil
+// calculé, certification et validation (US-05b, ResultatProfil.jsx).
 import { useEffect, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import PageCompte from '../PageCompte.jsx';
-import { enregistrerEtape, lireQuestionnaire } from './api.js';
+import {
+  enregistrerEtape,
+  lireProfil,
+  lireQuestionnaire,
+  reinitialiserEtape,
+  validerProfil,
+} from './api.js';
 import {
   ETAPES,
   MESSAGES,
@@ -14,6 +20,7 @@ import {
   questionsVisibles,
   reponsesAEnvoyer,
 } from './questionnaire.js';
+import ResultatProfil from './ResultatProfil.jsx';
 import './investisseur.css';
 
 function naviguer(url) {
@@ -49,7 +56,8 @@ function Question({ question, valeur, erreur, changer }) {
             type="text"
             inputMode="numeric"
             value={valeur ?? ''}
-            onChange={(e) => changer(e.target.value)}
+            // chiffres seulement : lettres et autres caractères ignorés (frappe ou collage)
+            onChange={(e) => changer(e.target.value.replace(/\D/g, ''))}
             aria-invalid={Boolean(erreur)}
             aria-describedby={idErreur}
           />
@@ -95,6 +103,9 @@ function Question({ question, valeur, erreur, changer }) {
 export default function FormulaireInvestisseur({
   lire = lireQuestionnaire,
   enregistrer = enregistrerEtape,
+  effacer = reinitialiserEtape,
+  calculerProfil = lireProfil,
+  valider = validerProfil,
   seDeconnecter = deconnecter,
   allerA = naviguer,
 }) {
@@ -109,6 +120,11 @@ export default function FormulaireInvestisseur({
     lire()
       .then((avancement) => {
         if (!actif) return;
+        // Formulaire déjà validé : il n'est plus proposé (US-05b, scénario 11)
+        if (avancement.valide) {
+          allerA('/catalogue');
+          return;
+        }
         setReponses(pourSaisie(avancement.reponses));
         setEtape(avancement.etapeCourante);
       })
@@ -150,6 +166,22 @@ export default function FormulaireInvestisseur({
     }
   }
 
+  // « Réinitialiser » : efface en base les réponses de l'étape affichée, et seulement
+  // elle, puis vide ses champs. En cas d'échec, les saisies restent à l'écran.
+  async function reinitialiser() {
+    setEnvoiEnCours(true);
+    setAlerte('');
+    try {
+      await effacer(etape);
+      setReponses({ ...reponses, [etape]: {} });
+      setErreurs({});
+    } catch {
+      setAlerte(MESSAGES.echecReinitialisation);
+    } finally {
+      setEnvoiEnCours(false);
+    }
+  }
+
   function precedent() {
     setErreurs({});
     setAlerte('');
@@ -161,17 +193,9 @@ export default function FormulaireInvestisseur({
     allerA('/');
   }
 
-  const deconnexion = (
-    <p className="compte__lien">
-      <button type="button" className="lien-bouton" onClick={quitter}>
-        Se déconnecter
-      </button>
-    </p>
-  );
-
   if (etape === null) {
     return (
-      <PageCompte titre="Formulaire investisseur">
+      <PageCompte titre="Formulaire investisseur" seDeconnecter={quitter}>
         {alerte ? (
           <p className="compte__alerte" role="alert">
             {alerte}
@@ -185,26 +209,20 @@ export default function FormulaireInvestisseur({
 
   if (etape > NOMBRE_ETAPES) {
     return (
-      <PageCompte titre="Formulaire investisseur">
-        <p className="compte__texte">Merci, vos réponses aux 5 étapes sont enregistrées.</p>
-        <p className="compte__texte">
-          Prochaine étape : le calcul de votre profil investisseur, bientôt disponible.
-        </p>
-        <button
-          type="button"
-          className="compte__bouton compte__bouton--secondaire"
-          onClick={() => setEtape(1)}
-        >
-          Revoir mes réponses
-        </button>
-        {deconnexion}
+      <PageCompte titre="Formulaire investisseur" seDeconnecter={quitter}>
+        <ResultatProfil
+          lireProfil={calculerProfil}
+          valider={valider}
+          modifier={() => setEtape(1)}
+          apresValidation={() => allerA('/catalogue')}
+        />
       </PageCompte>
     );
   }
 
   const { titre } = ETAPES[etape - 1];
   return (
-    <PageCompte titre="Formulaire investisseur" large>
+    <PageCompte titre="Formulaire investisseur" seDeconnecter={quitter} large>
       <div className="progression">
         <p className="progression__texte">
           Étape {etape}/{NOMBRE_ETAPES} — {titre}
@@ -248,12 +266,19 @@ export default function FormulaireInvestisseur({
               Précédent
             </button>
           )}
+          <button
+            type="button"
+            className="compte__bouton compte__bouton--secondaire"
+            onClick={reinitialiser}
+            disabled={envoiEnCours}
+          >
+            Réinitialiser
+          </button>
           <button type="submit" className="compte__bouton" disabled={envoiEnCours}>
             {envoiEnCours ? 'Enregistrement…' : 'Suivant'}
           </button>
         </div>
       </form>
-      {deconnexion}
     </PageCompte>
   );
 }

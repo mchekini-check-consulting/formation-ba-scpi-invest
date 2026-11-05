@@ -43,6 +43,13 @@
       "when": 1793802881691,
       "tag": "0005_questionnaire_investisseur",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793818113019,
+      "tag": "0006_profil_investisseur",
+      "breakpoints": true
     }
   ]
 }

@@ -53,6 +53,12 @@ describe('Routeur', () => {
     expect(titre()).toBe('Formulaire investisseur');
   });
 
+  it('/catalogue : écran du Catalogue (accès vérifié par Catalogue.jsx), mémorisé', () => {
+    afficher('/catalogue');
+    expect(titre()).toBe('Catalogue des SCPI');
+    expect(localStorage.getItem('scpi-invest.derniere-page')).toBe('/catalogue');
+  });
+
   it('/indicateurs : définitions des indicateurs', () => {
     afficher('/indicateurs');
     expect(titre()).toBe('Les indicateurs des SCPI, expliqués simplement.');

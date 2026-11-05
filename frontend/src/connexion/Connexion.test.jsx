@@ -4,7 +4,10 @@ import { ErreurApi } from '../auth.js';
 import Connexion from './Connexion.jsx';
 import { destinationApresConnexion } from './destination.js';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 const MDP = 'Tr0pBien!Choisi';
 
@@ -47,7 +50,8 @@ describe('Connexion', () => {
   it('scénario 1 : identifiants corrects, redirection vers le formulaire KYC', async () => {
     const connecter = vi.fn().mockResolvedValue({ id: 'u1', email: 'jean@exemple.fr' });
     const allerA = vi.fn();
-    render(<Connexion connecter={connecter} allerA={allerA} />);
+    const lireAvancement = vi.fn().mockResolvedValue({ etapeCourante: 1, valide: false });
+    render(<Connexion connecter={connecter} allerA={allerA} lireAvancement={lireAvancement} />);
     saisir('Adresse e-mail', ' jean@exemple.fr ');
     saisir('Mot de passe', MDP);
 
@@ -101,6 +105,54 @@ describe('Connexion', () => {
   });
 
   it('destination après connexion : formulaire KYC tant que le KYC n’existe pas', () => {
-    expect(destinationApresConnexion({ id: 'u1', email: 'jean@exemple.fr' })).toBe('/kyc');
+    expect(destinationApresConnexion({ etapeCourante: 3, valide: false })).toBe('/kyc');
+    expect(destinationApresConnexion(null)).toBe('/kyc');
+    expect(destinationApresConnexion({ etapeCourante: 6, valide: true })).toBe('/catalogue');
+  });
+
+  it('reconnexion : retour sur le dernier écran ouvert (formulaire investisseur)', async () => {
+    localStorage.setItem('scpi-invest.derniere-page', '/profil-investisseur');
+    const allerA = vi.fn();
+    render(
+      <Connexion
+        connecter={vi.fn().mockResolvedValue({ id: 'u1' })}
+        lireAvancement={vi.fn().mockResolvedValue({ etapeCourante: 6, valide: false })}
+        allerA={allerA}
+      />,
+    );
+    saisir('Adresse e-mail', 'jean@exemple.fr');
+    saisir('Mot de passe', MDP);
+    await envoyer();
+    expect(allerA).toHaveBeenCalledWith('/profil-investisseur');
+  });
+
+  it('US-05b scénario 11 : profil investisseur validé -> directement le Catalogue', async () => {
+    const allerA = vi.fn();
+    render(
+      <Connexion
+        connecter={vi.fn().mockResolvedValue({ id: 'u1' })}
+        lireAvancement={vi.fn().mockResolvedValue({ etapeCourante: 6, valide: true })}
+        allerA={allerA}
+      />,
+    );
+    saisir('Adresse e-mail', 'jean@exemple.fr');
+    saisir('Mot de passe', MDP);
+    await envoyer();
+    expect(allerA).toHaveBeenCalledWith('/catalogue');
+  });
+
+  it('avancement indisponible : parcours par défaut (/kyc)', async () => {
+    const allerA = vi.fn();
+    render(
+      <Connexion
+        connecter={vi.fn().mockResolvedValue({ id: 'u1' })}
+        lireAvancement={vi.fn().mockRejectedValue(new Error('panne'))}
+        allerA={allerA}
+      />,
+    );
+    saisir('Adresse e-mail', 'jean@exemple.fr');
+    saisir('Mot de passe', MDP);
+    await envoyer();
+    expect(allerA).toHaveBeenCalledWith('/kyc');
   });
 });

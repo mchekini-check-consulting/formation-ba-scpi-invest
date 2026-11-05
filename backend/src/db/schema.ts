@@ -127,6 +127,25 @@ export const questionnaireInvestisseur = pgTable('questionnaire_investisseur', {
   misAJourLe: horodatage('mis_a_jour_le').notNull().defaultNow(),
 });
 
+// US-05b : profil investisseur validé (traçabilité réglementaire MIF2) : profil, score,
+// réponses, avertissements affichés, date et heure de validation, version du
+// questionnaire. Plusieurs lignes possibles par utilisateur : une mise à jour (US-05d)
+// ajoute une ligne, l'ancienne est conservée (jamais écrasée).
+export const profilInvestisseur = pgTable(
+  'profil_investisseur',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+    utilisateurId: text('utilisateur_id').notNull(),
+    profil: text('profil').notNull(),
+    score: integer('score').notNull(),
+    reponses: jsonb('reponses').$type<ReponsesQuestionnaire>().notNull(),
+    avertissements: jsonb('avertissements').$type<string[]>().notNull().default([]),
+    versionQuestionnaire: text('version_questionnaire').notNull(),
+    valideLe: horodatage('valide_le').notNull().defaultNow(),
+  },
+  (t) => [index('profil_investisseur_utilisateur_id_idx').on(t.utilisateurId)],
+);
+
 // ---- Catalogue SCPI (import CSV, src/csv/)
 
 export const frequence = pgEnum('frequence', [

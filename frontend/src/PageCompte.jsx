@@ -1,9 +1,11 @@
 // Mise en page commune des écrans du compte (inscription, KYC, pages légales) :
-// en-tête avec le logo, carte centrée
+// en-tête avec le logo (et le bouton de déconnexion sur les écrans connectés : prop
+// seDeconnecter), carte centrée
+import BoutonDeconnexion from './BoutonDeconnexion.jsx';
 import './compte.css';
 import LogoIcone from './LogoIcone.jsx';
 
-export default function PageCompte({ titre, large = false, children }) {
+export default function PageCompte({ titre, large = false, seDeconnecter, children }) {
   return (
     <div className="compte">
       <header className="compte__entete">
@@ -13,6 +15,7 @@ export default function PageCompte({ titre, large = false, children }) {
             SCPI INVEST<span className="compte__logo-plus">+</span>
           </span>
         </a>
+        {seDeconnecter && <BoutonDeconnexion onClick={seDeconnecter} />}
       </header>
       <main className="compte__contenu">
         <section

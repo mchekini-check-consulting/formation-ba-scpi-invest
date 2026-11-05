@@ -1,7 +1,9 @@
 // Choix de l'écran selon l'adresse de la page (nginx renvoie index.html pour toute
 // adresse : nginx.conf). Navigation par liens classiques, sans bibliothèque de routage.
 import App from './App.jsx';
+import Catalogue from './catalogue/Catalogue.jsx';
 import Connexion from './connexion/Connexion.jsx';
+import { memoriserPage } from './connexion/destination.js';
 import Indicateurs from './Indicateurs.jsx';
 import Inscription from './inscription/Inscription.jsx';
 import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
@@ -24,6 +26,8 @@ export default function Routeur({
   recherche = window.location.search,
 }) {
   const page = chemin.replace(/\/+$/, '') || '/';
+  // Dernier écran du parcours, pour y revenir après une reconnexion (destination.js)
+  memoriserPage(page);
   if (page === '/inscription') {
     return <Inscription emailInitial={new URLSearchParams(recherche).get('email') ?? ''} />;
   }
@@ -35,6 +39,9 @@ export default function Routeur({
   }
   if (page === '/profil-investisseur') {
     return <FormulaireInvestisseur />;
+  }
+  if (page === '/catalogue') {
+    return <Catalogue />;
   }
   if (page === '/indicateurs') {
     return <Indicateurs />;

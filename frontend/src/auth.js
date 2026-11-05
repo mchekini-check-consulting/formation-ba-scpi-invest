@@ -4,11 +4,13 @@ import { apiBase } from './api.js';
 // backend aujourd'hui). La session est un jeton envoyé dans l'en-tête
 // "Authorization: Bearer", comme un jeton d'accès OIDC : passer à Keycloak revient à
 // réécrire ces fonctions (par exemple avec oidc-client-ts), sans toucher aux écrans.
+// Jeton gardé le temps de la session du navigateur (sessionStorage) : fermer le
+// navigateur déconnecte l'utilisateur.
 const CLE_JETON = 'scpi-invest.session';
 
 export function jeton() {
   try {
-    return localStorage.getItem(CLE_JETON);
+    return sessionStorage.getItem(CLE_JETON);
   } catch {
     return null;
   }
@@ -17,9 +19,9 @@ export function jeton() {
 function memoriser(valeur) {
   try {
     if (valeur) {
-      localStorage.setItem(CLE_JETON, valeur);
+      sessionStorage.setItem(CLE_JETON, valeur);
     } else {
-      localStorage.removeItem(CLE_JETON);
+      sessionStorage.removeItem(CLE_JETON);
     }
   } catch {
     // stockage indisponible (navigation privée stricte) : session limitée à la page
@@ -51,7 +53,8 @@ async function erreur(reponse) {
   return new ErreurApi(reponse.status, message);
 }
 
-// Envoie la demande, mémorise la session (7 jours) renvoyée par le backend
+// Envoie la demande, mémorise la session renvoyée par le backend (jusqu'à la fermeture
+// du navigateur, 7 jours au plus côté backend)
 async function ouvrirSession(url, demande) {
   const reponse = await fetch(url, {
     method: 'POST',

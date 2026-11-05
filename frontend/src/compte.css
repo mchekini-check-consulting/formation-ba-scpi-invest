@@ -28,9 +28,54 @@
 }
 
 .compte__entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   background: #fff;
   border-bottom: 1px solid var(--bordure);
   padding: 18px 24px;
+}
+
+/* Déconnexion mise en évidence : bouton rouge avec pictogramme (BoutonDeconnexion.jsx) */
+.bouton-deconnexion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--erreur);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--erreur);
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.bouton-deconnexion:hover,
+.bouton-deconnexion:focus-visible {
+  background: var(--erreur);
+  color: #fff;
+}
+
+.bouton-deconnexion svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 480px) {
+  .compte__entete {
+    padding: 14px 16px;
+  }
+
+  .bouton-deconnexion {
+    padding: 0 12px;
+  }
 }
 
 .compte .compte__logo {

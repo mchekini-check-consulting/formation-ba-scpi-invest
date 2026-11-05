@@ -1,8 +1,13 @@
 import { randomBytes } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import type { DepotQuestionnaires } from '../investisseur/service.js';
+import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.js';
 import type { Db } from './index.js';
-import { acceptationCgu, parametre, questionnaireInvestisseur } from './schema.js';
+import {
+  acceptationCgu,
+  parametre,
+  profilInvestisseur,
+  questionnaireInvestisseur,
+} from './schema.js';
 
 // Accès aux données (testé par test/*.e2e-test.ts sur une vraie base)
 
@@ -46,6 +51,30 @@ export function depotQuestionnaires(db: Db): DepotQuestionnaires {
           target: questionnaireInvestisseur.utilisateurId,
           set: { etapeCourante, reponses, versionQuestionnaire, misAJourLe: new Date() },
         });
+    },
+  };
+}
+
+// US-05b : profils validés, jamais modifiés (une mise à jour ajoute une ligne, US-05d)
+export function depotProfils(db: Db): DepotProfils {
+  return {
+    async existe(utilisateurId) {
+      const lignes = await db
+        .select({ id: profilInvestisseur.id })
+        .from(profilInvestisseur)
+        .where(eq(profilInvestisseur.utilisateurId, utilisateurId))
+        .limit(1);
+      return lignes.length > 0;
+    },
+    async enregistrer(utilisateurId, p) {
+      await db.insert(profilInvestisseur).values({
+        utilisateurId,
+        profil: p.profil,
+        score: p.score,
+        reponses: p.reponses,
+        avertissements: p.avertissements,
+        versionQuestionnaire: p.versionQuestionnaire,
+      });
     },
   };
 }

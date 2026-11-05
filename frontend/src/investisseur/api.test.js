@@ -1,11 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { enregistrerEtape, lireQuestionnaire } from './api.js';
+import {
+  enregistrerEtape,
+  lireProfil,
+  lireQuestionnaire,
+  reinitialiserEtape,
+  validerProfil,
+} from './api.js';
 
 let fetchMock;
 
 beforeEach(() => {
-  localStorage.clear();
-  localStorage.setItem('scpi-invest.session', 'jeton-1');
+  sessionStorage.clear();
+  sessionStorage.setItem('scpi-invest.session', 'jeton-1');
   fetchMock = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
@@ -35,6 +41,29 @@ describe('API du formulaire investisseur', () => {
     expect(options.method).toBe('PUT');
     expect(options.headers['Content-Type']).toBe('application/json');
     expect(JSON.parse(options.body)).toEqual({ objectifs: ['retraite'] });
+  });
+
+  it('reinitialiserEtape : DELETE de l’étape', async () => {
+    await reinitialiserEtape(2, '/api');
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/questionnaire-investisseur/etapes/2');
+    expect(options.method).toBe('DELETE');
+    expect(options.body).toBeUndefined();
+  });
+
+  it('lireProfil : GET du profil calculé (US-05b)', async () => {
+    await lireProfil('/api');
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/questionnaire-investisseur/profil');
+    expect(options.method).toBe('GET');
+  });
+
+  it('validerProfil : POST avec la certification (US-05b)', async () => {
+    await validerProfil('/api');
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/questionnaire-investisseur/validation');
+    expect(options.method).toBe('POST');
+    expect(JSON.parse(options.body)).toEqual({ certification: true });
   });
 
   it('session absente ou expirée : erreur 401', async () => {
