@@ -1,11 +1,15 @@
 // Contenu du formulaire KYC (US-04a, SCPI-21) : 4 étapes, leurs champs et les règles de
-// saisie. Tous les champs sont obligatoires, sauf `facultatif: true`. Un champ avec
-// `visible` n'est affiché (et contrôlé) que si la condition est vraie.
+// saisie, puis l'étape des pièces justificatives (US-04c, SCPI-44, règles dans pieces.js).
+// Tous les champs sont obligatoires, sauf `facultatif: true`. Un champ avec `visible` n'est
+// affiché (et contrôlé) que si la condition est vraie. Nationalité : liste de pays (pays.js).
 // L'enregistrement, la reprise et la validation relèvent de l'US-04b (SCPI-37).
+
+import { paysParNom } from './pays.js';
 
 export const MESSAGE_OBLIGATOIRE = 'Ce champ est obligatoire.';
 export const MESSAGE_MAJEUR = 'Vous devez être majeur pour ouvrir un compte.';
 export const MESSAGE_DATE = 'Merci de saisir une date de naissance valide.';
+export const MESSAGE_PAYS = 'Merci de choisir un pays dans la liste.';
 export const MESSAGE_TELEPHONE =
   'Merci de saisir un numéro de téléphone valide (10 chiffres minimum).';
 
@@ -33,7 +37,12 @@ export const ETAPES = [
         type: 'texte',
         aide: 'Ville et pays, par exemple : Lyon, France.',
       },
-      { nom: 'nationalite', libelle: 'Nationalité', type: 'texte' },
+      {
+        nom: 'nationalite',
+        libelle: 'Nationalité',
+        type: 'pays',
+        aide: 'Tapez le nom du pays pour le trouver.',
+      },
     ],
   },
   {
@@ -170,6 +179,8 @@ export const ETAPES = [
       },
     ],
   },
+  // US-04c : dépôt des fichiers (EtapePieces.jsx), pas de champ de saisie
+  { id: 'pieces', titre: 'Pièces justificatives', champs: [] },
 ];
 
 export function champsVisibles(etape, reponses) {
@@ -243,6 +254,8 @@ export function erreursEtape(etape, reponses, aujourdhui = new Date()) {
       if (message) erreurs[champ.nom] = message;
     } else if (champ.type === 'tel' && !telephoneValide(valeur)) {
       erreurs[champ.nom] = MESSAGE_TELEPHONE;
+    } else if (champ.type === 'pays' && !paysParNom(valeur)) {
+      erreurs[champ.nom] = MESSAGE_PAYS;
     }
   }
   return erreurs;

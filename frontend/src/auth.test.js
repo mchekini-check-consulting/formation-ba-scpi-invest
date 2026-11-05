@@ -5,6 +5,7 @@ import {
   connecter,
   creerCompte,
   deconnecter,
+  envoyerFichierConnecte,
   jeton,
   utilisateurConnecte,
 } from './auth.js';
@@ -157,5 +158,85 @@ describe('appelConnecte', () => {
     const err = await appelConnecte('/kyc', {}, '/api').catch((e) => e);
     expect(err).toBeInstanceOf(ErreurApi);
     expect(err.message).toContain('momentanément indisponible');
+  });
+});
+
+describe('appelConnecte : réponse sans contenu (204)', () => {
+  it('renvoie null sans lire de corps', async () => {
+    fetchMock.mockResolvedValue(reponse(204));
+    await expect(appelConnecte('/kyc/pieces/rib', { methode: 'DELETE' }, '/api')).resolves.toBe(
+      null,
+    );
+  });
+});
+
+// Faux XMLHttpRequest : garde la dernière requête ; repondre(status, corps) la termine
+class FauxXhr {
+  static derniere = null;
+  constructor() {
+    this.entetes = {};
+    this.upload = {};
+    FauxXhr.derniere = this;
+  }
+  open(methode, url) {
+    Object.assign(this, { methode, url });
+  }
+  setRequestHeader(nom, valeur) {
+    this.entetes[nom] = valeur;
+  }
+  send(corps) {
+    this.corps = corps;
+  }
+  avancer(loaded, total, lengthComputable = true) {
+    this.upload.onprogress({ loaded, total, lengthComputable });
+  }
+  repondre(status, corps) {
+    this.status = status;
+    this.responseText = corps === undefined ? '' : JSON.stringify(corps);
+    this.onload();
+  }
+}
+
+describe('envoyerFichierConnecte (US-04c)', () => {
+  beforeEach(() => vi.stubGlobal('XMLHttpRequest', FauxXhr));
+
+  it('PUT du fichier tel quel, avec son type, la session et l’avancement', async () => {
+    localStorage.setItem('scpi-invest.session', 'jeton-1');
+    const progression = vi.fn();
+    const fichier = new File(['%PDF-'], 'rib.pdf', { type: 'application/pdf' });
+    const envoi = envoyerFichierConnecte('/kyc/pieces/rib', fichier, { progression }, '/api');
+    const xhr = FauxXhr.derniere;
+    expect([xhr.methode, xhr.url, xhr.corps]).toEqual(['PUT', '/api/kyc/pieces/rib', fichier]);
+    expect(xhr.entetes).toEqual({
+      Authorization: 'Bearer jeton-1',
+      'Content-Type': 'application/pdf',
+    });
+    xhr.avancer(25, 100);
+    xhr.avancer(0, 0, false); // taille inconnue : ignoré
+    expect(progression.mock.calls).toEqual([[0.25]]);
+    xhr.repondre(200, { type: 'rib' });
+    expect(await envoi).toEqual({ type: 'rib' });
+  });
+
+  it('type inconnu : octet-stream ; refus -> message du backend', async () => {
+    const envoi = envoyerFichierConnecte('/kyc/pieces/rib', new File(['x'], 'scan'), {}, '/api');
+    expect(FauxXhr.derniere.entetes['Content-Type']).toBe('application/octet-stream');
+    FauxXhr.derniere.repondre(400, { message: 'Format non accepté' });
+    const err = await envoi.catch((e) => e);
+    expect(err).toBeInstanceOf(ErreurApi);
+    expect([err.status, err.message]).toEqual([400, 'Format non accepté']);
+  });
+
+  it('erreur serveur, réponse illisible ou réseau coupé : message générique', async () => {
+    const fichier = new File(['x'], 'a.pdf');
+    const serveur = envoyerFichierConnecte('/p', fichier, {}, '/api');
+    FauxXhr.derniere.status = 500;
+    FauxXhr.derniere.responseText = 'pas du JSON';
+    FauxXhr.derniere.onload();
+    expect((await serveur.catch((e) => e)).message).toContain('momentanément indisponible');
+    const reseau = envoyerFichierConnecte('/p', fichier);
+    FauxXhr.derniere.onerror();
+    const err = await reseau.catch((e) => e);
+    expect([err.status, err.message]).toEqual([0, expect.stringContaining('indisponible')]);
   });
 });

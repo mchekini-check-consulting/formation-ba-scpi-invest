@@ -43,6 +43,13 @@
       "when": 1793830866679,
       "tag": "0005_kyc",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793893968769,
+      "tag": "0006_kyc_pieces",
+      "breakpoints": true
     }
   ]
 }

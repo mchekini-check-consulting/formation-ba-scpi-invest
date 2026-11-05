@@ -40,7 +40,7 @@
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
   font-size: 13px;
   color: var(--texte-secondaire);
@@ -246,4 +246,215 @@
     grid-template-columns: 1fr;
     gap: 2px;
   }
+}
+
+/* Pièces justificatives (US-04c) */
+.kyc-pieces {
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.kyc-piece {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--cadre);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+}
+
+.kyc-piece--erreur {
+  border-color: var(--erreur);
+}
+
+.kyc-piece__texte {
+  flex: 1;
+  min-width: 0;
+}
+
+.kyc-piece__libelle {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.kyc-piece__fichier {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.kyc-piece__nom {
+  overflow-wrap: anywhere;
+}
+
+.kyc-piece__statut {
+  color: var(--succes);
+  font-weight: 600;
+}
+
+.kyc-piece__actions {
+  position: relative; /* repère du champ fichier masqué */
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  font-size: 14px;
+}
+
+/* Champ fichier natif masqué (mais focusable) ; à sa place, le bouton .kyc-piece__bouton,
+   comme les boutons secondaires (compte__bouton--secondaire) */
+.kyc-piece__champ {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.kyc-piece__bouton {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border: 1.5px solid var(--encre);
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--encre);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.kyc-piece__bouton:hover {
+  background: var(--papier);
+}
+
+.kyc-piece__champ:focus-visible + .kyc-piece__bouton {
+  box-shadow: 0 0 0 2px var(--bleu-vif);
+}
+
+.kyc-piece__champ--masque {
+  display: none;
+}
+
+/* Avancement de l'envoi (barre comme celle des étapes) */
+.kyc-piece__avancement {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--texte-secondaire);
+}
+
+.kyc-piece__avancement-texte {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+
+.kyc-piece__barre {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--papier);
+  overflow: hidden;
+}
+
+.kyc-piece__barre span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bleu-vif);
+  transition: width 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kyc-piece__barre span {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .kyc-piece {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .kyc-piece__actions {
+    align-items: flex-start;
+  }
+}
+
+/* Liste de pays avec drapeau (nationalité) */
+.choix-pays {
+  position: relative;
+}
+
+.choix-pays__saisie {
+  position: relative;
+}
+
+.choix-pays__saisie .choix-pays__drapeau {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.kyc .champ .choix-pays__champ--drapeau {
+  padding-left: 48px;
+}
+
+.choix-pays__drapeau {
+  flex: none;
+  width: 22px;
+  height: 16px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--bordure);
+}
+
+.choix-pays__liste {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 264px;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--cadre);
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgb(14 26 51 / 12%);
+}
+
+.choix-pays__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.choix-pays__option[data-actif='true'] {
+  background: var(--papier);
+}
+
+.choix-pays__option[aria-selected='true'] {
+  font-weight: 600;
+  color: var(--bleu-vif);
+}
+
+.choix-pays__vide {
+  padding: 8px 12px;
+  color: var(--texte-secondaire);
 }
