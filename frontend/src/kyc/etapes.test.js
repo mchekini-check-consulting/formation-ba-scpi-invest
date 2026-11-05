@@ -4,6 +4,7 @@ import {
   MESSAGE_DATE,
   MESSAGE_MAJEUR,
   MESSAGE_OBLIGATOIRE,
+  MESSAGE_PAYS,
   MESSAGE_TELEPHONE,
   age,
   champsVisibles,
@@ -17,13 +18,15 @@ const [identite, coordonnees, situation, declarations] = ETAPES;
 const AUJOURDHUI = new Date(2026, 10, 4); // 4 novembre 2026
 
 describe('Contenu du KYC (US-04a)', () => {
-  it('4 étapes dans l’ordre de la story, avec leurs champs', () => {
+  it('4 étapes dans l’ordre de la story, avec leurs champs, puis les pièces (US-04c)', () => {
     expect(ETAPES.map((e) => e.titre)).toEqual([
       'Identité',
       'Coordonnées',
       'Situation personnelle et professionnelle',
       'Déclarations réglementaires',
+      'Pièces justificatives',
     ]);
+    expect(ETAPES[4].champs).toEqual([]);
     const noms = (e) => e.champs.map((c) => c.nom);
     expect(noms(identite)).toEqual([
       'civilite',
@@ -85,6 +88,11 @@ describe('Règles de saisie', () => {
     expect(telephoneValide('06 12 AB 56 78')).toBe(false);
     expect(telephoneValide('1234567890123456')).toBe(false);
     expect(erreursEtape(coordonnees, { telephone: '0612' }).telephone).toBe(MESSAGE_TELEPHONE);
+  });
+
+  it('nationalité : un pays de la liste (US-04c)', () => {
+    expect(erreursEtape(identite, { nationalite: 'France' }).nationalite).toBeUndefined();
+    expect(erreursEtape(identite, { nationalite: 'Française' }).nationalite).toBe(MESSAGE_PAYS);
   });
 
   it('origine des fonds : au moins un choix', () => {

@@ -32,8 +32,8 @@ export const CHAMPS_KYC: Champ[] = [
   { nom: 'usPerson' },
 ];
 
-// Étapes 1 à 4, puis 5 = récapitulatif avant validation
-export const ETAPE_RECAPITULATIF = 5;
+// Étapes 1 à 4, 5 = pièces justificatives (US-04c), puis 6 = récapitulatif avant validation
+export const ETAPE_RECAPITULATIF = 6;
 
 const LONGUEUR_MAX = 300;
 const CHOIX_MAX = 20;

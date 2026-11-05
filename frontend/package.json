@@ -15,6 +15,7 @@
     "@fontsource-variable/fraunces": "^5.3.0",
     "@fontsource/figtree": "^5.3.0",
     "@tanstack/react-query": "^5.104.5",
+    "flag-icons": "^7.6.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.5.1"

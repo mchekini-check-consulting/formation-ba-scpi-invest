@@ -6,10 +6,13 @@ import { creerAuth, fournisseurBetterAuth } from './auth/better-auth.js';
 import { routesComptes } from './comptes/routes.js';
 import { demarrerImportNocturne } from './csv/planification.js';
 import { creerCompteService } from './comptes/service.js';
-import { depotAcceptationsCgu, depotKyc, secretDesSessions } from './db/depots.js';
+import { depotAcceptationsCgu, depotKyc, depotPieces, secretDesSessions } from './db/depots.js';
 import { createDb, createPool } from './db/index.js';
+import { routesPiecesKyc } from './kyc/pieces-routes.js';
+import { creerPiecesService } from './kyc/pieces-service.js';
 import { routesKyc } from './kyc/routes.js';
 import { creerKycService } from './kyc/service.js';
+import { stockagePieces } from './kyc/stockage.js';
 import { logger } from './logging/logger.js';
 import { migrate } from './migrate.js';
 
@@ -24,6 +27,8 @@ const fournisseur = fournisseurBetterAuth(auth);
 const betterAuth: RequestHandler = toNodeHandler(auth);
 const comptes = creerCompteService(fournisseur, depotAcceptationsCgu(db));
 const kyc = creerKycService(depotKyc(db));
+// US-04c : fichiers des pièces dans R2 (dépôt indisponible, 503, sans les variables R2)
+const pieces = creerPiecesService(depotKyc(db), depotPieces(db), stockagePieces());
 
 // US-07a : import du catalogue au démarrage puis chaque nuit à 2h (désactivé sans les variables R2)
 demarrerImportNocturne(pool, db);
@@ -31,5 +36,9 @@ demarrerImportNocturne(pool, db);
 const port = Number(process.env.PORT ?? 8080);
 createApp(() => db.execute(sql`select 1`), logger, {
   auth: betterAuth,
-  routeurs: [routesComptes(comptes, fournisseur), routesKyc(kyc, fournisseur)],
+  routeurs: [
+    routesComptes(comptes, fournisseur),
+    routesKyc(kyc, fournisseur),
+    routesPiecesKyc(pieces, fournisseur),
+  ],
 }).listen(port, () => logger.info({ port }, 'backend démarré'));

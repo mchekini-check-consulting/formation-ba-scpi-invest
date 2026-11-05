@@ -6,7 +6,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { deconnecter, utilisateurConnecte } from '../auth.js';
 import PageCompte from '../PageCompte.jsx';
-import { ECRAN_APRES_KYC, enregistrerKyc, lireKyc, validerKyc } from './api.js';
+import {
+  ECRAN_APRES_KYC,
+  deposerPiece,
+  enregistrerKyc,
+  lireKyc,
+  listerPieces,
+  supprimerPiece,
+  validerKyc,
+} from './api.js';
 import FormulaireKyc from './FormulaireKyc.jsx';
 
 function naviguer(url) {
@@ -18,6 +26,9 @@ export default function Kyc({
   lire = lireKyc,
   enregistrer = enregistrerKyc,
   valider = validerKyc,
+  lirePieces = listerPieces,
+  deposer = deposerPiece,
+  supprimer = supprimerPiece,
   seDeconnecter = deconnecter,
   allerA = naviguer,
   aujourdhui,
@@ -35,6 +46,13 @@ export default function Kyc({
     retry: false,
   });
   const kyc = kycQuery.data;
+  // US-04c : pièces déjà déposées (reprise de l'étape « Pièces justificatives »)
+  const piecesQuery = useQuery({
+    queryKey: ['kyc-pieces'],
+    queryFn: () => lirePieces(),
+    enabled: kyc?.statut === 'en_cours',
+    retry: false,
+  });
 
   useEffect(() => {
     if (utilisateur === null) allerA('/');
@@ -53,7 +71,7 @@ export default function Kyc({
     allerA('/');
   }
 
-  const indisponible = utilisateurQuery.isError || kycQuery.isError;
+  const indisponible = utilisateurQuery.isError || kycQuery.isError || piecesQuery.isError;
 
   return (
     <PageCompte titre="Connaissance client (KYC)" large>
@@ -69,15 +87,20 @@ export default function Kyc({
             des fonds investis (lutte contre le blanchiment). Ce formulaire est obligatoire avant
             d’accéder à l’application.
           </p>
-          {kycQuery.isPending && <p className="kyc__chargement">Chargement de votre dossier…</p>}
-          {kyc?.statut === 'en_cours' && (
+          {(kycQuery.isPending || (kyc?.statut === 'en_cours' && piecesQuery.isPending)) && (
+            <p className="kyc__chargement">Chargement de votre dossier…</p>
+          )}
+          {kyc?.statut === 'en_cours' && piecesQuery.data && (
             <FormulaireKyc
               email={utilisateur.email}
               aujourdhui={aujourdhui}
               etapeInitiale={kyc.etape}
               reponsesInitiales={kyc.reponses}
+              piecesInitiales={piecesQuery.data}
               enregistrer={enregistrer}
               valider={valider}
+              deposerPiece={deposer}
+              supprimerPiece={supprimer}
               apresValidation={() => allerA(ECRAN_APRES_KYC)}
             />
           )}
