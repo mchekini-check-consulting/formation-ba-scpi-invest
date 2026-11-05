@@ -23,7 +23,7 @@ export function Logo({ clair = false }) {
 
 // Lien interne : navigation React Router (sans rechargement, donc animée) ; simple lien
 // quand l'écran est affiché hors routeur (tests unitaires d'un écran seul)
-function LienInterne({ to, state, ...props }) {
+export function LienInterne({ to, state, ...props }) {
   return useInRouterContext() ? (
     <Link to={to} state={state} {...props} />
   ) : (
