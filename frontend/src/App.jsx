@@ -1,43 +1,60 @@
 // Page d'accueil SCPI Invest+ : textes de la maquette « 0 · Landing page »,
-// visuel de la maquette « Landing_v3 · version photo » ;
+// visuel du modèle retenu « bleu éditorial » (mockups/accueil.html) ;
 // présente la plateforme et donne accès à l'inscription et à la connexion
 import './App.css';
-import LogoIcone from './LogoIcone.jsx';
+import { EnTete, LienCompte, Logo } from './MiseEnPage.jsx';
 
 // « Comment ça marche » décrit le parcours ; « Pourquoi choisir » ne garde que ce qui
 // distingue la plateforme, sans répéter les étapes
 const ETAPES = [
   {
-    n: '1',
+    n: '01',
     titre: 'Recherchez',
     texte: 'Filtrez les SCPI selon rendement, stratégie, zone, ticket d’entrée et frais.',
   },
   {
-    n: '2',
+    n: '02',
     titre: 'Comparez',
     texte: 'Jusqu’à 4 SCPI côte à côte, la meilleure valeur mise en avant.',
   },
   {
-    n: '3',
+    n: '03',
     titre: 'Souscrivez',
     texte:
       'Directement auprès de la société de gestion : aucun fonds ne transite par la plateforme.',
   },
   {
-    n: '4',
+    n: '04',
     titre: 'Suivez',
     texte: 'Importez vos relevés : tout votre portefeuille réuni sur un seul tableau de bord.',
   },
 ];
 
+// Icônes reprises dans le bandeau visuel du héros et dans les avantages
+const ICONE_IMPORT = (
+  <>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="M17 8l-5-5-5 5" />
+    <path d="M12 3v12" />
+  </>
+);
+const ICONE_BOUCLIER = <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
+
+// Grille éditoriale : un grand bloc bleu ciel, un bloc sombre, puis trois cartes
 const AVANTAGES = [
   {
+    style: 'grand',
     titre: 'La santé des SCPI, pas seulement leur rendement',
     texte:
       'Endettement, réserves, parts en attente : un code couleur vous montre en un coup d’œil si une SCPI est solide ou à surveiller.',
     icone: <path d="M3 12h4l3-8 4 16 3-8h4" />,
+    jauges: [
+      { texte: 'Solide', couleur: 'var(--vert)' },
+      { texte: 'À surveiller', couleur: 'var(--orange)' },
+    ],
   },
   {
+    style: 'sombre',
     titre: 'Une commission identique pour toutes',
     texte:
       'Nous percevons la même commission sur chaque SCPI partenaire. Elle est affichée, et elle n’influence donc pas le classement.',
@@ -57,18 +74,12 @@ const AVANTAGES = [
   {
     titre: 'Import automatique des relevés',
     texte: 'Vos PDF sont lus automatiquement, sans saisie, quelle que soit la société de gestion.',
-    icone: (
-      <>
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <path d="M17 8l-5-5-5 5" />
-        <path d="M12 3v12" />
-      </>
-    ),
+    icone: ICONE_IMPORT,
   },
   {
     titre: 'Votre argent reste chez vous',
     texte: 'Aucun fonds ne transite par la plateforme : vous réglez directement la SCPI.',
-    icone: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+    icone: ICONE_BOUCLIER,
   },
 ];
 
@@ -98,253 +109,306 @@ const LIENS_LEGAUX = [
   { href: '/contact', texte: 'Contact' },
 ];
 
-function Logo({ className = '' }) {
+const MENU = [
+  { href: '#fonctionnement', texte: 'Comment ça marche' },
+  { href: '#avantages', texte: 'Avantages' },
+  { href: '#faq', texte: 'FAQ' },
+];
+
+const AVANT = [
+  {
+    titre: 'Trop de choix, peu de repères',
+    texte: 'Comparer rendement, frais et stratégie demande des heures de lecture.',
+    icone: (
+      <>
+        <circle cx="11" cy="11" r="7" />
+        <path d="M20 20l-4-4M8 11h6" />
+      </>
+    ),
+  },
+  {
+    titre: 'Des indicateurs obscurs',
+    texte: 'TOF, WALT, report à nouveau : des termes techniques rarement expliqués.',
+    icone: (
+      <>
+        <path d="M12 3l9 16H3z" />
+        <path d="M12 10v4M12 17v.5" />
+      </>
+    ),
+  },
+  {
+    titre: 'Un portefeuille éclaté',
+    texte: 'Un espace client par société de gestion, aucune vue d’ensemble.',
+    icone: (
+      <>
+        <rect x="3" y="4" width="7" height="7" rx="1" />
+        <rect x="14" y="13" width="7" height="7" rx="1" />
+        <path d="M10 7.5h4v5.5" />
+      </>
+    ),
+  },
+];
+
+const CHIFFRES = [
+  { valeur: '4', texte: 'SCPI comparées côte à côte' },
+  { valeur: '37', texte: 'indicateurs définis simplement' },
+  { valeur: '1', texte: 'commission identique pour toutes les SCPI partenaires' },
+  { valeur: '0 €', texte: 'ne transite par la plateforme' },
+];
+
+const SANTE = [
+  { critere: 'Endettement', etat: 'ok', texte: 'Solide' },
+  { critere: 'Réserves', etat: 'ok', texte: 'Solide' },
+  { critere: 'Parts en attente', etat: 'alerte', texte: 'À surveiller' },
+];
+
+function Coche() {
   return (
-    <span className={`logo ${className}`}>
-      SCPI INVEST<span className="logo__plus">+</span>
-    </span>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 12l5 5 9-10" />
+    </svg>
   );
 }
 
-// Immeubles décoratifs (fenêtres, porte, toits) : groupe d'immeubles de la section
-// « Pourquoi choisir » ; couleurs dans App.css
-const QUARTIER = {
-  largeur: 340,
-  sol: 270,
-  immeubles: [
-    { x: 14, largeur: 92, hauteur: 150, toit: 'pointe' },
-    { x: 116, largeur: 108, hauteur: 224, toit: 'antenne' },
-    { x: 234, largeur: 92, hauteur: 124, toit: 'etage' },
-  ],
-};
-
-// Grille de fenêtres de 8 × 10, centrée sur la façade, au-dessus du rez-de-chaussée
-function fenetres({ x, largeur, hauteur }, sol) {
-  const colonnes = Math.floor((largeur - 28) / 16) + 1;
-  const debut = x + (largeur - (colonnes - 1) * 16 - 8) / 2;
-  const liste = [];
-  for (let y = sol - hauteur + 14; y <= sol - 44; y += 18) {
-    for (let c = 0; c < colonnes; c += 1) {
-      liste.push([debut + c * 16, y]);
-    }
-  }
-  return liste;
-}
-
-function Toit({ x, largeur, hauteur, toit, sol }) {
-  const haut = sol - hauteur;
-  const milieu = x + largeur / 2;
-  if (toit === 'antenne') {
-    return <path className="immeubles__antenne" d={`M${milieu} ${haut}v-26`} />;
-  }
-  if (toit === 'pointe') {
-    return <path d={`M${x} ${haut}L${milieu} ${haut - 22}L${x + largeur} ${haut}z`} />;
-  }
-  if (toit === 'etage') {
-    return <rect x={x + largeur / 4} y={haut - 16} width={largeur / 2} height="16" />;
-  }
-  return null;
-}
-
-function Immeubles({ className, plan: { largeur, sol, immeubles } }) {
+function Icone({ children }) {
   return (
-    <svg className={`immeubles ${className}`} aria-hidden="true" viewBox={`0 0 ${largeur} ${sol}`}>
-      {immeubles.map((i) => (
-        <g key={i.x}>
-          <g className="immeubles__facade">
-            <rect x={i.x} y={sol - i.hauteur} width={i.largeur} height={i.hauteur} />
-            <Toit {...i} sol={sol} />
-          </g>
-          <g className="immeubles__fenetre">
-            {fenetres(i, sol).map(([fx, fy]) => (
-              <rect key={`${fx}-${fy}`} x={fx} y={fy} width="8" height="10" rx="1" />
-            ))}
-            <rect x={i.x + i.largeur / 2 - 7} y={sol - 22} width="14" height="22" rx="1" />
-          </g>
-        </g>
-      ))}
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {children}
     </svg>
+  );
+}
+
+// Bandeau visuel du héros : photo avec deux étiquettes, panneau sombre « santé des SCPI »
+function Vitrine() {
+  return (
+    <div className="vitrine">
+      <div className="vitrine__photo">
+        <div className="vitrine__bloc" />
+        <p className="puce puce--1">
+          <strong>4 SCPI</strong>côte à côte, la meilleure valeur
+          <br />
+          mise en avant
+        </p>
+        <p className="puce puce--2">
+          <strong>1 tableau</strong>de bord pour tout
+          <br />
+          votre portefeuille
+        </p>
+      </div>
+      <div className="vitrine__sombre">
+        <span className="etiquette">Santé des SCPI</span>
+        <p className="vitrine__titre">Solide ou à surveiller, en un coup d’œil.</p>
+        <ul className="sante">
+          {SANTE.map((l) => (
+            <li key={l.critere} className="sante__ligne">
+              {l.critere} <span className={`feu feu--${l.etat}`}>{l.texte}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="vitrine__bas">
+          <p className="mini">
+            <span className="mini__icone">
+              <Icone>{ICONE_IMPORT}</Icone>
+            </span>
+            Vos PDF sont lus automatiquement, sans saisie.
+          </p>
+          <p className="mini">
+            <span className="mini__icone">
+              <Icone>{ICONE_BOUCLIER}</Icone>
+            </span>
+            Vous réglez directement la SCPI.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
 function App() {
   return (
-    <div className="landing">
-      <header className="header">
-        <div className="container header__inner">
-          <a href="/" className="logo-lien" aria-label="SCPI Invest+ — accueil">
-            <LogoIcone />
-            <Logo />
-          </a>
-          <nav aria-label="Navigation" className="header__nav">
-            <a href="#fonctionnement">Comment ça marche</a>
-            <a href="#avantages">Avantages</a>
-            <a href="#faq">FAQ</a>
-          </nav>
-          <div className="actions">
-            <a href="/connexion" className="btn btn--outline">
-              Se connecter
-            </a>
-            <a href="/inscription" className="btn btn--primary">
-              Créer mon compte
-            </a>
-          </div>
-        </div>
-      </header>
+    <div className="cadre accueil">
+      <EnTete menu={MENU} />
 
       <main>
-        <section className="hero">
-          <div className="container hero__inner">
-            <div className="hero__text">
-              <p className="eyebrow eyebrow--light">La plateforme des investisseurs en SCPI</p>
-              <h1 className="hero__title">
-                Choisissez vos SCPI <span className="hero__accent">en confiance.</span> Suivez-les
-                toutes au même endroit.
+        <section className="panneau heros">
+          <div className="heros__haut">
+            <div>
+              <p className="surtitre">La plateforme des investisseurs en SCPI</p>
+              <h1 className="titre">
+                Choisissez vos SCPI <em>en confiance.</em> Suivez-les toutes au même endroit.
               </h1>
-              <p className="hero__lead">
+            </div>
+            <div className="heros__droite">
+              <p className="heros__chapeau">
                 Comparez les SCPI selon vos critères, comprenez leurs indicateurs et regroupez tout
                 votre portefeuille grâce à l’import automatique de vos relevés.
               </p>
-              <div className="actions">
-                <a href="/inscription" className="btn btn--primary btn--lg">
+              <div className="heros__actions">
+                <LienCompte
+                  vers="inscription"
+                  origine="heros-inscription"
+                  className="btn btn--bleu btn--lg"
+                  fleche
+                >
                   Créer mon compte
-                </a>
-                <a href="/connexion" className="btn btn--outline btn--lg">
+                </LienCompte>
+                <LienCompte
+                  vers="connexion"
+                  origine="heros-connexion"
+                  className="btn btn--contour btn--lg"
+                >
                   J’ai déjà un compte
-                </a>
+                </LienCompte>
               </div>
-              <ul className="hero__note">
-                <li>Sans engagement</li>
-                <li>Aucun fonds ne transite par la plateforme</li>
+              <ul className="heros__notes">
+                <li>
+                  <Coche />
+                  Sans engagement
+                </li>
+                <li>
+                  <Coche />
+                  Aucun fonds ne transite par la plateforme
+                </li>
               </ul>
             </div>
           </div>
+          <Vitrine />
         </section>
 
-        <section className="section section--cercles">
-          <div className="container stack">
-            <div className="intro">
-              <h2 className="titre-section">Investir en SCPI ne devrait pas être un casse-tête.</h2>
-              <p className="intro__texte">
-                Des centaines de SCPI, des indicateurs difficiles à comparer, des relevés éparpillés
-                chez plusieurs sociétés de gestion… SCPI INVEST+ remet de la clarté à chaque étape.
-              </p>
-            </div>
-            <div className="grille">
-              <div className="carte">
-                <svg className="carte__icone" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M20 20l-4-4M8 11h6" />
-                </svg>
-                <p className="carte__avant">Avant</p>
-                <h3>Trop de choix, peu de repères</h3>
-                <p>Comparer rendement, frais et stratégie demande des heures de lecture.</p>
-              </div>
-              <div className="carte">
-                <svg className="carte__icone" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 3l9 16H3z" />
-                  <path d="M12 10v4M12 17v.5" />
-                </svg>
-                <p className="carte__avant">Avant</p>
-                <h3>Des indicateurs obscurs</h3>
-                <p>TOF, WALT, report à nouveau : des termes techniques rarement expliqués.</p>
-              </div>
-              <div className="carte">
-                <svg className="carte__icone" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="3" y="4" width="7" height="7" rx="1" />
-                  <rect x="14" y="13" width="7" height="7" rx="1" />
-                  <path d="M10 7.5h4v5.5" />
-                </svg>
-                <p className="carte__avant">Avant</p>
-                <h3>Un portefeuille éclaté</h3>
-                <p>Un espace client par société de gestion, aucune vue d’ensemble.</p>
-              </div>
-            </div>
+        <ul className="chiffres">
+          {CHIFFRES.map((c) => (
+            <li key={c.valeur} className="chiffre">
+              <strong>{c.valeur}</strong>
+              <span>{c.texte}</span>
+            </li>
+          ))}
+        </ul>
+
+        <section className="section section--probleme">
+          <div className="intro">
+            <h2 className="titre-section">
+              Investir en SCPI ne devrait pas être <em>un casse-tête.</em>
+            </h2>
+            <p>
+              Des centaines de SCPI, des indicateurs difficiles à comparer, des relevés éparpillés
+              chez plusieurs sociétés de gestion… SCPI INVEST+ remet de la clarté à chaque étape.
+            </p>
           </div>
-        </section>
-
-        <section id="fonctionnement" className="section section--sombre">
-          <div className="container stack">
-            <div className="entete-centre">
-              <p className="eyebrow eyebrow--light">Comment ça marche</p>
-              <h2 className="titre-section">De la recherche au suivi, en 4 étapes</h2>
-            </div>
-            <ol className="etapes">
-              {ETAPES.map((e) => (
-                <li key={e.n} className="etape">
-                  <span className="etape__numero">{e.n}</span>
-                  <h3>{e.titre}</h3>
-                  <p>{e.texte}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        <section id="avantages" className="section">
-          <Immeubles className="decor-quartier" plan={QUARTIER} />
-          <div className="container stack">
-            <h2 className="titre-section intro">Pourquoi choisir SCPI INVEST+</h2>
-            <div className="grille grille--avantages">
-              {AVANTAGES.map((a) => (
-                <div key={a.titre} className="avantage">
-                  <span className="avantage__icone">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      {a.icone}
-                    </svg>
+          <div className="avant">
+            {AVANT.map((a) => (
+              <div key={a.titre} className="carte">
+                <div className="carte__haut">
+                  <span className="carte__icone">
+                    <Icone>{a.icone}</Icone>
                   </span>
-                  <h3>{a.titre}</h3>
-                  <p>{a.texte}</p>
-                  {a.lien && (
-                    <a href={a.lien.href} className="avantage__lien">
-                      {a.lien.texte} →
-                    </a>
-                  )}
+                  <span className="carte__avant">Avant</span>
                 </div>
-              ))}
-            </div>
+                <h3>{a.titre}</h3>
+                <p>{a.texte}</p>
+              </div>
+            ))}
           </div>
         </section>
 
-        <section id="faq" className="section section--blanc">
-          <div className="container container--etroit faq">
-            <h2 className="titre-section faq__titre">Questions fréquentes</h2>
-            {FAQ.map((f) => (
-              <details key={f.q} className="faq__item">
-                <summary>{f.q}</summary>
-                <p>{f.r}</p>
-              </details>
+        <section id="fonctionnement" className="etapes-bloc">
+          <p className="surtitre">Comment ça marche</p>
+          <h2 className="titre-section">
+            De la recherche au suivi, <em>en 4 étapes</em>
+          </h2>
+          <ol className="etapes">
+            {ETAPES.map((e, i) => (
+              <li key={e.n} className="etape">
+                <span className="etape__n" aria-hidden="true">
+                  {e.n}
+                </span>
+                <div className="etape__trait">
+                  <i style={{ width: `${((i + 1) / ETAPES.length) * 100}%` }} />
+                </div>
+                <h3>{e.titre}</h3>
+                <p>{e.texte}</p>
+              </li>
             ))}
+          </ol>
+        </section>
+
+        <section id="avantages" className="section panneau section--avantages">
+          <p className="surtitre">Avantages</p>
+          <h2 className="titre-section">
+            Pourquoi choisir <em>SCPI INVEST+</em>
+          </h2>
+          <div className="avantages">
+            {AVANTAGES.map((a) => (
+              <div key={a.titre} className={a.style ? `avantage avantage--${a.style}` : 'avantage'}>
+                <span className="avantage__icone">
+                  <Icone>{a.icone}</Icone>
+                </span>
+                <h3>{a.titre}</h3>
+                <p>{a.texte}</p>
+                {a.jauges && (
+                  <ul className="jauges">
+                    {a.jauges.map((j) => (
+                      <li key={j.texte} style={{ '--c': j.couleur }}>
+                        {j.texte}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {a.lien && (
+                  <a href={a.lien.href} className="avantage__lien">
+                    {a.lien.texte} →
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section id="faq" className="section section--faq">
+          <div className="faq">
+            <div className="faq__titre">
+              <p className="surtitre">FAQ</p>
+              <h2 className="titre-section">
+                Questions <em>fréquentes</em>
+              </h2>
+            </div>
+            <div>
+              {FAQ.map((f, i) => (
+                <details key={f.q} open={i === 0}>
+                  <summary>{f.q}</summary>
+                  <p>{f.r}</p>
+                </details>
+              ))}
+            </div>
           </div>
         </section>
       </main>
 
-      <footer className="footer">
-        <div className="container footer__inner">
-          <div className="footer__haut">
-            <Logo className="logo--footer" />
-            <nav aria-label="Liens légaux">
-              <ul className="footer__nav">
-                {LIENS_LEGAUX.map((l) => (
-                  <li key={l.href}>
-                    <a href={l.href}>{l.texte}</a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </div>
-          <p className="footer__mention">
-            Les SCPI sont des placements immobiliers à long terme, présentant un risque de perte en
-            capital, sans garantie de rendement ni de liquidité. Les performances passées ne
-            préjugent pas des performances futures.
-          </p>
-          <p className="footer__mention">
-            SCPI INVEST+ exerce son activité avec son partenaire agréé, Marc Delorme, conseiller en
-            investissements financiers (CIF), immatriculé à l’ORIAS sous le numéro 08066027
-            (www.orias.fr) et adhérent de l’AFCP, association agréée par l’Autorité des marchés
-            financiers (AMF).
-          </p>
+      <footer className="pied">
+        <div className="pied__haut">
+          <span className="logo">
+            <Logo clair />
+          </span>
+          <nav aria-label="Liens légaux">
+            <ul className="pied__liens">
+              {LIENS_LEGAUX.map((l) => (
+                <li key={l.href}>
+                  <a href={l.href}>{l.texte}</a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
+        <p className="pied__mention">
+          Les SCPI sont des placements immobiliers à long terme, présentant un risque de perte en
+          capital, sans garantie de rendement ni de liquidité. Les performances passées ne préjugent
+          pas des performances futures.
+        </p>
+        <p className="pied__mention">
+          SCPI INVEST+ exerce son activité avec son partenaire agréé, Marc Delorme, conseiller en
+          investissements financiers (CIF), immatriculé à l’ORIAS sous le numéro 08066027
+          (www.orias.fr) et adhérent de l’AFCP, association agréée par l’Autorité des marchés
+          financiers (AMF).
+        </p>
       </footer>
     </div>
   );

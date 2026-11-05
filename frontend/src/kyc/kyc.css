@@ -1,4 +1,4 @@
-/* Formulaire KYC (US-04a) : complète compte.css (mêmes couleurs, mêmes champs) */
+/* Formulaire KYC (US-04a) : complète compte.css (modèle « bleu éditorial ») */
 .kyc__intro {
   margin-bottom: 24px;
   font-size: 15px;
@@ -12,16 +12,18 @@
 }
 
 .kyc-progression__texte {
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--bleu);
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bleu-vif);
 }
 
 .kyc-progression__barre {
-  height: 8px;
+  height: 4px;
   border-radius: 999px;
-  background: var(--bordure);
+  background: var(--papier);
   overflow: hidden;
 }
 
@@ -60,9 +62,10 @@
 /* Étape */
 .kyc__titre-etape {
   margin: 0;
-  font-family: Manrope, sans-serif;
-  font-size: 20px;
-  font-weight: 800;
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
 }
 
 .kyc__titre-etape:focus {
@@ -79,32 +82,8 @@
   grid-column: 1 / -1;
 }
 
-/* Champs absents de compte.css */
-.kyc .champ input[type='date'],
-.kyc .champ input[type='tel'],
-.kyc .champ select {
-  width: 100%;
-  min-height: 46px;
-  padding: 0 14px;
-  border: 1px solid var(--bordure-champ);
-  border-radius: 8px;
-  font: inherit;
-  color: inherit;
-  background: #fff;
-  box-sizing: border-box;
-}
-
-.kyc .champ select:focus-visible {
-  outline: 2px solid var(--bleu-vif);
-  outline-offset: 1px;
-}
-
-.kyc .champ select[aria-invalid='true'] {
-  border-color: var(--erreur);
-}
-
 .kyc .champ input[readonly] {
-  background: var(--fond);
+  background: var(--sable);
   color: var(--texte-secondaire);
 }
 
@@ -162,10 +141,6 @@
   margin-top: 8px;
 }
 
-.kyc__boutons .compte__bouton {
-  padding: 0 28px;
-}
-
 .kyc__suivant {
   min-width: 160px;
 }
@@ -183,8 +158,10 @@
   border: 0;
   background: none;
   font: inherit;
-  color: var(--bleu);
+  color: var(--bleu-vif);
+  font-weight: 600;
   text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
 }
 
@@ -215,9 +192,10 @@
 }
 
 .kyc-recap__etape {
+  background: var(--cadre);
   border: 1px solid var(--bordure);
-  border-radius: 12px;
-  padding: 16px 20px;
+  border-radius: var(--r-m);
+  padding: 20px 24px;
 }
 
 .kyc-recap__entete {
@@ -230,9 +208,9 @@
 
 .kyc-recap__entete h3 {
   margin: 0;
-  font-family: Manrope, sans-serif;
-  font-size: 16px;
-  font-weight: 800;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
 }
 
 .kyc-recap__liste {

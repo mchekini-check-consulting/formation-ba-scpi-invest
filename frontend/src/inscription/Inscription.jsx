@@ -11,7 +11,12 @@ function naviguer(url) {
   window.location.assign(url);
 }
 
-export default function Inscription({ emailInitial = '', creer = creerCompte, allerA = naviguer }) {
+export default function Inscription({
+  emailInitial = '',
+  origine,
+  creer = creerCompte,
+  allerA = naviguer,
+}) {
   const [email, setEmail] = useState(emailInitial);
   const [emailQuitte, setEmailQuitte] = useState(emailInitial !== '');
   const [motDePasse, setMotDePasse] = useState('');
@@ -43,7 +48,7 @@ export default function Inscription({ emailInitial = '', creer = creerCompte, al
   }
 
   return (
-    <PageCompte titre="Créer mon compte">
+    <PageCompte titre="Créer mon compte" origine={origine}>
       <form className="compte__form" aria-label="Création de compte" onSubmit={envoyer} noValidate>
         <div className="champ">
           <label htmlFor="email">Adresse e-mail</label>
