@@ -1,6 +1,6 @@
 // Page d'accueil SCPI Invest+ : textes de la maquette « 0 · Landing page »,
 // visuel du modèle retenu « bleu éditorial » (mockups/accueil.html) ;
-// présente la plateforme et donne accès à l'inscription et à la connexion
+// présente la plateforme ; un bouton d'inscription dans le héros, la connexion dans l'en-tête
 import './App.css';
 import { EnTete, LienCompte, Logo } from './MiseEnPage.jsx';
 
@@ -30,7 +30,7 @@ const ETAPES = [
   },
 ];
 
-// Icônes reprises dans le bandeau visuel du héros et dans les avantages
+// Icônes reprises dans le panneau santé du héros et dans les avantages
 const ICONE_IMPORT = (
   <>
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -178,47 +178,32 @@ function Icone({ children }) {
   );
 }
 
-// Bandeau visuel du héros : photo avec deux étiquettes, panneau sombre « santé des SCPI »
-function Vitrine() {
+// Panneau sombre « santé des SCPI », posé sur la photo de fond du héros
+function Sante() {
   return (
-    <div className="vitrine">
-      <div className="vitrine__photo">
-        <div className="vitrine__bloc" />
-        <p className="puce puce--1">
-          <strong>4 SCPI</strong>côte à côte, la meilleure valeur
-          <br />
-          mise en avant
+    <div className="heros__sante">
+      <span className="etiquette">Santé des SCPI</span>
+      <p className="heros__sante-titre">Solide ou à surveiller, en un coup d’œil.</p>
+      <ul className="sante">
+        {SANTE.map((l) => (
+          <li key={l.critere} className="sante__ligne">
+            {l.critere} <span className={`feu feu--${l.etat}`}>{l.texte}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="heros__sante-bas">
+        <p className="mini">
+          <span className="mini__icone">
+            <Icone>{ICONE_IMPORT}</Icone>
+          </span>
+          Vos PDF sont lus automatiquement, sans saisie.
         </p>
-        <p className="puce puce--2">
-          <strong>1 tableau</strong>de bord pour tout
-          <br />
-          votre portefeuille
+        <p className="mini">
+          <span className="mini__icone">
+            <Icone>{ICONE_BOUCLIER}</Icone>
+          </span>
+          Vous réglez directement la SCPI.
         </p>
-      </div>
-      <div className="vitrine__sombre">
-        <span className="etiquette">Santé des SCPI</span>
-        <p className="vitrine__titre">Solide ou à surveiller, en un coup d’œil.</p>
-        <ul className="sante">
-          {SANTE.map((l) => (
-            <li key={l.critere} className="sante__ligne">
-              {l.critere} <span className={`feu feu--${l.etat}`}>{l.texte}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="vitrine__bas">
-          <p className="mini">
-            <span className="mini__icone">
-              <Icone>{ICONE_IMPORT}</Icone>
-            </span>
-            Vos PDF sont lus automatiquement, sans saisie.
-          </p>
-          <p className="mini">
-            <span className="mini__icone">
-              <Icone>{ICONE_BOUCLIER}</Icone>
-            </span>
-            Vous réglez directement la SCPI.
-          </p>
-        </div>
       </div>
     </div>
   );
@@ -230,20 +215,22 @@ function App() {
       <EnTete menu={MENU} />
 
       <main>
+        {/* Héros : photo de l'immeuble en fond, texte à gauche, santé des SCPI à droite */}
         <section className="panneau heros">
-          <div className="heros__haut">
+          <div className="heros__fond" aria-hidden="true">
+            <div className="heros__bloc" />
+          </div>
+          <div className="heros__grille">
             <div>
               <p className="surtitre">La plateforme des investisseurs en SCPI</p>
               <h1 className="titre">
                 Choisissez vos SCPI <em>en confiance.</em> Suivez-les toutes au même endroit.
               </h1>
-            </div>
-            <div className="heros__droite">
               <p className="heros__chapeau">
                 Comparez les SCPI selon vos critères, comprenez leurs indicateurs et regroupez tout
                 votre portefeuille grâce à l’import automatique de vos relevés.
               </p>
-              <div className="heros__actions">
+              <div className="heros__cta">
                 <LienCompte
                   vers="inscription"
                   origine="heros-inscription"
@@ -251,13 +238,6 @@ function App() {
                   fleche
                 >
                   Créer mon compte
-                </LienCompte>
-                <LienCompte
-                  vers="connexion"
-                  origine="heros-connexion"
-                  className="btn btn--contour btn--lg"
-                >
-                  J’ai déjà un compte
                 </LienCompte>
               </div>
               <ul className="heros__notes">
@@ -271,8 +251,8 @@ function App() {
                 </li>
               </ul>
             </div>
+            <Sante />
           </div>
-          <Vitrine />
         </section>
 
         <ul className="chiffres">
