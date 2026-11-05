@@ -2,7 +2,7 @@
 // index.html pour toute adresse : nginx.conf). Le routeur (BrowserRouter) est posé
 // dans main.jsx ; les tests utilisent MemoryRouter.
 import { useEffect, ViewTransition } from 'react';
-import { Route, Routes, useLocation, useSearchParams } from 'react-router';
+import { Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router';
 import App from './App.jsx';
 import Catalogue from './catalogue/Catalogue.jsx';
 import Connexion from './connexion/Connexion.jsx';
@@ -16,6 +16,7 @@ import Cgu from './legal/Cgu.jsx';
 import Confidentialite from './legal/Confidentialite.jsx';
 import Contact from './legal/Contact.jsx';
 import MentionsLegales from './legal/MentionsLegales.jsx';
+import { CHEMINS_INACTIFS } from './navigation/entrees.js';
 
 // Email pré-rempli transmis par l'adresse (?email=...)
 function useEmailDeLAdresse() {
@@ -69,6 +70,11 @@ export default function Routeur() {
             </ExigerKycComplete>
           }
         />
+        {/* Écrans pas encore disponibles (entrées grisées de la sidebar, US-06) :
+            adresse saisie directement -> Catalogue */}
+        {CHEMINS_INACTIFS.map((chemin) => (
+          <Route key={chemin} path={chemin} element={<Navigate to="/catalogue" replace />} />
+        ))}
         <Route path="/indicateurs" element={<Indicateurs />} />
         {/* Pages légales du pied de page (US-01b) */}
         <Route path="/mentions-legales" element={<MentionsLegales />} />

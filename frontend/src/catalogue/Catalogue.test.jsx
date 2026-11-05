@@ -10,8 +10,16 @@ async function afficher({
   seDeconnecter = vi.fn().mockResolvedValue(undefined),
   allerA = vi.fn(),
 } = {}) {
+  const chargerIdentite = vi.fn().mockResolvedValue({ nomComplet: '', email: '', profil: null });
   await act(async () => {
-    render(<Catalogue lire={lire} seDeconnecter={seDeconnecter} allerA={allerA} />);
+    render(
+      <Catalogue
+        lire={lire}
+        seDeconnecter={seDeconnecter}
+        allerA={allerA}
+        chargerIdentite={chargerIdentite}
+      />,
+    );
   });
   return { seDeconnecter, allerA };
 }
@@ -23,6 +31,15 @@ describe('Catalogue (accès après validation du profil, US-05b)', () => {
     const { allerA } = await afficher();
     expect(texte()).toContain('Votre profil investisseur est validé.');
     expect(allerA).not.toHaveBeenCalled();
+  });
+
+  it('US-06 scénario 1 : sidebar affichée, entrée Catalogue sélectionnée', async () => {
+    await afficher();
+    const menu = screen.getByRole('navigation', { name: 'Menu de l’application' });
+    expect(menu.textContent).toContain('Comparaison');
+    expect(screen.getByRole('link', { name: 'Catalogue' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
   });
 
   it('profil non validé (certification non cochée) : formulaire investisseur', async () => {
@@ -46,11 +63,17 @@ describe('Catalogue (accès après validation du profil, US-05b)', () => {
   });
 
   it('pendant la vérification : message d’attente', () => {
-    render(<Catalogue lire={() => new Promise(() => {})} allerA={vi.fn()} />);
+    render(
+      <Catalogue
+        lire={() => new Promise(() => {})}
+        allerA={vi.fn()}
+        chargerIdentite={() => new Promise(() => {})}
+      />,
+    );
     expect(texte()).toContain('Chargement…');
   });
 
-  it('déconnexion depuis l’en-tête', async () => {
+  it('déconnexion depuis la sidebar', async () => {
     const { seDeconnecter, allerA } = await afficher();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Se déconnecter' }));
