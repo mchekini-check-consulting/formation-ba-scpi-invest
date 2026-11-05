@@ -6,6 +6,7 @@
 // US-04c (SCPI-44) : étape 5 « Pièces justificatives » (EtapePieces.jsx), avant le récapitulatif.
 // Étapes numérotées 1 à 5, 6 = récapitulatif.
 import { useEffect, useRef, useState } from 'react';
+import ChampDate from './ChampDate.jsx';
 import ChoixPays from './ChoixPays.jsx';
 import EtapePieces from './EtapePieces.jsx';
 import { ETAPES, champsVisibles, erreursEtape, reponsesAEnregistrer } from './etapes.js';
@@ -91,7 +92,7 @@ function Groupe({ champ, valeur, erreur, changer }) {
   );
 }
 
-function Champ({ champ, valeur, erreur, changer }) {
+function Champ({ champ, valeur, erreur, changer, aujourdhui }) {
   if (champ.type === 'choix' || champ.type === 'cases') {
     return <Groupe champ={champ} valeur={valeur} erreur={erreur} changer={changer} />;
   }
@@ -116,6 +117,8 @@ function Champ({ champ, valeur, erreur, changer }) {
           invalide={Boolean(erreur)}
           decritPar={commun['aria-describedby']}
         />
+      ) : champ.type === 'date' ? (
+        <ChampDate {...commun} valeur={valeur} changer={changer} aujourdhui={aujourdhui} />
       ) : champ.type === 'liste' ? (
         <select {...commun}>
           <option value="">Choisir…</option>
@@ -345,6 +348,7 @@ export default function FormulaireKyc({
                 valeur={reponses[champ.nom]}
                 erreur={erreurs[champ.nom]}
                 changer={(valeur) => changer(champ.nom, valeur)}
+                aujourdhui={aujourdhui}
               />
             ))}
           </div>
