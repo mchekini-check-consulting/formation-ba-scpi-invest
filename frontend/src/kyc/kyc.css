@@ -458,3 +458,178 @@
   padding: 8px 12px;
   color: var(--texte-secondaire);
 }
+
+/* Date de naissance : saisie JJ/MM/AAAA + calendrier par années (ChampDate.jsx) */
+.champ-date {
+  position: relative;
+}
+
+.champ-date__ligne {
+  position: relative;
+}
+
+.kyc .champ .champ-date input[type='text'] {
+  padding-right: 52px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.champ-date__bouton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: var(--bleu-vif);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.champ-date__bouton:hover,
+.champ-date__bouton[aria-expanded='true'] {
+  color: var(--bleu);
+}
+
+.champ-date__bouton svg,
+.calendrier__fleche svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.calendrier {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 304px;
+  max-width: calc(100vw - 32px);
+  padding: 12px;
+  background: var(--cadre);
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgb(14 26 51 / 12%);
+}
+
+.calendrier__entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.calendrier__titre {
+  font-weight: 700;
+  font-size: 15px;
+  text-transform: capitalize;
+}
+
+.calendrier__titre--bouton {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--bleu-vif);
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.calendrier__titre--bouton:hover {
+  background: var(--papier);
+  text-decoration: underline;
+}
+
+.calendrier__fleche {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--bleu-vif);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.calendrier__fleche:hover:not(:disabled) {
+  background: var(--papier);
+}
+
+.calendrier__fleche:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.calendrier__grille {
+  display: grid;
+  gap: 6px;
+}
+
+.calendrier__grille--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.calendrier__grille--7 {
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendrier__jour-nom {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texte-secondaire);
+  padding-bottom: 4px;
+}
+
+.calendrier__case {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--papier);
+  font: inherit;
+  font-size: 14px;
+  color: var(--texte);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.calendrier__case--jour {
+  min-height: 36px;
+  background: none;
+}
+
+.calendrier__case:hover:not(:disabled) {
+  border-color: var(--bleu-vif);
+}
+
+.calendrier__case:focus-visible,
+.calendrier__fleche:focus-visible,
+.calendrier__titre--bouton:focus-visible,
+.champ-date__bouton:focus-visible {
+  outline: 2px solid var(--bleu-vif);
+  outline-offset: 1px;
+}
+
+.calendrier__case[aria-pressed='true'] {
+  background: var(--bleu-vif);
+  color: #fff;
+  font-weight: 700;
+}
+
+.calendrier__case:disabled {
+  opacity: 0.3;
+  cursor: default;
+}

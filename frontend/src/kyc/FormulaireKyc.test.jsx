@@ -79,7 +79,7 @@ function remplirIdentite() {
   cocher('Madame');
   saisir('Nom', 'Martin');
   saisir('Prénom', 'Claire');
-  saisir('Date de naissance', '1980-01-15');
+  saisir('Date de naissance', '15/01/1980');
   saisir('Lieu de naissance', 'Lyon, France');
   saisir('Nationalité', 'fran');
   fireEvent.click(screen.getByRole('option', { name: 'France' }));
@@ -140,7 +140,7 @@ describe('Formulaire KYC en 4 étapes (US-04a)', () => {
   it('refuse un utilisateur mineur', async () => {
     afficher();
     remplirIdentite();
-    saisir('Date de naissance', '2010-05-01');
+    saisir('Date de naissance', '01/05/2010');
     await cliquer('Suivant');
     expect(titreEtape()).toBe('Identité');
     expect(document.getElementById('kyc-dateNaissance-erreur').textContent).toBe(
@@ -167,7 +167,7 @@ describe('Formulaire KYC en 4 étapes (US-04a)', () => {
     expect(progression()).toBe(1);
     expect(screen.getByLabelText('Nom').value).toBe('Martin');
     expect(screen.getByLabelText('Madame').checked).toBe(true);
-    expect(screen.getByLabelText('Date de naissance').value).toBe('1980-01-15');
+    expect(screen.getByLabelText('Date de naissance').value).toBe('15/01/1980');
     await cliquer('Suivant');
     expect(screen.getByLabelText('Ville').value).toBe('Lyon');
   });
