@@ -51,7 +51,7 @@ describe('champs incomplets avant validation', () => {
   it('pays de résidence fiscale exigé seulement hors de France', () => {
     const autrePays = { ...KYC_COMPLET, residenceFiscale: 'Autre pays' };
     expect(champsIncomplets(autrePays, LE)).toEqual(['paysResidenceFiscale']);
-    expect(champsIncomplets({ ...autrePays, paysResidenceFiscale: 'Belgique' }, LE)).toEqual([]);
+    expect(champsIncomplets({ ...autrePays, paysResidenceFiscale: 'BE' }, LE)).toEqual([]);
   });
 
   it('date de naissance : majeur et au format AAAA-MM-JJ', () => {
@@ -61,6 +61,22 @@ describe('champs incomplets avant validation', () => {
     expect(champsIncomplets({ ...KYC_COMPLET, dateNaissance: '15/01/1980' }, LE)).toEqual([
       'dateNaissance',
     ]);
+  });
+
+  it('pays, nationalité et indicatif : code pays à 2 lettres (liste de l’écran)', () => {
+    const saisieLibre = {
+      ...KYC_COMPLET,
+      pays: 'jqgdgdv',
+      nationalite: 'Française',
+      indicatif: '33',
+    };
+    expect(champsIncomplets(saisieLibre, LE)).toEqual(['nationalite', 'pays', 'indicatif']);
+  });
+
+  it('code postal facultatif (pays sans code postal), téléphone fait de chiffres', () => {
+    const { codePostal: _cp, ...sansCodePostal } = KYC_COMPLET;
+    expect(champsIncomplets(sansCodePostal, LE)).toEqual([]);
+    expect(champsIncomplets({ ...KYC_COMPLET, telephone: 'abc' }, LE)).toEqual(['telephone']);
   });
 
   it('âge révolu, anniversaire compris', () => {

@@ -2,7 +2,15 @@ import type { ReponsesKyc } from '../db/schema.js';
 
 // Champs du formulaire KYC (US-04a), même liste que frontend/src/kyc/etapes.js.
 // L'email n'en fait pas partie : c'est celui du compte, déjà connu.
-type Champ = { nom: string; multiple?: boolean; facultatif?: boolean; siAutrePays?: boolean };
+// pays : code ISO à 2 lettres (liste des pays de l'écran). codePostal : facultatif ici, car
+// certains pays n'en ont pas ; son format, selon le pays, est contrôlé par l'écran.
+type Champ = {
+  nom: string;
+  multiple?: boolean;
+  facultatif?: boolean;
+  siAutrePays?: boolean;
+  pays?: boolean;
+};
 
 export const CHAMPS_KYC: Champ[] = [
   // 1. Identité
@@ -12,12 +20,13 @@ export const CHAMPS_KYC: Champ[] = [
   { nom: 'nomNaissance', facultatif: true },
   { nom: 'dateNaissance' },
   { nom: 'lieuNaissance' },
-  { nom: 'nationalite' },
+  { nom: 'nationalite', pays: true },
   // 2. Coordonnées
+  { nom: 'pays', pays: true },
   { nom: 'adresse' },
-  { nom: 'codePostal' },
+  { nom: 'codePostal', facultatif: true },
   { nom: 'ville' },
-  { nom: 'pays' },
+  { nom: 'indicatif', pays: true },
   { nom: 'telephone' },
   // 3. Situation personnelle et professionnelle
   { nom: 'situationFamiliale' },
@@ -28,7 +37,7 @@ export const CHAMPS_KYC: Champ[] = [
   { nom: 'origineFonds', multiple: true },
   { nom: 'ppe' },
   { nom: 'residenceFiscale' },
-  { nom: 'paysResidenceFiscale', siAutrePays: true },
+  { nom: 'paysResidenceFiscale', siAutrePays: true, pays: true },
   { nom: 'usPerson' },
 ];
 
@@ -80,7 +89,17 @@ export function champsIncomplets(reponses: ReponsesKyc, le: Date): string[] {
   for (const champ of CHAMPS_KYC) {
     if (champ.facultatif) continue;
     if (champ.siAutrePays && reponses.residenceFiscale !== 'Autre pays') continue;
-    if (!rempli(reponses[champ.nom])) manquants.push(champ.nom);
+    const valeur = reponses[champ.nom];
+    if (!rempli(valeur)) manquants.push(champ.nom);
+    else if (champ.pays && !/^[A-Z]{2}$/.test(String(valeur))) manquants.push(champ.nom);
+  }
+  const telephone = reponses.telephone;
+  if (
+    typeof telephone === 'string' &&
+    rempli(telephone) &&
+    !/^\+?[\d\s.()-]{4,20}$/.test(telephone)
+  ) {
+    manquants.push('telephone');
   }
   const naissance = reponses.dateNaissance;
   if (typeof naissance === 'string' && rempli(naissance)) {

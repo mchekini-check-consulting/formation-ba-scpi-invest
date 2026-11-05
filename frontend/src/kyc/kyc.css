@@ -269,3 +269,16 @@
     gap: 2px;
   }
 }
+
+/* Téléphone : indicatif + numéro */
+.kyc-telephone {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .kyc-telephone {
+    grid-template-columns: 1fr;
+  }
+}

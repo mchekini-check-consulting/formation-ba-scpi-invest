@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErreurApi } from '../auth.js';
-import { enregistrerKyc, lireKyc, validerKyc } from './api.js';
+import { chercherCommunes, enregistrerKyc, lireKyc, validerKyc } from './api.js';
 
 function reponse(status, corps) {
   return { ok: status >= 200 && status < 300, status, json: () => Promise.resolve(corps) };
@@ -49,5 +49,11 @@ describe('appels du KYC (US-04b)', () => {
     expect(err).toBeInstanceOf(ErreurApi);
     expect(err.status).toBe(400);
     expect(err.message).toBe('Le formulaire KYC est incomplet');
+  });
+
+  it('chercherCommunes : GET /communes avec le pays et le code postal', async () => {
+    fetchMock.mockResolvedValue(reponse(200, { communes: ['Lyon'] }));
+    expect(await chercherCommunes('FR', '69003')).toEqual(['Lyon']);
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/communes?pays=FR&codePostal=69003');
   });
 });

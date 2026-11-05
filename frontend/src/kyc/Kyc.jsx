@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { deconnecter, utilisateurConnecte } from '../auth.js';
 import PageCompte from '../PageCompte.jsx';
-import { ECRAN_APRES_KYC, enregistrerKyc, lireKyc, validerKyc } from './api.js';
+import { ECRAN_APRES_KYC, chercherCommunes, enregistrerKyc, lireKyc, validerKyc } from './api.js';
 import FormulaireKyc from './FormulaireKyc.jsx';
 
 function naviguer(url) {
@@ -18,6 +18,7 @@ export default function Kyc({
   lire = lireKyc,
   enregistrer = enregistrerKyc,
   valider = validerKyc,
+  communes = chercherCommunes,
   seDeconnecter = deconnecter,
   allerA = naviguer,
   aujourdhui,
@@ -78,6 +79,7 @@ export default function Kyc({
               reponsesInitiales={kyc.reponses}
               enregistrer={enregistrer}
               valider={valider}
+              chercherCommunes={communes}
               apresValidation={() => allerA(ECRAN_APRES_KYC)}
             />
           )}

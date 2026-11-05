@@ -4,13 +4,17 @@ import {
   MESSAGE_DATE,
   MESSAGE_MAJEUR,
   MESSAGE_OBLIGATOIRE,
+  MESSAGE_ADRESSE,
+  MESSAGE_PAYS,
   MESSAGE_TELEPHONE,
+  MESSAGE_VILLE,
+  aideDe,
   age,
   champsVisibles,
   erreursEtape,
+  indicatifChoisi,
   reponseLisible,
   reponsesAEnregistrer,
-  telephoneValide,
 } from './etapes.js';
 
 const [identite, coordonnees, situation, declarations] = ETAPES;
@@ -34,7 +38,14 @@ describe('Contenu du KYC (US-04a)', () => {
       'lieuNaissance',
       'nationalite',
     ]);
-    expect(noms(coordonnees)).toContain('email');
+    expect(noms(coordonnees)).toEqual([
+      'pays',
+      'adresse',
+      'codePostal',
+      'ville',
+      'telephone',
+      'email',
+    ]);
     expect(noms(situation)).toEqual(['situationFamiliale', 'profession', 'categorie', 'secteur']);
     expect(noms(declarations)).toEqual([
       'origineFonds',
@@ -77,14 +88,60 @@ describe('Règles de saisie', () => {
     expect(erreur('04/11/1980')).toBe(MESSAGE_DATE);
   });
 
-  it('téléphone : 10 à 15 chiffres, formats français et international', () => {
-    expect(telephoneValide('06 12 34 56 78')).toBe(true);
-    expect(telephoneValide('+33 6 12 34 56 78')).toBe(true);
-    expect(telephoneValide('01.46.00.12.34')).toBe(true);
-    expect(telephoneValide('06 12 34')).toBe(false);
-    expect(telephoneValide('06 12 AB 56 78')).toBe(false);
-    expect(telephoneValide('1234567890123456')).toBe(false);
-    expect(erreursEtape(coordonnees, { telephone: '0612' }).telephone).toBe(MESSAGE_TELEPHONE);
+  it('coordonnées : pays, code postal, ville, adresse et téléphone contrôlés', () => {
+    const erreurs = erreursEtape(coordonnees, {
+      pays: 'jqgdgdv',
+      adresse: 'jqgdgdv',
+      codePostal: 'jqgdgdv',
+      ville: '123',
+      telephone: '0612',
+      email: 'jean@exemple.fr',
+    });
+    expect(erreurs).toEqual({
+      pays: MESSAGE_PAYS,
+      adresse: MESSAGE_ADRESSE,
+      codePostal:
+        'Code postal invalide : lettres, chiffres, espaces ou tirets, avec au moins un chiffre.',
+      ville: MESSAGE_VILLE,
+      telephone: MESSAGE_TELEPHONE,
+    });
+    const france = erreursEtape(coordonnees, { pays: 'FR', codePostal: '7500' });
+    expect(france.codePostal).toBe('Code postal invalide pour France (exemple : 75008).');
+    expect(
+      erreursEtape(coordonnees, {
+        pays: 'FR',
+        adresse: '12 rue des Lilas',
+        codePostal: '69003',
+        ville: 'Lyon',
+        telephone: '06 12 34 56 78',
+        email: 'jean@exemple.fr',
+      }),
+    ).toEqual({});
+  });
+
+  it('téléphone : contrôlé selon l’indicatif choisi, sinon celui du pays de l’adresse', () => {
+    const tel = coordonnees.champs.find((c) => c.nom === 'telephone');
+    expect(indicatifChoisi(tel, {})).toBe('FR');
+    expect(indicatifChoisi(tel, { pays: 'BE' })).toBe('BE');
+    expect(indicatifChoisi(tel, { pays: 'BE', indicatif: 'MA' })).toBe('MA');
+    expect(indicatifChoisi(tel, { pays: 'BE', indicatif: 'xx' })).toBe('BE');
+    // le même numéro belge est refusé avec l'indicatif des États-Unis (10 chiffres)
+    expect(
+      erreursEtape(coordonnees, { telephone: '0470 12 34 56', indicatif: 'BE' }),
+    ).not.toHaveProperty('telephone');
+    expect(
+      erreursEtape(coordonnees, { telephone: '0470 12 34 56', indicatif: 'US' }).telephone,
+    ).toBe(MESSAGE_TELEPHONE);
+  });
+
+  it('pays sans code postal : champ non demandé ; exemple adapté au pays', () => {
+    const noms = (reponses) => champsVisibles(coordonnees, reponses).map((c) => c.nom);
+    expect(noms({ pays: 'AE' })).not.toContain('codePostal');
+    expect(noms({ pays: 'FR' })).toContain('codePostal');
+    const cp = coordonnees.champs.find((c) => c.nom === 'codePostal');
+    expect(aideDe(cp, { pays: 'GB' })).toBe('Par exemple : SW1A 1AA.');
+    expect(aideDe(cp, { pays: 'ZZ' })).toBeUndefined();
+    expect(aideDe(identite.champs[0], {})).toBeUndefined();
   });
 
   it('origine des fonds : au moins un choix', () => {
@@ -115,9 +172,18 @@ describe('Réponses enregistrées et récapitulatif (US-04b)', () => {
       inconnu: 'x',
     };
     expect(reponsesAEnregistrer(reponses)).toEqual({ nom: 'Martin', residenceFiscale: 'France' });
+    // téléphone saisi : son indicatif est enregistré avec lui
+    expect(reponsesAEnregistrer({ pays: 'BE', telephone: '0470 12 34 56' })).toEqual({
+      pays: 'BE',
+      telephone: '0470 12 34 56',
+      indicatif: 'BE',
+    });
     expect(
       reponsesAEnregistrer({ residenceFiscale: 'Autre pays', paysResidenceFiscale: 'Belgique' }),
-    ).toEqual({ residenceFiscale: 'Autre pays', paysResidenceFiscale: 'Belgique' });
+    ).toEqual({
+      residenceFiscale: 'Autre pays',
+      paysResidenceFiscale: 'Belgique',
+    });
   });
 
   it('réponses lisibles : date, choix multiples, champ vide', () => {
@@ -128,5 +194,9 @@ describe('Réponses enregistrées et récapitulatif (US-04b)', () => {
     expect(reponseLisible(texte, [])).toBe('Non renseigné');
     expect(reponseLisible(texte, '  ')).toBe('Non renseigné');
     expect(reponseLisible(texte, undefined)).toBe('Non renseigné');
+    expect(reponseLisible({ type: 'pays' }, 'BE')).toBe('Belgique');
+    expect(reponseLisible({ type: 'pays' }, 'Française')).toBe('Française'); // ancienne saisie
+    const tel = { type: 'tel', indicatif: 'indicatif' };
+    expect(reponseLisible(tel, '0470 12 34 56', { indicatif: 'BE' })).toBe('+32 0470 12 34 56');
   });
 });

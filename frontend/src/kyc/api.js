@@ -16,3 +16,11 @@ export function enregistrerKyc(etape, reponses) {
 export function validerKyc() {
   return appelConnecte('/kyc/validation', { methode: 'POST', corps: {} });
 }
+
+// Communes d'un code postal (France) ; liste vide pour les autres pays ou si le service
+// ne répond pas : la ville reste alors en saisie libre
+export async function chercherCommunes(pays, codePostal) {
+  const parametres = new URLSearchParams({ pays, codePostal });
+  const { communes } = await appelConnecte(`/communes?${parametres}`);
+  return communes;
+}

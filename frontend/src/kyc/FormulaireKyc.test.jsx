@@ -40,14 +40,15 @@ const IDENTITE = {
   prenom: 'Claire',
   dateNaissance: '1980-01-15',
   lieuNaissance: 'Lyon, France',
-  nationalite: 'Française',
+  nationalite: 'FR',
 };
 const COMPLET = {
   ...IDENTITE,
   adresse: '12 rue des Lilas',
   codePostal: '69003',
   ville: 'Lyon',
-  pays: 'France',
+  pays: 'FR',
+  indicatif: 'FR',
   telephone: '06 12 34 56 78',
   situationFamiliale: 'Marié(e)',
   profession: 'Ingénieure',
@@ -65,7 +66,7 @@ function remplirIdentite() {
   saisir('Prénom', 'Claire');
   saisir('Date de naissance', '1980-01-15');
   saisir('Lieu de naissance', 'Lyon, France');
-  saisir('Nationalité', 'Française');
+  saisir('Nationalité', 'FR');
 }
 
 describe('Formulaire KYC en 4 étapes (US-04a)', () => {
@@ -168,6 +169,135 @@ describe('Formulaire KYC en 4 étapes (US-04a)', () => {
     cocher('Gains au jeu');
     cocher('Gains au jeu');
     expect(screen.getByLabelText('Gains au jeu').checked).toBe(false);
+  });
+});
+
+describe('Coordonnées : pays, code postal et téléphone selon le pays', () => {
+  it('pays en liste, indicatif qui suit le pays, erreurs effacées au changement de pays', async () => {
+    const { enregistrer } = afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE });
+    const pays = screen.getByLabelText('Pays');
+    expect(pays.tagName).toBe('SELECT');
+    expect(pays.options[1].textContent).toBe('France');
+    const indicatif = screen.getByLabelText('Indicatif du pays');
+    expect(indicatif.value).toBe('FR');
+
+    // saisies fausses : signalées
+    saisir('Adresse postale', 'jqgdgdv');
+    saisir('Code postal', '7500');
+    saisir('Ville', 'Lyon');
+    saisir('Téléphone', '0470 12 34 56');
+    await cliquer('Suivant');
+    expect(document.getElementById('kyc-pays-erreur').textContent).toBe(
+      'Ce champ est obligatoire.',
+    );
+    expect(document.getElementById('kyc-adresse-erreur')).not.toBeNull();
+
+    // Belgique : l'indicatif suit, l'exemple de code postal change, erreurs liées effacées
+    saisir('Pays', 'BE');
+    expect(screen.getByLabelText('Indicatif du pays').value).toBe('BE');
+    expect(document.body.textContent).toContain('Par exemple : 1000.');
+    expect(document.getElementById('kyc-codePostal-erreur')).toBeNull();
+    saisir('Adresse postale', '12 rue Neuve');
+    await cliquer('Suivant');
+    // 7500 est un code postal belge valide (Tournai) : l'étape est enregistrée
+    expect(titreEtape()).toBe('Situation personnelle et professionnelle');
+    expect(enregistrer).toHaveBeenCalledWith(3, {
+      ...IDENTITE,
+      pays: 'BE',
+      adresse: '12 rue Neuve',
+      codePostal: '7500',
+      ville: 'Lyon',
+      telephone: '0470 12 34 56',
+      indicatif: 'BE',
+    });
+    // retour à l'étape 2 : indicatif choisi à la main, puis numéro refusé pour ce pays
+    await cliquer('Précédent');
+    saisir('Indicatif du pays', 'US');
+    await cliquer('Suivant');
+    expect(document.getElementById('kyc-telephone-erreur').textContent).toContain(
+      'Numéro de téléphone invalide',
+    );
+    saisir('Indicatif du pays', 'BE');
+    expect(document.getElementById('kyc-telephone-erreur')).toBeNull();
+  });
+});
+
+describe('Ville proposée selon le code postal (France)', () => {
+  const COORDONNEES = { ...IDENTITE, pays: 'FR', adresse: '12 rue des Lilas' };
+
+  async function saisirCodePostal(code) {
+    await act(async () => saisir('Code postal', code));
+  }
+
+  it('une seule commune : sélectionnée d’office dans une liste', async () => {
+    const chercherCommunes = vi.fn().mockResolvedValue(['Lyon']);
+    afficher({ etapeInitiale: 2, reponsesInitiales: COORDONNEES, chercherCommunes });
+    expect(screen.getByLabelText('Ville').tagName).toBe('INPUT');
+    await saisirCodePostal('69003');
+    expect(chercherCommunes).toHaveBeenCalledWith('FR', '69003');
+    const ville = screen.getByLabelText('Ville');
+    expect(ville.tagName).toBe('SELECT');
+    expect(ville.value).toBe('Lyon');
+    expect(document.body.textContent).toContain('Commune du code postal 69003.');
+  });
+
+  it('plusieurs communes : à choisir, ville obligatoire', async () => {
+    const chercherCommunes = vi
+      .fn()
+      .mockResolvedValue(['Bourg-en-Bresse', 'Saint-Denis-lès-Bourg']);
+    const { enregistrer } = afficher({
+      etapeInitiale: 2,
+      reponsesInitiales: { ...COORDONNEES, telephone: '06 12 34 56 78' },
+      chercherCommunes,
+    });
+    await saisirCodePostal('01000');
+    const ville = screen.getByLabelText('Ville');
+    expect([...ville.options].map((o) => o.textContent)).toEqual([
+      'Choisir une commune…',
+      'Bourg-en-Bresse',
+      'Saint-Denis-lès-Bourg',
+    ]);
+    await cliquer('Suivant');
+    expect(document.getElementById('kyc-ville-erreur').textContent).toBe(
+      'Ce champ est obligatoire.',
+    );
+    saisir('Ville', 'Saint-Denis-lès-Bourg');
+    await cliquer('Suivant');
+    expect(enregistrer.mock.calls[0][1].ville).toBe('Saint-Denis-lès-Bourg');
+  });
+
+  it('ville déjà saisie : remplacée par le nom officiel, ou effacée si elle ne correspond pas', async () => {
+    const chercherCommunes = vi.fn().mockResolvedValue(['Saint-Étienne', 'Villars']);
+    afficher({
+      etapeInitiale: 2,
+      reponsesInitiales: { ...COORDONNEES, ville: 'saint etienne' },
+      chercherCommunes,
+    });
+    await saisirCodePostal('42000');
+    expect(screen.getByLabelText('Ville').value).toBe('Saint-Étienne');
+    chercherCommunes.mockResolvedValue(['Lyon', 'Villeurbanne']);
+    await saisirCodePostal('69100');
+    expect(screen.getByLabelText('Ville').value).toBe('');
+  });
+
+  it('autre pays, code incomplet, code inconnu ou service en panne : saisie libre', async () => {
+    const chercherCommunes = vi.fn().mockResolvedValue([]);
+    afficher({
+      etapeInitiale: 2,
+      reponsesInitiales: { ...COORDONNEES, pays: 'BE' },
+      chercherCommunes,
+    });
+    await saisirCodePostal('1000');
+    expect(chercherCommunes).not.toHaveBeenCalled();
+    await act(async () => saisir('Pays', 'FR'));
+    await saisirCodePostal('7500');
+    expect(chercherCommunes).not.toHaveBeenCalled();
+    await saisirCodePostal('75999');
+    expect(chercherCommunes).toHaveBeenCalledWith('FR', '75999');
+    expect(screen.getByLabelText('Ville').tagName).toBe('INPUT');
+    chercherCommunes.mockRejectedValue(new Error('panne'));
+    await saisirCodePostal('75008');
+    expect(screen.getByLabelText('Ville').tagName).toBe('INPUT');
   });
 });
 

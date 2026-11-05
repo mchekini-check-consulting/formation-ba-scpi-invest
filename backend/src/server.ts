@@ -3,6 +3,8 @@ import { toNodeHandler } from 'better-auth/node';
 import type { RequestHandler } from 'express';
 import { createApp } from './app.js';
 import { creerAuth, fournisseurBetterAuth } from './auth/better-auth.js';
+import { routesCommunes } from './communes/routes.js';
+import { creerCommunesService } from './communes/service.js';
 import { routesComptes } from './comptes/routes.js';
 import { demarrerImportNocturne } from './csv/planification.js';
 import { creerCompteService } from './comptes/service.js';
@@ -24,6 +26,7 @@ const fournisseur = fournisseurBetterAuth(auth);
 const betterAuth: RequestHandler = toNodeHandler(auth);
 const comptes = creerCompteService(fournisseur, depotAcceptationsCgu(db));
 const kyc = creerKycService(depotKyc(db));
+const communes = creerCommunesService();
 
 // US-07a : import du catalogue au démarrage puis chaque nuit à 2h (désactivé sans les variables R2)
 demarrerImportNocturne(pool, db);
@@ -31,5 +34,9 @@ demarrerImportNocturne(pool, db);
 const port = Number(process.env.PORT ?? 8080);
 createApp(() => db.execute(sql`select 1`), logger, {
   auth: betterAuth,
-  routeurs: [routesComptes(comptes, fournisseur), routesKyc(kyc, fournisseur)],
+  routeurs: [
+    routesComptes(comptes, fournisseur),
+    routesKyc(kyc, fournisseur),
+    routesCommunes(communes, fournisseur),
+  ],
 }).listen(port, () => logger.info({ port }, 'backend démarré'));

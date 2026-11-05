@@ -39,7 +39,7 @@ export default function Recapitulatif({
             {champsVisibles(etape, reponses).map((champ) => (
               <div key={champ.nom} className="kyc-recap__ligne">
                 <dt>{champ.libelle}</dt>
-                <dd>{reponseLisible(champ, reponses[champ.nom])}</dd>
+                <dd>{reponseLisible(champ, reponses[champ.nom], reponses)}</dd>
               </div>
             ))}
           </dl>
