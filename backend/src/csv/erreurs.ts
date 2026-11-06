@@ -85,13 +85,14 @@ export function colonnesAbsentes(trouvees: string[]): FichierInvalide | null {
 }
 
 // En-tête lu comme une seule colonne qui contient « ; » ou une tabulation
+const SEPARATEURS = [
+  [';', 'point-virgule'],
+  ['\t', 'tabulation'],
+] as const;
+
 function mauvaisSeparateur(colonnes: string[], technique: string | null): FichierInvalide | null {
   if (colonnes.length !== 1) return null;
-  const separateur = colonnes[0].includes(';')
-    ? 'point-virgule'
-    : colonnes[0].includes('\t')
-      ? 'tabulation'
-      : null;
+  const separateur = SEPARATEURS.find(([caractere]) => colonnes[0].includes(caractere))?.[1];
   if (!separateur) return null;
   return new FichierInvalide({
     ligne: 1,
@@ -125,81 +126,94 @@ type ErreurLecture = {
 
 const nombre = (v: unknown) => (typeof v === 'number' ? v : null);
 
+// Une traduction par famille d'erreur ; technique : message d'origine
+type Traduction = (e: ErreurLecture, technique: string) => FichierInvalide;
+
+// Nombre de valeurs différent de l'en-tête ; en-tête d'une seule colonne avec « ; » ou
+// tabulation : mauvais séparateur
+const nombreDeValeurs: Traduction = (e, technique) => {
+  const entete = Array.isArray(e.columns)
+    ? e.columns.map((c: { name?: unknown }) => String(c?.name ?? ''))
+    : [];
+  const separateur = mauvaisSeparateur(entete, technique);
+  if (separateur) return separateur;
+  const recues = Array.isArray(e.record) ? e.record.length : null;
+  const attendues = entete.length || COLONNES.length;
+  return new FichierInvalide({
+    ligne: nombre(e.lines),
+    constat:
+      recues === null
+        ? `Nombre de valeurs différent de l’en-tête (${attendues} colonnes)`
+        : `${recues} valeurs au lieu de ${attendues}`,
+    cause:
+      recues !== null && recues > attendues
+        ? 'une valeur contient une virgule sans être entourée de guillemets (taux, secteurs, localisation…)'
+        : 'valeur manquante, ou ligne coupée en deux par un retour à la ligne dans une valeur',
+    action: `Corriger cette ligne : elle doit compter ${COLONNES.length} valeurs, une par colonne du catalogue ; une valeur qui contient des virgules s’écrit entre guillemets, par exemple "8.35,8.16"`,
+    technique,
+  });
+};
+
+// csv-parse signale la fin du fichier : le guillemet s'ouvre juste après la dernière
+// ligne lue sans erreur
+const guillemetNonFerme: Traduction = (e, technique) => {
+  const derniere = nombre(e.derniere_ligne_lue);
+  return new FichierInvalide({
+    ligne: derniere === null ? null : derniere + 1,
+    constat: 'Guillemet ouvert jamais fermé',
+    cause:
+      'il manque le guillemet de fin d’une valeur : toute la suite du fichier est lue comme une seule valeur',
+    action:
+      'Ajouter le guillemet de fin de la valeur : une valeur entre guillemets en a un au début et un à la fin',
+    technique,
+  });
+};
+
+const apresGuillemetFermant: Traduction = (e, technique) => {
+  const colonne = typeof e.column === 'string' ? ` (colonne ${e.column})` : '';
+  return new FichierInvalide({
+    ligne: nombre(e.lines),
+    constat: `Caractère inattendu après un guillemet fermant${colonne}`,
+    cause: 'guillemet au milieu d’une valeur, ou texte collé après une valeur entre guillemets',
+    action:
+      'Entourer toute la valeur de guillemets, et doubler les guillemets qui font partie du texte ("")',
+    technique,
+  });
+};
+
+const encodage: Traduction = (_e, technique) =>
+  new FichierInvalide({
+    ligne: null,
+    constat: 'Encodage du fichier invalide : UTF-8 attendu',
+    cause:
+      'fichier enregistré dans un autre encodage (Latin-1 / Windows-1252), souvent par Excel en « CSV » simple',
+    action:
+      'Réenregistrer le fichier en CSV UTF-8 (Excel : « CSV UTF-8 (délimité par des virgules) »), puis le déposer à nouveau',
+    technique,
+  });
+
+const illisible: Traduction = (e, technique) =>
+  new FichierInvalide({
+    ligne: nombre(e.lines),
+    constat: 'Fichier illisible',
+    cause: null,
+    action:
+      'Vérifier que le fichier est bien un CSV séparé par des virgules et enregistré en UTF-8 ; sinon, transmettre le détail technique à l’équipe technique',
+    technique,
+  });
+
+// Code d'erreur -> traduction ; code absent de la table : « Fichier illisible »
+const TRADUCTIONS = new Map<unknown, Traduction>([
+  ['CSV_RECORD_INCONSISTENT_FIELDS_LENGTH', nombreDeValeurs],
+  ['CSV_RECORD_INCONSISTENT_COLUMNS', nombreDeValeurs],
+  ['CSV_QUOTE_NOT_CLOSED', guillemetNonFerme],
+  ['CSV_INVALID_CLOSING_QUOTE', apresGuillemetFermant],
+  ['CSV_NON_TRIMABLE_CHAR_AFTER_CLOSING_QUOTE', apresGuillemetFermant],
+  [ENCODAGE_INVALIDE, encodage],
+]);
+
 export function erreurDeLecture(err: unknown): FichierInvalide {
   const e: ErreurLecture = typeof err === 'object' && err !== null ? err : {};
   const technique = err instanceof Error ? err.message : String(err);
-  const ligne = nombre(e.lines);
-
-  switch (e.code) {
-    case 'CSV_RECORD_INCONSISTENT_FIELDS_LENGTH':
-    case 'CSV_RECORD_INCONSISTENT_COLUMNS': {
-      const entete = Array.isArray(e.columns)
-        ? e.columns.map((c: { name?: unknown }) => String(c?.name ?? ''))
-        : [];
-      const separateur = mauvaisSeparateur(entete, technique);
-      if (separateur) return separateur;
-      const recues = Array.isArray(e.record) ? e.record.length : null;
-      const attendues = entete.length || COLONNES.length;
-      const enTrop = recues !== null && recues > attendues;
-      return new FichierInvalide({
-        ligne,
-        constat:
-          recues === null
-            ? `Nombre de valeurs différent de l’en-tête (${attendues} colonnes)`
-            : `${recues} valeurs au lieu de ${attendues}`,
-        cause: enTrop
-          ? 'une valeur contient une virgule sans être entourée de guillemets (taux, secteurs, localisation…)'
-          : 'valeur manquante, ou ligne coupée en deux par un retour à la ligne dans une valeur',
-        action: `Corriger cette ligne : elle doit compter ${COLONNES.length} valeurs, une par colonne du catalogue ; une valeur qui contient des virgules s’écrit entre guillemets, par exemple "8.35,8.16"`,
-        technique,
-      });
-    }
-
-    case 'CSV_QUOTE_NOT_CLOSED': {
-      // csv-parse signale la fin du fichier : le guillemet s'ouvre juste après la
-      // dernière ligne lue sans erreur
-      const derniere = nombre(e.derniere_ligne_lue);
-      return new FichierInvalide({
-        ligne: derniere === null ? null : derniere + 1,
-        constat: 'Guillemet ouvert jamais fermé',
-        cause:
-          'il manque le guillemet de fin d’une valeur : toute la suite du fichier est lue comme une seule valeur',
-        action:
-          'Ajouter le guillemet de fin de la valeur : une valeur entre guillemets en a un au début et un à la fin',
-        technique,
-      });
-    }
-
-    case 'CSV_INVALID_CLOSING_QUOTE':
-    case 'CSV_NON_TRIMABLE_CHAR_AFTER_CLOSING_QUOTE':
-      return new FichierInvalide({
-        ligne,
-        constat: `Caractère inattendu après un guillemet fermant${typeof e.column === 'string' ? ` (colonne ${e.column})` : ''}`,
-        cause: 'guillemet au milieu d’une valeur, ou texte collé après une valeur entre guillemets',
-        action:
-          'Entourer toute la valeur de guillemets, et doubler les guillemets qui font partie du texte ("")',
-        technique,
-      });
-
-    case ENCODAGE_INVALIDE:
-      return new FichierInvalide({
-        ligne: null,
-        constat: 'Encodage du fichier invalide : UTF-8 attendu',
-        cause:
-          'fichier enregistré dans un autre encodage (Latin-1 / Windows-1252), souvent par Excel en « CSV » simple',
-        action:
-          'Réenregistrer le fichier en CSV UTF-8 (Excel : « CSV UTF-8 (délimité par des virgules) »), puis le déposer à nouveau',
-        technique,
-      });
-
-    default:
-      return new FichierInvalide({
-        ligne,
-        constat: 'Fichier illisible',
-        cause: null,
-        action:
-          'Vérifier que le fichier est bien un CSV séparé par des virgules et enregistré en UTF-8 ; sinon, transmettre le détail technique à l’équipe technique',
-        technique,
-      });
-  }
+  return (TRADUCTIONS.get(e.code) ?? illisible)(e, technique);
 }
