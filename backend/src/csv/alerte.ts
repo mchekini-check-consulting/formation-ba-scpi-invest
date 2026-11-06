@@ -2,6 +2,8 @@ import type { Logger } from 'pino';
 import { businessLog, logger } from '../logging/logger.js';
 
 // Alerte à l'administrateur quand l'import du catalogue échoue (US-07b, scénarios 2 et 5)
+// motif : fichier refusé, un bloc par ligne (où, constat, cause probable, à faire :
+// texteAlerte, erreurs.ts) ; erreur technique, son message.
 export type Alerter = (sujet: string, motif: string) => Promise<void>;
 
 export function alerteAdministrateur(log: Logger = logger): Alerter {

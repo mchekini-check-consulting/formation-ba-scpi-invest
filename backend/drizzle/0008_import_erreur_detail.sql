@@ -1,0 +1,1 @@
+ALTER TABLE "import_rapport" ADD COLUMN "erreur_detail" jsonb;
