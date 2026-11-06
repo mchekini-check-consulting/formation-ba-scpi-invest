@@ -64,7 +64,6 @@ export const ETAPES = [
         libelle: 'Adresse e-mail',
         type: 'email',
         lectureSeule: true,
-        aide: 'L’adresse de votre compte.',
       },
     ],
   },

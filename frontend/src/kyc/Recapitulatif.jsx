@@ -76,12 +76,7 @@ export default function Recapitulatif({
         >
           Précédent
         </button>
-        <button
-          type="button"
-          className="compte__bouton kyc__suivant"
-          onClick={valider}
-          disabled={envoi}
-        >
+        <button type="button" className="compte__bouton" onClick={valider} disabled={envoi}>
           {envoi ? 'Validation…' : 'Valider'}
         </button>
       </div>

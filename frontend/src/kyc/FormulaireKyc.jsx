@@ -108,7 +108,6 @@ function Champ({ champ, valeur, erreur, changer, aujourdhui }) {
       <label htmlFor={idChamp(champ.nom)}>
         <Libelle champ={champ} />
       </label>
-      <Aide champ={champ} />
       {champ.type === 'pays' ? (
         <ChoixPays
           id={commun.id}
@@ -134,6 +133,7 @@ function Champ({ champ, valeur, erreur, changer, aujourdhui }) {
           readOnly={champ.lectureSeule}
         />
       )}
+      <Aide champ={champ} />
       <Erreur nom={champ.nom} message={erreur} />
     </div>
   );
@@ -368,11 +368,7 @@ export default function FormulaireKyc({
               Précédent
             </button>
           )}
-          <button
-            type="submit"
-            className="compte__bouton kyc__suivant"
-            disabled={envoi || envoiPiece}
-          >
+          <button type="submit" className="compte__bouton" disabled={envoi || envoiPiece}>
             {envoi ? 'Enregistrement…' : 'Suivant'}
           </button>
         </div>

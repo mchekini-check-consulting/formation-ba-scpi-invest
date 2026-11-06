@@ -104,7 +104,11 @@ export default function Sidebar({ actif, seDeconnecter, chargerIdentite = lireId
       aria-label="Menu de l’application"
     >
       <div className="sidebar__haut">
-        <LienInterne to="/" className="sidebar__logo" aria-label="SCPI Invest+ — accueil">
+        <LienInterne
+          to="/catalogue"
+          className="sidebar__logo"
+          aria-label="SCPI Invest+ — catalogue"
+        >
           <LogoIcone clair />
         </LienInterne>
         <button

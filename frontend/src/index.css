@@ -37,7 +37,7 @@ html {
 
 body {
   margin: 0;
-  padding: 28px;
+  padding: 12px;
   background: var(--page);
   color: var(--encre);
   font: 16px/1.55 var(--sans);
@@ -61,7 +61,6 @@ a {
 /* --- Cadre clair arrondi qui contient toute la page ----------------------- */
 
 .cadre {
-  max-width: 1360px;
   margin: 0 auto;
   background: var(--cadre);
   border-radius: 36px;
