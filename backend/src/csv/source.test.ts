@@ -6,6 +6,9 @@ import {
 } from '@aws-sdk/client-s3';
 import { describe, expect, it, vi } from 'vitest';
 import { Readable } from 'node:stream';
+import type { Db } from '../db/index.js';
+import { COLONNES } from './convert.js';
+import { importScpis } from './import.js';
 import {
   archiverCsv,
   cleArchive,
@@ -179,7 +182,74 @@ describe('lignesCsv', () => {
     }
     expect(lignes).toEqual([{ Nom: 'A', taux: '8.35,8.16' }]);
   });
+
+  it('chaque ligne porte son numéro dans le fichier, lignes vides comprises', async () => {
+    const base = fausseBaseVide();
+    const csv = Readable.from([
+      `${ENTETE}\n`,
+      `${ligneValide('A')}\n`,
+      '\n',
+      `${ligneValide('B').replace('BNPAFRPPXXX', 'X')}\n`,
+    ]);
+    const bilan = await importScpis(base, lignesCsv(csv));
+    expect(bilan.rejets).toEqual([
+      { ligne: 4, nom: 'B', motif: 'bic : format invalide (8 ou 11 caractères attendus)' },
+    ]);
+  });
+
+  // Octets tels que lus dans R2 (Buffer), découpés au milieu d'un caractère accentué
+  const octets = (...morceaux: Buffer[]) => Readable.from(morceaux, { objectMode: false });
+
+  it('fichier UTF-8 : accents corrects même coupés entre deux morceaux, BOM retiré', async () => {
+    const utf8 = Buffer.from('﻿Nom,Gerant\nA,Gérant\n', 'utf8');
+    const lignes = [];
+    for await (const l of lignesCsv(octets(utf8.subarray(0, 18), utf8.subarray(18)))) {
+      lignes.push(l);
+    }
+    expect(lignes).toEqual([{ Nom: 'A', Gerant: 'Gérant' }]);
+  });
+
+  it('« � » écrit tel quel dans un fichier UTF-8 : accepté (donnée, pas encodage)', async () => {
+    const lignes = [];
+    for await (const l of lignesCsv(octets(Buffer.from('Nom\nm�tropoles\n', 'utf8')))) {
+      lignes.push(l);
+    }
+    expect(lignes).toEqual([{ Nom: 'm�tropoles' }]);
+  });
+
+  // US-07b, scénario 2
+  it('fichier en Latin-1 (pas en UTF-8) : fichier entier refusé, motif « encodage »', async () => {
+    const latin1 = Buffer.from(`${ENTETE}\n${ligneValide('Métropoles')}\n`, 'latin1');
+    await expect(importScpis(fausseBaseVide(), lignesCsv(octets(latin1)))).rejects.toThrow(
+      'fichier illisible : encodage invalide (UTF-8 attendu)',
+    );
+  });
+
+  it('caractère UTF-8 tronqué en fin de fichier : refusé', async () => {
+    const tronque = Buffer.from('Nom\né', 'utf8').subarray(0, -1);
+    await expect(async () => {
+      for await (const _ of lignesCsv(octets(tronque))) {
+        // lecture jusqu'à l'erreur
+      }
+    }).rejects.toThrow('encodage invalide (UTF-8 attendu)');
+  });
 });
+
+// Fichier CSV complet, lu puis importé dans une fausse base sans SCPI existante
+const ENTETE = COLONNES.join(',');
+function ligneValide(nom: string) {
+  return `${nom},,1000,"France,100","Bureaux,100",200,1000000,G,10,10,3,Mensuelle,,FR7630001007941234567890185,BNPAFRPPXXX,,Non,,Non,Texte`;
+}
+function fausseBaseVide(): Db {
+  const tx = {
+    select: () => ({ from: () => Promise.resolve([]) }),
+    insert: () => ({
+      values: () =>
+        Object.assign(Promise.resolve(), { returning: () => Promise.resolve([{ id: 1 }]) }),
+    }),
+  };
+  return { transaction: (fn: (t: typeof tx) => Promise<void>) => fn(tx) } as unknown as Db;
+}
 
 describe('sourceR2', () => {
   const config = s3Config({ ...env, CSV_ARCHIVE_DELETE_SOURCE: 'true' });

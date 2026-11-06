@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  COLONNES_OBLIGATOIRES,
   convertirLigne,
   empreinte,
   toBoolean,
@@ -10,7 +11,38 @@ import {
   toPaires,
   toSecteur,
   toValeursAnnuelles,
+  verifierBic,
+  verifierIban,
 } from './convert.js';
+
+describe('verifierIban', () => {
+  it.each([
+    'FR7630001007941234567890185',
+    'FR76 3000 1007 9412 3456 7890 185',
+    'DE89370400440532013000',
+  ])('accepte %s', (iban) => {
+    expect(() => verifierIban(iban)).not.toThrow();
+  });
+
+  it.each([
+    'FR76123',
+    'FR763000100794123456789018',
+    '7630001007941234567890185',
+    'FR76300010079412345678901-5',
+  ])('refuse %s, sans recopier la valeur dans le motif', (iban) => {
+    expect(() => verifierIban(iban)).toThrow(/^iban : format invalide$/);
+  });
+});
+
+describe('verifierBic', () => {
+  it.each(['BNPAFRPP', 'BNPAFRPPXXX', 'bnpafrpp'])('accepte %s', (bic) => {
+    expect(() => verifierBic(bic)).not.toThrow();
+  });
+
+  it.each(['BNPAFRP', 'BNPAFRPPXX', '1234FRPP'])('refuse %s', (bic) => {
+    expect(() => verifierBic(bic)).toThrow('bic : format invalide (8 ou 11 caractères attendus)');
+  });
+});
 
 describe('toNumber', () => {
   it('convertit un nombre décimal', () => {
@@ -221,13 +253,13 @@ describe('convertirLigne', () => {
     delai_jouissance: '5',
     frequence_loyers: 'Trimestrielle',
     valeur_reconstitution: '',
-    iban: '',
-    bic: '',
+    iban: 'FR7630001007941234567890185',
+    bic: 'BNPAFRPPXXX',
     decote_demembrement: '3,90',
     demembrement: 'Oui',
     cashback: '',
     versement_programme: 'Non',
-    publicite: '',
+    publicite: 'Texte libre',
   };
   const annee = new Date().getFullYear();
 
@@ -242,12 +274,12 @@ describe('convertirLigne', () => {
         frais_gestion: 10.5,
         delai_jouissance: 5,
         frequence: 'Trimestrielle',
-        iban: '',
-        bic: '',
+        iban: 'FR7630001007941234567890185',
+        bic: 'BNPAFRPPXXX',
         demembrement: true,
         cashback: null,
         versement_programme: false,
-        publicite: '',
+        publicite: 'Texte libre',
       },
       taux: [{ valeur: 8.35, annee: annee - 1 }],
       prix: [{ valeur: 200, annee: annee - 1 }],
@@ -262,6 +294,36 @@ describe('convertirLigne', () => {
     expect(() => convertirLigne({ ...ligne, capitalisation: '1.5' })).toThrow(
       'capitalisation : nombre entier attendu, reçu "1.5"',
     );
+  });
+
+  it.each(COLONNES_OBLIGATOIRES)('colonne obligatoire vide : %s', (colonne) => {
+    expect(() => convertirLigne({ ...ligne, [colonne]: '' })).toThrow(
+      `${colonne} : champ obligatoire vide`,
+    );
+  });
+
+  it('colonnes facultatives vides : acceptées, valeurs inconnues', () => {
+    const scpi = convertirLigne({
+      ...ligne,
+      taux_distribution: '',
+      cashback: '',
+      demembrement: 'Non',
+      decote_demembrement: '',
+    });
+    expect(scpi.taux).toEqual([]);
+    expect(scpi.fiche.cashback).toBeNull();
+    expect(scpi.decotes).toEqual([]);
+  });
+
+  it('demembrement = Oui sans decote_demembrement : refusée', () => {
+    expect(() => convertirLigne({ ...ligne, decote_demembrement: '' })).toThrow(
+      'decote_demembrement : obligatoire quand demembrement = Oui',
+    );
+  });
+
+  it('IBAN et BIC au mauvais format : refusée', () => {
+    expect(() => convertirLigne({ ...ligne, iban: 'FR76' })).toThrow('iban : format invalide');
+    expect(() => convertirLigne({ ...ligne, bic: 'BNP' })).toThrow('bic : format invalide');
   });
 
   describe('empreinte', () => {
