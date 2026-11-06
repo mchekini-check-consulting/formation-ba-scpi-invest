@@ -13,7 +13,7 @@ jobs:
     outputs:
       components: ${{ steps.list.outputs.components }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0       # git diff avec la branche cible
       - id: list
@@ -24,7 +24,7 @@ jobs:
   gitleaks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: mchekini-check-consulting/formation-ba-gitops/ci-template/gitleaks@main
@@ -37,7 +37,7 @@ jobs:
         component: ${{ fromJSON(needs.components.outputs.components) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: mchekini-check-consulting/formation-ba-gitops/ci-template/lint@main
         with:
           component: ${{ matrix.component }}
@@ -50,7 +50,7 @@ jobs:
         component: ${{ fromJSON(needs.components.outputs.components) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: mchekini-check-consulting/formation-ba-gitops/ci-template/unit-test@main
         with:
           component: ${{ matrix.component }}
@@ -64,7 +64,7 @@ jobs:
         component: ${{ fromJSON(needs.components.outputs.components) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0       # SonarQube : blame / nouveau code
       - uses: mchekini-check-consulting/formation-ba-gitops/ci-template/sonarqube@main
@@ -80,7 +80,7 @@ jobs:
         component: ${{ fromJSON(needs.components.outputs.components) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: mchekini-check-consulting/formation-ba-gitops/ci-template/integration-test@main
         with:
           component: ${{ matrix.component }}
