@@ -221,7 +221,7 @@ describe('lignesCsv', () => {
   it('fichier en Latin-1 (pas en UTF-8) : fichier entier refusé, motif « encodage »', async () => {
     const latin1 = Buffer.from(`${ENTETE}\n${ligneValide('Métropoles')}\n`, 'latin1');
     await expect(importScpis(fausseBaseVide(), lignesCsv(octets(latin1)))).rejects.toThrow(
-      'fichier illisible : encodage invalide (UTF-8 attendu)',
+      'Encodage du fichier invalide : UTF-8 attendu',
     );
   });
 

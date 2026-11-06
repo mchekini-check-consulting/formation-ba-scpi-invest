@@ -57,6 +57,13 @@
       "when": 1793903650761,
       "tag": "0007_formulaire_investisseur",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793991191636,
+      "tag": "0008_import_erreur_detail",
+      "breakpoints": true
     }
   ]
 }

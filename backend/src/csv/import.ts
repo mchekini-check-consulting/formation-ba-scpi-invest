@@ -10,7 +10,10 @@ import {
   TABLE_VALEUR_RECONSTITUTION,
 } from '../db/schema.js';
 import type { RejetImport } from '../db/schema.js';
-import { COLONNES, convertirLigne, empreinte, type ScpiConvertie } from './convert.js';
+import { convertirLigne, empreinte, type ScpiConvertie } from './convert.js';
+import { aucuneLigneValide, colonnesAbsentes, erreurDeLecture, fichierVide } from './erreurs.js';
+
+export { FichierInvalide, type DetailErreur } from './erreurs.js';
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 type Lignes = AsyncIterable<Record<string, string>>;
@@ -26,18 +29,6 @@ export type BilanImport = {
   rejets: RejetImport[];
 };
 
-// Fichier entier refusé (US-07b, scénario 2) : catalogue non modifié. rejets : lignes
-// rejetées quand c'est parce qu'aucune n'est valide.
-export class FichierInvalide extends Error {
-  constructor(
-    message: string,
-    readonly rejets: RejetImport[] = [],
-  ) {
-    super(message);
-    this.name = 'FichierInvalide';
-  }
-}
-
 // Numéro de la ligne dans le fichier (en-tête = 1), posé par la lecture du CSV (source.ts).
 // Propriété cachée : n'apparaît ni dans les colonnes ni dans les comparaisons des tests.
 const NUMERO_LIGNE = Symbol('numéro de ligne');
@@ -50,9 +41,9 @@ type Ligne = { numero: number; row: Record<string, string> };
 
 // Lit tout le fichier (quelques centaines de SCPI au plus) avant d'écrire quoi que ce
 // soit : les doublons ne se voient qu'une fois toutes les lignes lues.
-// Refuse le fichier entier : illisible (guillemets, nombre de valeurs, encodage autre
-// qu'UTF-8 : erreurs levées par la lecture, source.ts), colonnes absentes (souvent un
-// mauvais séparateur), aucune SCPI.
+// Refuse le fichier entier (FichierInvalide, motif expliqué en blocs : erreurs.ts) :
+// illisible (guillemets, nombre de valeurs, encodage autre qu'UTF-8 : erreurs levées par
+// la lecture, source.ts), mauvais séparateur, colonnes absentes, aucune SCPI.
 async function lireFichier(rows: Lignes): Promise<Ligne[]> {
   const lignes: Ligne[] = [];
   try {
@@ -61,18 +52,12 @@ async function lireFichier(rows: Lignes): Promise<Ligne[]> {
       lignes.push({ numero, row });
     }
   } catch (err) {
-    throw new FichierInvalide(`fichier illisible : ${err instanceof Error ? err.message : err}`);
+    throw erreurDeLecture(err);
   }
 
-  if (lignes.length === 0) {
-    throw new FichierInvalide('fichier sans aucune SCPI : catalogue non modifié');
-  }
-  const absentes = COLONNES.filter((c) => !(c in lignes[0].row));
-  if (absentes.length > 0) {
-    throw new FichierInvalide(
-      `colonnes absentes (séparateur attendu : virgule) : ${absentes.join(', ')}`,
-    );
-  }
+  if (lignes.length === 0) throw fichierVide();
+  const absentes = colonnesAbsentes(Object.keys(lignes[0].row));
+  if (absentes) throw absentes;
   return lignes;
 }
 
@@ -133,7 +118,7 @@ export async function importScpis(db: Db, rows: Lignes): Promise<BilanImport> {
   }
   bilan.rejetees = bilan.rejets.length;
   if (valides.length === 0) {
-    throw new FichierInvalide('aucune ligne valide : catalogue non modifié', bilan.rejets);
+    throw aucuneLigneValide(bilan.rejets);
   }
 
   // Une seule transaction pour tout le fichier : sur une erreur technique (connexion

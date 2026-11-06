@@ -344,6 +344,17 @@ export const statutImport = pgEnum('statut_import', [
 // Motif de rejet d'une ligne du CSV (rempli par les contrôles de l'US-07b)
 export type RejetImport = { ligne: number; nom: string | null; motif: string };
 
+// Refus du fichier entier expliqué en blocs (US-07b), pour l'écran du rapport :
+// où (ligne du fichier, null = fichier entier), constat, cause probable, à faire, et le
+// message d'origine de la lecture du CSV (détail technique). Jamais le contenu d'une ligne.
+export type DetailErreurImport = {
+  ligne: number | null;
+  constat: string;
+  cause: string | null;
+  action: string | null;
+  technique: string | null;
+};
+
 export const TABLE_IMPORT_RAPPORT = pgTable('import_rapport', {
   id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
   debut: horodatage('debut').notNull().defaultNow(),
@@ -358,6 +369,8 @@ export const TABLE_IMPORT_RAPPORT = pgTable('import_rapport', {
   rejetees: integer('rejetees').notNull().default(0),
   rejets: jsonb('rejets').$type<RejetImport[]>().notNull().default([]),
   erreur: text('erreur'), // motif d'un échec du fichier entier
+  // même motif en blocs, quand c'est le fichier qui est refusé (vide sinon)
+  erreur_detail: jsonb('erreur_detail').$type<DetailErreurImport>(),
 });
 
 // DRIZZLE RELATIONS : pour simplifier les appels one-to-many avec une seule requête drizzle
