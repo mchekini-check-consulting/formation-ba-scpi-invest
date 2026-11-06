@@ -52,9 +52,16 @@ describe('Routeur', () => {
   });
 
   it('/formulaire-investisseur : écran protégé, rien sans session ni KYC validé', () => {
-    localStorage.clear();
+    sessionStorage.clear();
     afficher('/formulaire-investisseur');
     expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
+  });
+
+  it('/catalogue : écran protégé (KYC puis profil validés), dernier écran mémorisé', () => {
+    sessionStorage.clear();
+    afficher('/catalogue');
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
+    expect(localStorage.getItem('scpi-invest.derniere-page')).toBe('/catalogue');
   });
 
   it('/indicateurs : définitions des indicateurs', () => {

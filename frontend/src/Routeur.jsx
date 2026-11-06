@@ -1,9 +1,12 @@
 // Choix de l'écran selon l'adresse de la page, avec React Router (nginx renvoie
 // index.html pour toute adresse : nginx.conf). Le routeur (BrowserRouter) est posé
 // dans main.jsx ; les tests utilisent MemoryRouter.
-import { Route, Routes, useSearchParams } from 'react-router';
+import { useEffect, ViewTransition } from 'react';
+import { Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router';
 import App from './App.jsx';
+import Catalogue from './catalogue/Catalogue.jsx';
 import Connexion from './connexion/Connexion.jsx';
+import { memoriserPage } from './connexion/destination.js';
 import Indicateurs from './Indicateurs.jsx';
 import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
 import Inscription from './inscription/Inscription.jsx';
@@ -13,6 +16,7 @@ import Cgu from './legal/Cgu.jsx';
 import Confidentialite from './legal/Confidentialite.jsx';
 import Contact from './legal/Contact.jsx';
 import MentionsLegales from './legal/MentionsLegales.jsx';
+import { CHEMINS_INACTIFS } from './navigation/entrees.js';
 
 // Email pré-rempli transmis par l'adresse (?email=...)
 function useEmailDeLAdresse() {
@@ -20,37 +24,66 @@ function useEmailDeLAdresse() {
   return parametres.get('email') ?? '';
 }
 
+// Bouton cliqué pour arriver sur la page (LienCompte, MiseEnPage.jsx) : son texte
+// glisse jusqu'au titre du formulaire
+function useOrigine() {
+  return useLocation().state?.origine;
+}
+
 function PageInscription() {
-  return <Inscription emailInitial={useEmailDeLAdresse()} />;
+  return <Inscription emailInitial={useEmailDeLAdresse()} origine={useOrigine()} />;
 }
 
 function PageConnexion() {
-  return <Connexion emailInitial={useEmailDeLAdresse()} />;
+  return <Connexion emailInitial={useEmailDeLAdresse()} origine={useOrigine()} />;
 }
 
 export default function Routeur() {
+  // Changement d'écran animé (<ViewTransition>, réglages dans index.css) : l'écran
+  // quitté s'efface, le nouveau apparaît ; un écran par adresse (key)
+  const { pathname } = useLocation();
+  // Dernier écran du parcours, pour y revenir après une reconnexion (destination.js)
+  useEffect(() => {
+    memoriserPage(pathname.replace(/\/+$/, '') || '/');
+  }, [pathname]);
   return (
-    <Routes>
-      <Route path="/inscription" element={<PageInscription />} />
-      <Route path="/connexion" element={<PageConnexion />} />
-      <Route path="/kyc" element={<Kyc />} />
-      {/* Écrans de l'application : session et KYC validé exigés (US-04b) */}
-      <Route
-        path="/formulaire-investisseur"
-        element={
-          <ExigerKycComplete>
-            <FormulaireInvestisseur />
-          </ExigerKycComplete>
-        }
-      />
-      <Route path="/indicateurs" element={<Indicateurs />} />
-      {/* Pages légales du pied de page (US-01b) */}
-      <Route path="/mentions-legales" element={<MentionsLegales />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/cgu" element={<Cgu />} />
-      <Route path="/confidentialite" element={<Confidentialite />} />
-      {/* Accueil, et toute adresse inconnue */}
-      <Route path="*" element={<App />} />
-    </Routes>
+    <ViewTransition key={pathname} enter="ecran-entre" exit="ecran-sort" default="none">
+      <Routes>
+        <Route path="/inscription" element={<PageInscription />} />
+        <Route path="/connexion" element={<PageConnexion />} />
+        <Route path="/kyc" element={<Kyc />} />
+        {/* Écrans de l'application : session et KYC validé exigés (US-04b) */}
+        <Route
+          path="/formulaire-investisseur"
+          element={
+            <ExigerKycComplete>
+              <FormulaireInvestisseur />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Catalogue : profil investisseur validé exigé en plus (Catalogue.jsx, US-05b) */}
+        <Route
+          path="/catalogue"
+          element={
+            <ExigerKycComplete>
+              <Catalogue />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Écrans pas encore disponibles (entrées grisées de la sidebar, US-06) :
+            adresse saisie directement -> Catalogue */}
+        {CHEMINS_INACTIFS.map((chemin) => (
+          <Route key={chemin} path={chemin} element={<Navigate to="/catalogue" replace />} />
+        ))}
+        <Route path="/indicateurs" element={<Indicateurs />} />
+        {/* Pages légales du pied de page (US-01b) */}
+        <Route path="/mentions-legales" element={<MentionsLegales />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/cgu" element={<Cgu />} />
+        <Route path="/confidentialite" element={<Confidentialite />} />
+        {/* Accueil, et toute adresse inconnue */}
+        <Route path="*" element={<App />} />
+      </Routes>
+    </ViewTransition>
   );
 }

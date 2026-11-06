@@ -1,8 +1,18 @@
 import { randomBytes } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { Db } from './index.js';
+import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
+import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
 import type { DepotKyc, EtatKyc } from '../kyc/service.js';
-import { acceptationCgu, kyc, parametre } from './schema.js';
+import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.js';
+import {
+  acceptationCgu,
+  kyc,
+  kycPiece,
+  parametre,
+  profilInvestisseur,
+  questionnaireInvestisseur,
+} from './schema.js';
 
 // Accès aux données (testé par test/*.e2e-test.ts sur une vraie base)
 
@@ -23,6 +33,55 @@ export async function secretDesSessions(
     .onConflictDoNothing();
   const [ligne] = await db.select().from(parametre).where(eq(parametre.cle, cle));
   return ligne.valeur;
+}
+
+// US-05a : une ligne par utilisateur, créée à la première étape puis mise à jour
+export function depotQuestionnaires(db: Db): DepotQuestionnaires {
+  return {
+    async lire(utilisateurId) {
+      const [ligne] = await db
+        .select({
+          etapeCourante: questionnaireInvestisseur.etapeCourante,
+          reponses: questionnaireInvestisseur.reponses,
+        })
+        .from(questionnaireInvestisseur)
+        .where(eq(questionnaireInvestisseur.utilisateurId, utilisateurId));
+      return ligne ?? null;
+    },
+    async enregistrer(utilisateurId, { etapeCourante, reponses }, versionQuestionnaire) {
+      await db
+        .insert(questionnaireInvestisseur)
+        .values({ utilisateurId, etapeCourante, reponses, versionQuestionnaire })
+        .onConflictDoUpdate({
+          target: questionnaireInvestisseur.utilisateurId,
+          set: { etapeCourante, reponses, versionQuestionnaire, misAJourLe: new Date() },
+        });
+    },
+  };
+}
+
+// US-05b : profils validés, jamais modifiés (une mise à jour ajoute une ligne, US-05d)
+export function depotProfils(db: Db): DepotProfils {
+  return {
+    async existe(utilisateurId) {
+      const lignes = await db
+        .select({ id: profilInvestisseur.id })
+        .from(profilInvestisseur)
+        .where(eq(profilInvestisseur.utilisateurId, utilisateurId))
+        .limit(1);
+      return lignes.length > 0;
+    },
+    async enregistrer(utilisateurId, p) {
+      await db.insert(profilInvestisseur).values({
+        utilisateurId,
+        profil: p.profil,
+        score: p.score,
+        reponses: p.reponses,
+        avertissements: p.avertissements,
+        versionQuestionnaire: p.versionQuestionnaire,
+      });
+    },
+  };
 }
 
 export function depotAcceptationsCgu(db: Db) {
@@ -63,13 +122,68 @@ export function depotKyc(db: Db): DepotKyc {
       return lignes.length > 0;
     },
 
+    // KYC et pièces dans la même transaction : jamais un KYC validé avec des pièces
+    // encore modifiables
     async valider(utilisateurId, le): Promise<boolean> {
+      return db.transaction(async (tx) => {
+        const lignes = await tx
+          .update(kyc)
+          .set({ statut: 'complete', etape: ETAPE_RECAPITULATIF, valideLe: le, modifieLe: le })
+          .where(and(eq(kyc.utilisateurId, utilisateurId), eq(kyc.statut, 'en_cours')))
+          .returning({ id: kyc.id });
+        if (lignes.length === 0) return false;
+        await tx
+          .update(kycPiece)
+          .set({ statut: 'en_verification', modifieLe: le })
+          .where(eq(kycPiece.utilisateurId, utilisateurId));
+        return true;
+      });
+    },
+
+    async typesPiecesDeposees(utilisateurId: string): Promise<string[]> {
       const lignes = await db
-        .update(kyc)
-        .set({ statut: 'complete', etape: 5, valideLe: le, modifieLe: le })
-        .where(and(eq(kyc.utilisateurId, utilisateurId), eq(kyc.statut, 'en_cours')))
-        .returning({ id: kyc.id });
-      return lignes.length > 0;
+        .select({ type: kycPiece.type })
+        .from(kycPiece)
+        .where(eq(kycPiece.utilisateurId, utilisateurId));
+      return lignes.map((ligne) => ligne.type);
+    },
+  };
+}
+
+// US-04c : pièces justificatives (métadonnées ; les fichiers sont dans R2)
+const colonnesPiece = {
+  type: kycPiece.type,
+  nomFichier: kycPiece.nomFichier,
+  format: kycPiece.format,
+  taille: kycPiece.taille,
+  statut: kycPiece.statut,
+  deposeLe: kycPiece.deposeLe,
+};
+
+export function depotPieces(db: Db): DepotPieces {
+  return {
+    async lister(utilisateurId: string): Promise<PieceKyc[]> {
+      return db
+        .select(colonnesPiece)
+        .from(kycPiece)
+        .where(eq(kycPiece.utilisateurId, utilisateurId))
+        .orderBy(kycPiece.id);
+    },
+
+    async enregistrer(utilisateurId, piece, le): Promise<PieceKyc> {
+      const valeurs = { ...piece, statut: 'deposee' as const, deposeLe: le, modifieLe: le };
+      const [ligne] = await db
+        .insert(kycPiece)
+        .values({ utilisateurId, ...valeurs })
+        .onConflictDoUpdate({ target: [kycPiece.utilisateurId, kycPiece.type], set: valeurs })
+        .returning(colonnesPiece);
+      return ligne;
+    },
+
+    async supprimer(utilisateurId, type): Promise<void> {
+      await db
+        .delete(kycPiece)
+        .where(and(eq(kycPiece.utilisateurId, utilisateurId), eq(kycPiece.type, type)));
     },
   };
 }

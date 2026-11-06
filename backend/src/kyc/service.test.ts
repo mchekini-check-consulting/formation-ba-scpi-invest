@@ -4,6 +4,7 @@ import { KYC_COMPLET } from './exemple.js';
 import {
   KYC_DEJA_VALIDE,
   KYC_INCOMPLET,
+  PIECES_MANQUANTES,
   creerKycService,
   type DepotKyc,
   type EtatKyc,
@@ -11,11 +12,18 @@ import {
 
 const LE = new Date(2026, 10, 4, 10, 0);
 
-function preparer(etat: EtatKyc | null = null, ecritureAcceptee = true) {
+const PIECES_DE_BASE = ['identite', 'domicile', 'rib'];
+
+function preparer(
+  etat: EtatKyc | null = null,
+  ecritureAcceptee = true,
+  piecesDeposees = PIECES_DE_BASE,
+) {
   const depot = {
     lire: vi.fn().mockResolvedValue(etat),
     enregistrer: vi.fn().mockResolvedValue(ecritureAcceptee),
     valider: vi.fn().mockResolvedValue(ecritureAcceptee),
+    typesPiecesDeposees: vi.fn().mockResolvedValue(piecesDeposees),
   } satisfies DepotKyc;
   return { service: creerKycService(depot, () => LE), depot };
 }
@@ -29,7 +37,7 @@ async function erreurDe(promesse: Promise<unknown>): Promise<HttpError> {
   return err as HttpError;
 }
 
-const EN_COURS: EtatKyc = { statut: 'en_cours', etape: 5, reponses: KYC_COMPLET, valideLe: null };
+const EN_COURS: EtatKyc = { statut: 'en_cours', etape: 6, reponses: KYC_COMPLET, valideLe: null };
 
 describe('KycService.lire', () => {
   it('nouvel utilisateur : KYC en cours, étape 1, sans réponse', async () => {
@@ -71,7 +79,7 @@ describe('KycService.enregistrer', () => {
     });
   });
 
-  it.each([0, 6, 2.5, '3', undefined])('étape invalide (%s) : 400', async (etape) => {
+  it.each([0, 7, 2.5, '3', undefined])('étape invalide (%s) : 400', async (etape) => {
     const { service, depot } = preparer();
     const err = await erreurDe(service.enregistrer('u1', { etape, reponses: {} }));
     expect(err.status).toBe(400);
@@ -91,7 +99,7 @@ describe('KycService.valider', () => {
     const { service, depot } = preparer(EN_COURS);
     expect(await service.valider('u1')).toEqual({
       statut: 'complete',
-      etape: 5,
+      etape: 6,
       reponses: KYC_COMPLET,
       valideLe: LE,
     });
@@ -107,6 +115,14 @@ describe('KycService.valider', () => {
       expect(err.message).toBe(KYC_INCOMPLET);
       expect(depot.valider).not.toHaveBeenCalled();
     }
+  });
+
+  it('pièce obligatoire manquante (US-04c) : 400, KYC non validé', async () => {
+    const { service, depot } = preparer(EN_COURS, true, ['identite', 'rib']);
+    const err = await erreurDe(service.valider('u1'));
+    expect(err.status).toBe(400);
+    expect(err.message).toBe(PIECES_MANQUANTES);
+    expect(depot.valider).not.toHaveBeenCalled();
   });
 
   it('KYC déjà validé : 409', async () => {

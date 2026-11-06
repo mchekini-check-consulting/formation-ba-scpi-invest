@@ -6,7 +6,8 @@ import {
 } from '@aws-sdk/client-s3';
 import { parse } from 'csv-parse';
 // pipeline de Node : transmet les erreurs du flux au parseur
-import { pipeline, type Readable } from 'node:stream';
+import { pipeline, Transform, type Readable } from 'node:stream';
+import { numeroter } from './import.js';
 import type { SourceCsv } from './service.js';
 
 // Lecture du CSV des SCPI dans un stockage compatible S3 (Cloudflare R2 aujourd'hui).
@@ -114,11 +115,44 @@ export async function archiverCsv(
   }
 }
 
-// Lignes du CSV (en-tête = noms des colonnes), lues au fil du flux
+// Décode le fichier en UTF-8 et refuse le fichier entier (US-07b, scénario 2) dès qu'un
+// octet n'est pas de l'UTF-8 (fichier enregistré en Latin-1 / Windows-1252 par exemple),
+// au lieu de le remplacer en silence par "�". Un "�" écrit tel quel dans un fichier UTF-8
+// valide reste accepté : c'est une donnée, pas un problème d'encodage.
+export function decoderUtf8(): Transform {
+  const decodeur = new TextDecoder('utf-8', { fatal: true }); // retire aussi le BOM
+  const decoder = (fn: () => string, done: (err?: Error | null, texte?: string) => void) => {
+    try {
+      done(null, fn());
+    } catch {
+      done(new Error('encodage invalide (UTF-8 attendu)'));
+    }
+  };
+  return new Transform({
+    readableObjectMode: true, // pousse du texte, pas des octets
+    // texte déjà décodé (tests) : transmis tel quel
+    transform: (chunk: Buffer | string, _encoding, done) =>
+      decoder(
+        () => (typeof chunk === 'string' ? chunk : decodeur.decode(chunk, { stream: true })),
+        done,
+      ),
+    flush: (done) => decoder(() => decodeur.decode(), done),
+  });
+}
+
+// Lignes du CSV (en-tête = noms des colonnes), lues au fil du flux. Chaque ligne porte
+// son numéro dans le fichier (NUMERO_LIGNE, en-tête = 1), pour le rapport des rejets.
 export function lignesCsv(body: Readable): AsyncIterable<Record<string, string>> {
   return pipeline(
     body,
-    parse({ columns: true, trim: true, skip_empty_lines: true, bom: true }),
+    decoderUtf8(),
+    parse({
+      columns: true,
+      trim: true,
+      skip_empty_lines: true,
+      bom: true,
+      on_record: (record: Record<string, string>, { lines }) => numeroter(record, lines),
+    }),
     () => {},
   ) as AsyncIterable<Record<string, string>>;
 }

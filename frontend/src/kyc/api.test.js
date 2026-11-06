@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErreurApi } from '../auth.js';
-import { chercherCommunes, enregistrerKyc, lireKyc, validerKyc } from './api.js';
+import {
+  chercherCommunes,
+  deposerPiece,
+  enregistrerKyc,
+  lireKyc,
+  listerPieces,
+  supprimerPiece,
+  validerKyc,
+} from './api.js';
 
 function reponse(status, corps) {
   return { ok: status >= 200 && status < 300, status, json: () => Promise.resolve(corps) };
@@ -9,8 +17,8 @@ function reponse(status, corps) {
 let fetchMock;
 
 beforeEach(() => {
-  localStorage.clear();
-  localStorage.setItem('scpi-invest.session', 'jeton-1');
+  sessionStorage.clear();
+  sessionStorage.setItem('scpi-invest.session', 'jeton-1');
   fetchMock = vi.fn();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -55,5 +63,50 @@ describe('appels du KYC (US-04b)', () => {
     fetchMock.mockResolvedValue(reponse(200, { communes: ['Lyon'] }));
     expect(await chercherCommunes('FR', '69003')).toEqual(['Lyon']);
     expect(fetchMock.mock.calls[0][0]).toBe('/api/communes?pays=FR&codePostal=69003');
+  });
+});
+
+describe('appels des pièces justificatives (US-04c)', () => {
+  it('listerPieces : GET /kyc/pieces', async () => {
+    fetchMock.mockResolvedValue(reponse(200, []));
+    expect(await listerPieces()).toEqual([]);
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/kyc/pieces');
+  });
+
+  it('deposerPiece : PUT du fichier, nom dans l’adresse, avancement transmis', async () => {
+    let xhr;
+    vi.stubGlobal(
+      'XMLHttpRequest',
+      class {
+        upload = {};
+        constructor() {
+          xhr = this;
+        }
+        open(methode, url) {
+          Object.assign(this, { methode, url });
+        }
+        setRequestHeader() {}
+        send(corps) {
+          this.corps = corps;
+        }
+      },
+    );
+    const progression = vi.fn();
+    const fichier = new File(['%PDF-'], 'mon rib & co.pdf', { type: 'application/pdf' });
+    const envoi = deposerPiece('rib', fichier, progression);
+    expect(xhr.url).toBe('/api/kyc/pieces/rib?nom=mon%20rib%20%26%20co.pdf');
+    expect([xhr.methode, xhr.corps]).toEqual(['PUT', fichier]);
+    xhr.upload.onprogress({ lengthComputable: true, loaded: 1, total: 2 });
+    expect(progression).toHaveBeenCalledWith(0.5);
+    Object.assign(xhr, { status: 200, responseText: '{"type":"rib"}' });
+    xhr.onload();
+    expect(await envoi).toEqual({ type: 'rib' });
+  });
+
+  it('supprimerPiece : DELETE /kyc/pieces/<type>', async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 204, json: () => Promise.reject() });
+    expect(await supprimerPiece('rib')).toBeNull();
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/kyc/pieces/rib');
+    expect(fetchMock.mock.calls[0][1].method).toBe('DELETE');
   });
 });

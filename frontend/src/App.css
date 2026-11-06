@@ -1,630 +1,693 @@
-/* Charte de la maquette « Landing_v3 · version photo » : bleus, photo d'immeuble en tête de page */
-.landing {
-  --fond: #f5f7fa;
-  --blanc: #fff;
-  --bleu: #1e3a8a;
-  --bleu-fonce: #1e40af;
-  --bleu-vif: #3b6fd4;
-  --bleu-nuit: #0f2a5c;
-  --bleu-pied: #0b1730;
-  --bleu-pale: #dbe7fa;
-  --bleu-clair: #93b4e8;
-  --bleu-logo-pied: #7fa6e6;
-  --bordure: #e2e8f0;
-  --bordure-bouton: #c2d0e4;
-  --bordure-badge: #c2d4ee;
-  --decor: #d6e2f2;
-  --texte: #0f172a;
-  --texte-menu: #1e293b;
-  --texte-intro: #334155;
-  --texte-secondaire: #475569;
-  --texte-discret: #64748b;
-  --texte-sur-sombre: #d5e1f5;
-  --texte-pied: #cbd5e1;
-  --gris-faq: #f8fafc;
-  --font-titre: Manrope, sans-serif;
+/* Page d'accueil : modèle « bleu éditorial » (mockups/accueil.html).
+   Charte commune (couleurs, boutons, titres, pied) dans index.css. */
 
+.accueil .section {
+  padding: 110px 70px;
+}
+
+.accueil .surtitre + .titre-section {
+  margin-top: 18px;
+}
+
+/* --- Héros --------------------------------------------------------------- */
+
+.heros {
   position: relative;
-  overflow-x: hidden;
-  font-family: Inter, system-ui, sans-serif;
-  color: var(--texte);
-  background: var(--fond);
+  overflow: hidden;
 }
 
-.landing h1,
-.landing h2,
-.landing h3,
-.landing p,
-.landing ul,
-.landing ol {
-  margin: 0;
-}
-
-.landing a {
-  color: var(--bleu);
-}
-
-.landing a:hover {
-  color: var(--bleu-fonce);
-}
-
-.container {
-  position: relative;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.container--etroit {
-  max-width: 900px;
-}
-
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-}
-
-/* --- Boutons ------------------------------------------------------------- */
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.landing .btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 20px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.landing .btn--outline,
-.landing .btn--outline:hover {
-  border: 1px solid var(--bordure-bouton);
-  background: var(--blanc);
-  color: var(--texte);
-}
-
-.landing .btn--primary,
-.landing .btn--primary:hover {
-  background: var(--bleu);
-  color: var(--blanc);
-}
-
-.landing .btn--lg {
-  padding: 16px 26px;
-  border-radius: 12px;
-  font-size: 16px;
-}
-
-.landing .btn--lg.btn--primary {
-  box-shadow: 0 10px 24px rgb(30 58 138 / 25%);
-}
-
-/* --- En-tête (posé sur la photo) ----------------------------------------- */
-
-.header {
+/* Photo de l'immeuble en fond, voile clair à gauche pour garder le texte lisible */
+.heros__fond {
   position: absolute;
-  inset: 0 0 auto;
-  z-index: 2;
+  inset: 0;
+  background: var(--bleu-ciel) url('./assets/landing-immeuble.jpg') 70% center / cover;
 }
 
-.header__inner {
-  padding: 20px 24px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-  justify-content: space-between;
-}
-
-.header__nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 6px;
-  border-radius: 12px;
-  background: rgb(255 255 255 / 75%);
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.landing .header__nav a {
-  padding: 8px 14px;
-  color: var(--texte-menu);
-  text-decoration: none;
-}
-
-.landing .logo-lien {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-}
-
-.logo {
-  font-family: var(--font-titre);
-  font-weight: 800;
-  font-size: 22px;
-  letter-spacing: -0.5px;
-  color: var(--texte);
-}
-
-.logo__plus {
-  color: var(--bleu-vif);
-}
-
-.logo--footer {
-  font-size: 20px;
-  color: var(--blanc);
-}
-
-.logo--footer .logo__plus {
-  color: var(--bleu-logo-pied);
-}
-
-/* --- Hero : photo d'immeuble, voile clair à gauche pour lire le texte ----- */
-
-.hero {
-  position: relative;
-  min-height: 720px;
-  padding: 200px 24px 150px;
-  background: #cfe0f3 url('./assets/landing-immeuble.jpg') right center / cover no-repeat;
-}
-
-.hero::before {
+.heros__fond::after {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(
     90deg,
-    rgb(245 248 252 / 94%) 0%,
-    rgb(245 248 252 / 80%) 38%,
-    rgb(245 248 252 / 15%) 62%,
-    rgb(245 248 252 / 0%) 75%
+    rgb(251 250 247 / 96%) 0,
+    rgb(251 250 247 / 85%) 42%,
+    transparent 70%
   );
 }
 
-.hero__text {
-  max-width: 620px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.hero__title {
-  font-family: var(--font-titre);
-  font-size: 64px;
-  line-height: 1.04;
-  letter-spacing: -1.6px;
-  font-weight: 800;
-}
-
-.hero__accent {
-  color: var(--bleu);
-}
-
-.hero__lead {
-  font-size: 19px;
-  line-height: 1.6;
-  color: var(--texte-intro);
-}
-
-.landing .hero__note {
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--texte-menu);
-}
-
-.hero__note li {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 90%);
-}
-
-.eyebrow {
-  font-size: 14px;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  font-weight: 600;
-  color: var(--bleu);
-}
-
-.eyebrow--light {
-  color: var(--bleu-clair);
-}
-
-.hero .eyebrow {
-  align-self: flex-start;
-  padding: 7px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--bordure-badge);
-  background: var(--blanc);
-  font-size: 13px;
-  letter-spacing: 1px;
-  color: var(--bleu);
-}
-
-/* --- Sections ------------------------------------------------------------ */
-
-.section {
-  position: relative;
-  overflow: hidden;
-  padding: 88px 24px;
-}
-
-/* Trame de petits cercles décorative (FAQ) */
-.section--blanc::before {
-  content: '';
+.heros__bloc {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 240px;
-  height: 200px;
-  background-image: radial-gradient(
-    circle,
-    transparent 4px,
-    var(--decor) 4px 5.5px,
-    transparent 5.5px
-  );
-  background-size: 26px 26px;
-}
-
-/* Ondes concentriques partant du coin haut droit : un quart de disque bleu pâle
-   et trois arcs fins de plus en plus clairs */
-.section--cercles::before,
-.section--cercles::after {
-  content: '';
-  position: absolute;
-  top: 0;
   right: 0;
-  border-radius: 999px;
-  transform: translate(50%, -50%);
+  top: 0;
+  width: 18%;
+  height: 30%;
+  background: var(--bleu-vif);
+  mix-blend-mode: multiply;
+  opacity: 0.9;
 }
 
-.section--cercles::before {
-  width: 300px;
-  height: 300px;
-  background: var(--bleu-pale);
-}
-
-.section--cercles::after {
-  width: 900px;
-  height: 900px;
-  background: radial-gradient(
-    circle closest-side,
-    transparent 228px,
-    var(--bordure-badge) 228px 230px,
-    transparent 230px 318px,
-    rgb(194 212 238 / 70%) 318px 320px,
-    transparent 320px 408px,
-    rgb(194 212 238 / 40%) 408px 410px,
-    transparent 410px
-  );
-}
-
-.section--sombre {
-  background: var(--bleu-nuit);
-  color: var(--blanc);
-}
-
-/* Rayures fines en diagonale */
-.section--sombre::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    135deg,
-    rgb(255 255 255 / 4%) 0,
-    rgb(255 255 255 / 4%) 2px,
-    transparent 2px,
-    transparent 26px
-  );
-}
-
-/* Groupe d'immeubles dans l'espace libre en bas à droite des avantages */
-.decor-quartier {
-  position: absolute;
-  right: max(24px, calc((100% - 1200px) / 2));
-  bottom: 0;
-  width: 340px;
-  height: 270px;
-}
-
-.section--blanc {
-  background: var(--blanc);
-  border-top: 1px solid var(--bordure);
-}
-
-/* Couleurs des immeubles : bleu pâle sur fond clair */
-.immeubles__antenne {
-  stroke-width: 2;
-}
-
-.decor-quartier .immeubles__facade {
-  fill: var(--bleu-pale);
-}
-
-.decor-quartier .immeubles__fenetre {
-  fill: var(--blanc);
-}
-
-.decor-quartier .immeubles__antenne {
-  stroke: var(--bleu-pale);
-}
-
-.titre-section {
-  font-family: var(--font-titre);
-  font-size: 40px;
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -1px;
-}
-
-.intro {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 760px;
-}
-
-.intro .titre-section {
-  font-size: 44px;
-}
-
-.intro__texte {
-  font-size: 18px;
-  line-height: 1.6;
-  color: var(--texte-secondaire);
-}
-
-.entete-centre {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.grille {
+.heros__grille {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-  gap: 24px;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 50px;
+  align-items: center;
+  min-height: 600px;
+  padding: 64px 56px 64px 70px;
 }
 
-/* 5 avantages : 3 par ligne sur grand écran plutôt que 4 + 1 */
-.grille--avantages {
-  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+.heros h1 {
+  font-size: clamp(40px, 4.4vw, 64px);
+  margin-top: 22px;
 }
 
-.carte,
-.avantage {
-  background: var(--blanc);
-  border: 1px solid var(--bordure);
-  border-radius: 16px;
-  padding: 28px;
+.heros__chapeau {
+  font-size: 18.5px;
+  color: var(--encre-douce);
+  max-width: 440px;
+  margin-top: 26px;
+}
+
+.heros__cta {
+  margin-top: 30px;
+}
+
+.heros__notes {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.carte__icone {
-  width: 40px;
-  height: 40px;
-  fill: none;
-  stroke: var(--texte-discret);
-  stroke-width: 1.6;
-}
-
-.carte__avant {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--texte-discret);
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-}
-
-.carte h3,
-.avantage h3 {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.carte p:not(.carte__avant),
-.avantage p {
-  font-size: 16px;
-  color: var(--texte-secondaire);
-  line-height: 1.6;
-}
-
-/* --- Comment ça marche (fond bleu nuit) ---------------------------------- */
-
-.etapes {
-  padding: 0;
+  gap: 20px;
+  margin-top: 22px;
   list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
-  gap: 24px;
+  padding: 0;
+  font-size: 14px;
+  color: var(--encre-douce);
+  flex-wrap: wrap;
 }
 
-.etape {
-  border: 1px solid rgb(255 255 255 / 15%);
-  border-radius: 16px;
-  background: rgb(255 255 255 / 7%);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.etape__numero {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: var(--blanc);
-  color: var(--bleu-nuit);
+.heros__notes li {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-weight: 800;
+  gap: 8px;
 }
 
-.etape h3 {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.etape p {
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--texte-sur-sombre);
-}
-
-/* --- Avantages ----------------------------------------------------------- */
-
-.avantage__icone {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: var(--bleu-pale);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avantage svg {
-  width: 24px;
-  height: 24px;
+.heros__notes svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--vert);
   fill: none;
-  stroke: var(--bleu);
-  stroke-width: 2;
+  stroke-width: 2.6;
+}
+
+/* --- Panneau sombre « santé des SCPI », posé sur la photo ---------------- */
+
+.heros__sante {
+  background: radial-gradient(120% 90% at 100% 0, #26407e, var(--nuit) 60%);
+  color: #fff;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: 22px;
+  box-shadow: 0 30px 60px -30px rgb(15 31 69 / 60%);
+}
+
+.etiquette {
+  align-self: flex-start;
+  background: var(--ocre);
+  color: #4a2a08;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 7px;
+}
+
+.heros__sante-titre {
+  font-family: var(--serif);
+  font-size: 26px;
+  line-height: 1.15;
+  max-width: 380px;
+}
+
+.sante,
+.mini {
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 16px;
+}
+
+.sante {
+  list-style: none;
+  padding: 6px 18px;
+}
+
+.sante__ligne {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  font-size: 14.5px;
+  color: #d6def2;
+}
+
+.sante__ligne + .sante__ligne {
+  border-top: 1px solid rgb(255 255 255 / 9%);
+}
+
+.feu {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+}
+
+.feu::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.feu--ok {
+  color: #6fd6a2;
+  background: rgb(111 214 162 / 10%);
+}
+
+.feu--alerte {
+  color: #f6b26b;
+  background: rgb(246 178 107 / 10%);
+}
+
+.heros__sante-bas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: auto;
+}
+
+.mini {
+  padding: 16px;
+  font-size: 13.5px;
+  color: var(--texte-sur-nuit);
+  line-height: 1.45;
+}
+
+.mini__icone {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgb(246 197 140 / 55%);
+  display: grid;
+  place-items: center;
+  margin-bottom: 12px;
+}
+
+.mini__icone svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--ocre);
+  fill: none;
+  stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.landing .avantage__lien {
-  margin-top: auto;
+/* --- Chiffres ------------------------------------------------------------ */
+
+.chiffres {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 44px 70px 50px;
+  list-style: none;
+}
+
+.chiffre {
+  padding: 0 26px;
+  border-left: 1px solid var(--ligne);
+}
+
+.chiffre:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.chiffre strong {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 54px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--bleu);
+  display: block;
+}
+
+.chiffre span {
+  display: block;
+  margin-top: 10px;
+  font-size: 14.5px;
+  color: var(--encre-douce);
+  max-width: 200px;
+}
+
+/* --- Problèmes (« Avant ») ----------------------------------------------- */
+
+.accueil .section--probleme {
+  padding-top: 70px;
+}
+
+.intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: end;
+  margin-bottom: 54px;
+}
+
+.intro p {
+  font-size: 17.5px;
+  color: var(--encre-douce);
+}
+
+.avant {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.accueil .carte,
+.avantage {
+  background: #fff;
+  border: 1px solid var(--ligne);
+  border-radius: var(--r-m);
+  padding: 30px;
+}
+
+.accueil .carte {
+  position: relative;
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s;
+}
+
+.accueil .carte:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 50px -30px rgb(15 31 69 / 35%);
+}
+
+.carte__haut {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.carte__icone,
+.avantage__icone {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--papier);
+  display: grid;
+  place-items: center;
+}
+
+.carte__icone svg,
+.avantage__icone svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--bleu);
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.carte__avant {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rouge);
+  background: #fbe9e5;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.accueil .carte h3,
+.avantage h3,
+.etape h3 {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.accueil .carte p,
+.avantage p {
+  color: var(--encre-douce);
   font-size: 15px;
+}
+
+/* --- Comment ça marche (bloc bleu nuit) ---------------------------------- */
+
+.etapes-bloc {
+  background: var(--nuit);
+  color: #fff;
+  border-radius: var(--r-l);
+  margin: 0 0 14px;
+  padding: 96px 70px;
+  position: relative;
+  overflow: hidden;
+}
+
+.etapes-bloc::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('./assets/landing-immeuble.jpg') right center / cover;
+  opacity: 0.12;
+  mix-blend-mode: luminosity;
+}
+
+.etapes-bloc > * {
+  position: relative;
+}
+
+.etapes-bloc .surtitre {
+  color: var(--ocre);
+}
+
+.etapes-bloc .titre-section em {
+  color: #9dbcf2;
+}
+
+.etapes {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 56px;
+}
+
+.etape {
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid rgb(255 255 255 / 12%);
+  backdrop-filter: blur(6px);
+  border-radius: var(--r-m);
+  padding: 26px;
+  transition: background 0.25s;
+}
+
+.etape:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+.etape__n {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 64px;
+  line-height: 1;
+  color: #9dbcf2;
+  display: block;
+  margin-bottom: 36px;
+}
+
+.etape p {
+  color: var(--texte-sur-nuit);
+  font-size: 15px;
+}
+
+.etape__trait {
+  height: 3px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 12%);
+  margin-bottom: 22px;
+  overflow: hidden;
+}
+
+.etape__trait i {
+  display: block;
+  height: 100%;
+  background: var(--ocre);
+}
+
+/* --- Avantages : grille éditoriale --------------------------------------- */
+
+.accueil .section--avantages {
+  padding-top: 96px;
+}
+
+.avantages {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-top: 54px;
+}
+
+.avantage {
+  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.avantage__icone {
+  margin-bottom: 34px;
+}
+
+.avantage--grand,
+.avantage--sombre {
+  grid-column: span 3;
+  border-color: transparent;
+}
+
+.avantage--grand {
+  background: var(--bleu-ciel);
+}
+
+.avantage--grand .avantage__icone {
+  background: #fff;
+}
+
+.avantage--grand h3,
+.avantage--sombre h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  max-width: 420px;
+}
+
+.avantage--grand p {
+  font-size: 16px;
+  color: #31405f;
+  max-width: 460px;
+}
+
+.avantage--sombre {
+  background: var(--nuit-2);
+  color: #fff;
+}
+
+.avantage--sombre p {
+  color: var(--texte-sur-nuit);
+  font-size: 16px;
+}
+
+.avantage--sombre .avantage__icone {
+  background: rgb(255 255 255 / 8%);
+}
+
+.avantage--sombre .avantage__icone svg {
+  stroke: var(--ocre);
+}
+
+.jauges {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding: 28px 0 0;
+  flex-wrap: wrap;
+  list-style: none;
+}
+
+.jauges li {
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 12px 6px 10px;
+  font-size: 13px;
   font-weight: 600;
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.jauges li::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+}
+
+.avantage__lien {
+  margin-top: auto;
+  padding-top: 22px;
+  color: var(--bleu-vif);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.avantage__lien:hover {
+  color: var(--bleu);
 }
 
 /* --- FAQ ----------------------------------------------------------------- */
 
 .faq {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 70px;
+  align-items: start;
 }
 
 .faq__titre {
-  margin-bottom: 8px;
+  position: sticky;
+  top: 30px;
 }
 
-.faq__item {
-  background: var(--gris-faq);
-  border: 1px solid var(--bordure);
-  border-radius: 14px;
-  padding: 20px 24px;
+.faq details {
+  border-bottom: 1px solid var(--ligne);
 }
 
-.faq__item summary {
-  font-size: 17px;
-  font-weight: 600;
-  cursor: pointer;
+.faq details:first-child {
+  border-top: 1px solid var(--ligne);
 }
 
-.landing .faq__item p {
-  margin: 12px 0 0;
-  font-size: 16px;
-  line-height: 1.6;
-  color: var(--texte-secondaire);
-}
-
-/* --- Pied de page -------------------------------------------------------- */
-
-.footer {
-  background: var(--bleu-pied);
-  color: var(--texte-pied);
-}
-
-.footer__inner {
-  padding: 48px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.footer__haut {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.landing .footer__nav {
-  padding: 0;
+.faq summary {
   list-style: none;
+  cursor: pointer;
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 20px;
-  font-size: 14px;
+  align-items: center;
+  padding: 26px 0;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-.landing .footer__nav a,
-.landing .footer__nav a:hover {
-  color: var(--texte-pied);
+.faq summary::-webkit-details-marker {
+  display: none;
 }
 
-.footer__mention {
-  font-size: 14px;
-  line-height: 1.6;
+.faq summary::after {
+  content: '+';
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--papier);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 400;
+  transition:
+    transform 0.3s,
+    background 0.3s;
 }
 
-/* La maquette est dessinée pour 1440 px : sur petit écran, titres réduits,
-   en-tête au-dessus de la photo et voile plus couvrant pour garder le texte lisible */
-@media (max-width: 760px) {
-  .header {
-    position: static;
-    background: var(--blanc);
-    border-bottom: 1px solid var(--bordure);
+.faq details[open] summary::after {
+  transform: rotate(45deg);
+  background: var(--bleu-vif);
+  color: #fff;
+}
+
+.faq details p {
+  padding: 0 60px 26px 0;
+  color: var(--encre-douce);
+  font-size: 16px;
+}
+
+/* --- Petits écrans ------------------------------------------------------- */
+
+@media (max-width: 960px) {
+  .accueil .section {
+    padding: 70px 22px;
   }
 
-  .hero {
+  .heros__grille {
     min-height: 0;
-    padding: 56px 16px 72px;
+    padding: 40px 22px;
   }
 
-  .hero::before {
-    background: rgb(245 248 252 / 88%);
+  .heros__grille,
+  .intro,
+  .faq {
+    grid-template-columns: 1fr;
+    gap: 28px;
   }
 
-  .decor-quartier {
-    display: none;
+  .chiffres {
+    grid-template-columns: 1fr 1fr;
+    gap: 26px 0;
+    padding: 36px 22px;
   }
 
-  .hero__title {
-    font-size: 38px;
-    letter-spacing: -1px;
+  .chiffre:nth-child(3) {
+    border-left: 0;
+    padding-left: 0;
   }
 
-  .section {
-    padding: 56px 16px;
+  .avant,
+  .etapes,
+  .avantages {
+    grid-template-columns: 1fr;
   }
 
-  .titre-section,
-  .intro .titre-section {
-    font-size: 28px;
+  .avantage,
+  .avantage--grand,
+  .avantage--sombre {
+    grid-column: auto;
   }
 
-  .header__inner,
-  .footer__inner {
-    padding-inline: 16px;
+  .etapes-bloc {
+    padding: 60px 22px;
+  }
+
+  .faq__titre {
+    position: static;
+  }
+
+  .faq details p {
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .heros h1 {
+    font-size: 40px;
+  }
+
+  .heros__grille > *,
+  .intro > * {
+    min-width: 0;
+  }
+
+  .heros__sante-bas {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablette et mobile : la photo passe sous tout le texte, voile clair uniforme */
+@media (max-width: 960px) {
+  .heros__fond::after {
+    background: rgb(251 250 247 / 88%);
   }
 }

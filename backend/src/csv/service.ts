@@ -4,7 +4,8 @@ import type { Db } from '../db/index.js';
 import { TABLE_IMPORT_RAPPORT } from '../db/schema.js';
 import { businessLog, logger } from '../logging/logger.js';
 import { loggable } from '../logging/service.js';
-import { importScpis, type BilanImport } from './import.js';
+import { alerteAdministrateur, type Alerter } from './alerte.js';
+import { FichierInvalide, importScpis, type BilanImport } from './import.js';
 
 type Lignes = AsyncIterable<Record<string, string>>;
 
@@ -18,8 +19,10 @@ export type SourceCsv = {
 // Couche service de l'import du catalogue (US-07a) : une ligne dans import_rapport par
 // exécution, ouverte "en_cours" puis terminée :
 //   - "aucun_fichier" : rien à importer, catalogue inchangé ;
-//   - "echec" (avec le motif) : import annulé, erreur journalisée par loggable et relancée ;
-//   - "reussi" (avec le bilan) : puis archivage du fichier ; un archivage impossible
+//   - "echec" (avec le motif) : import annulé, alerte à l'administrateur (US-07b), erreur
+//     journalisée par loggable et relancée ;
+//   - "reussi" (avec le bilan et les lignes rejetées) : puis archivage du fichier ; un
+//     archivage impossible
 //     n'annule pas l'import (déjà enregistré), il est noté dans le rapport et les logs.
 // Le rapport est écrit hors de la transaction de l'import : il reste même si l'import est
 // annulé. Une ligne de log résume chaque exécution (Grafana « Logs métier »).
@@ -29,6 +32,7 @@ export function creerImportService(
   log: Logger = logger,
   maintenant: () => Date = () => new Date(),
   importer: (db: Db, lignes: Lignes) => Promise<BilanImport> = importScpis,
+  alerter: Alerter = alerteAdministrateur(log),
 ) {
   const { fichier } = source;
   const terminer = (id: number, valeurs: Partial<typeof TABLE_IMPORT_RAPPORT.$inferInsert>) =>
@@ -55,8 +59,20 @@ export function creerImportService(
       }
       bilan = await importer(db, lignes);
     } catch (err) {
+      // Lignes rejetées quand le fichier est refusé faute de ligne valide
+      const rejets = err instanceof FichierInvalide ? err.rejets : [];
       // Base injoignable : le rapport reste "en_cours", l'erreur d'origine est relancée
-      await terminer(rapport.id, { statut: 'echec', erreur: message(err) }).catch(() => undefined);
+      await terminer(rapport.id, {
+        statut: 'echec',
+        erreur: message(err),
+        ...(rejets.length > 0 && { rejetees: rejets.length, rejets }),
+      }).catch(() => undefined);
+      const sujet =
+        err instanceof FichierInvalide
+          ? `fichier du catalogue rejeté : ${fichier}`
+          : `import du catalogue annulé (erreur technique) : ${fichier}`;
+      // Une alerte impossible à envoyer ne doit pas masquer l'erreur d'origine
+      await alerter(sujet, message(err)).catch(() => undefined);
       throw err;
     }
 
@@ -69,9 +85,11 @@ export function creerImportService(
     }
 
     await terminer(rapport.id, { statut: 'reussi', ...bilan, erreur });
-    resumer(erreur ? 'warn' : 'info', 'import du catalogue terminé', {
+    // Le détail des rejets reste dans le rapport : seuls les compteurs vont dans les logs
+    const { rejets: _rejets, ...compteurs } = bilan;
+    resumer(erreur || bilan.rejetees > 0 ? 'warn' : 'info', 'import du catalogue terminé', {
       archive,
-      ...bilan,
+      ...compteurs,
       ...(erreur && { erreur }),
     });
     return bilan;

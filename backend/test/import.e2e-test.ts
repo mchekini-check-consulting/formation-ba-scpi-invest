@@ -1,17 +1,30 @@
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { importScpis } from '../src/csv/import.js';
+import { importScpis, type BilanImport } from '../src/csv/import.js';
 import { lancerSurUnSeulReplica } from '../src/csv/planification.js';
 import { creerImportService, type SourceCsv } from '../src/csv/service.js';
 import { captureLogs } from '../src/logging/capture.js';
 import { createDb, createPool, type Db } from '../src/db/index.js';
 import { migrate } from '../src/migrate.js';
 
-// US-07a (SCPI-24), scénarios 1 à 3, sur un PostgreSQL 16 jetable. Docker requis.
+// US-07a (SCPI-24), scénarios 1 à 3, et US-07b (SCPI-39), sur un PostgreSQL 16 jetable.
+// Docker requis.
 async function* lignes(...rows: Record<string, string>[]) {
   yield* rows;
 }
+
+// Bilan sans rejet, compteurs précisés
+const bilan = (compteurs: Partial<BilanImport>): BilanImport => ({
+  lues: 0,
+  ajoutees: 0,
+  mises_a_jour: 0,
+  inchangees: 0,
+  supprimees: 0,
+  rejetees: 0,
+  rejets: [],
+  ...compteurs,
+});
 
 function scpi(nom: string, prix_part = '200'): Record<string, string> {
   return {
@@ -28,13 +41,13 @@ function scpi(nom: string, prix_part = '200'): Record<string, string> {
     delai_jouissance: '4',
     frequence_loyers: 'Trimestrielle',
     valeur_reconstitution: '215.5',
-    iban: '',
-    bic: '',
+    iban: 'FR7630001007941234567890185',
+    bic: 'BNPAFRPPXXX',
     decote_demembrement: '5,80',
     demembrement: 'Oui',
     cashback: '',
     versement_programme: 'Oui',
-    publicite: '',
+    publicite: `Texte ${nom}`,
   };
 }
 
@@ -67,9 +80,9 @@ describe('import du catalogue (e2e)', () => {
   });
 
   it('scénario 1 : 3 SCPI absentes de la base sont ajoutées', async () => {
-    const bilan = await importScpis(db, lignes(scpi('A'), scpi('B'), scpi('C')));
+    const resultat = await importScpis(db, lignes(scpi('A'), scpi('B'), scpi('C')));
 
-    expect(bilan).toEqual({ lues: 3, ajoutees: 3, mises_a_jour: 0, inchangees: 0, supprimees: 0 });
+    expect(resultat).toEqual(bilan({ lues: 3, ajoutees: 3 }));
     const scpis = await catalogue();
     expect(scpis.map((s) => s.nom)).toEqual(['A', 'B', 'C']);
     expect(scpis[0]).toMatchObject({
@@ -83,18 +96,18 @@ describe('import du catalogue (e2e)', () => {
   it('scénario 3 : fichier identique à la base, aucune donnée modifiée', async () => {
     const avant = await catalogue();
 
-    const bilan = await importScpis(db, lignes(scpi('A'), scpi('B'), scpi('C')));
+    const resultat = await importScpis(db, lignes(scpi('A'), scpi('B'), scpi('C')));
 
-    expect(bilan).toEqual({ lues: 3, ajoutees: 0, mises_a_jour: 0, inchangees: 3, supprimees: 0 });
+    expect(resultat).toEqual(bilan({ lues: 3, inchangees: 3 }));
     expect(await catalogue()).toEqual(avant);
   });
 
   it('scénario 2 : prix de part changé, seule cette SCPI est mise à jour', async () => {
     const avant = await catalogue();
 
-    const bilan = await importScpis(db, lignes(scpi('A'), scpi('B', '210'), scpi('C')));
+    const resultat = await importScpis(db, lignes(scpi('A'), scpi('B', '210'), scpi('C')));
 
-    expect(bilan).toEqual({ lues: 3, ajoutees: 0, mises_a_jour: 1, inchangees: 2, supprimees: 0 });
+    expect(resultat).toEqual(bilan({ lues: 3, mises_a_jour: 1, inchangees: 2 }));
     const apres = await catalogue();
     expect(apres[1]).toEqual({
       ...avant[1],
@@ -105,11 +118,49 @@ describe('import du catalogue (e2e)', () => {
     expect([apres[0], apres[2]]).toEqual([avant[0], avant[2]]); // autres SCPI intactes
   });
 
-  it('ligne invalide : rien n’est enregistré (une seule transaction)', async () => {
+  // US-07b, scénario 3
+  it('ligne invalide : seule cette ligne est rejetée, les autres importées', async () => {
     const avant = await catalogue();
-    await expect(
-      importScpis(db, lignes(scpi('D'), { ...scpi('E'), capitalisation: 'abc' })),
-    ).rejects.toThrow('capitalisation');
+
+    const resultat = await importScpis(
+      db,
+      lignes(scpi('A'), scpi('B', '210'), scpi('C'), { ...scpi('E'), capitalisation: 'abc' }),
+    );
+
+    expect(resultat).toEqual(
+      bilan({
+        lues: 4,
+        inchangees: 3,
+        rejetees: 1,
+        rejets: [{ ligne: 5, nom: 'E', motif: 'capitalisation : nombre attendu, reçu "abc"' }],
+      }),
+    );
+    expect(await catalogue()).toEqual(avant);
+  });
+
+  it('ligne rejetée d’une SCPI déjà en base : gardée telle quelle', async () => {
+    const avant = await catalogue();
+
+    const resultat = await importScpis(
+      db,
+      lignes(scpi('A'), { ...scpi('B', '999'), iban: 'FR76' }, scpi('C')),
+    );
+
+    expect(resultat).toMatchObject({ inchangees: 2, supprimees: 0, rejetees: 1 });
+    expect(await catalogue()).toEqual(avant); // B garde son prix de 210, rien n'est supprimé
+  });
+
+  // US-07b, scénario 4
+  it('même Nom sur deux lignes : les deux rejetées, la SCPI en base est gardée', async () => {
+    const avant = await catalogue();
+
+    const resultat = await importScpis(
+      db,
+      lignes(scpi('A'), scpi('B', '210'), scpi('C'), scpi('C', '300')),
+    );
+
+    expect(resultat).toMatchObject({ inchangees: 2, supprimees: 0, rejetees: 2 });
+    expect(resultat.rejets.map((r) => r.ligne)).toEqual([4, 5]);
     expect(await catalogue()).toEqual(avant);
   });
 
@@ -120,9 +171,9 @@ describe('import du catalogue (e2e)', () => {
   });
 
   it('SCPI en base absentes du fichier : supprimées avec leurs valeurs', async () => {
-    const bilan = await importScpis(db, lignes(scpi('A')));
+    const resultat = await importScpis(db, lignes(scpi('A')));
 
-    expect(bilan).toEqual({ lues: 1, ajoutees: 0, mises_a_jour: 0, inchangees: 1, supprimees: 2 });
+    expect(resultat).toEqual(bilan({ lues: 1, inchangees: 1, supprimees: 2 }));
     expect((await catalogue()).map((s) => s.nom)).toEqual(['A']);
     const { rows } = await pool.query(
       `select count(*)::int as n from scpi_prix_part p
@@ -136,7 +187,7 @@ describe('import du catalogue (e2e)', () => {
       (
         await pool.query(
           `select fichier, statut, lues, ajoutees, mises_a_jour, inchangees, supprimees,
-                  erreur, fin >= debut as termine
+                  rejetees, rejets, erreur, fin >= debut as termine
            from import_rapport order by id desc limit 1`,
         )
       ).rows[0];
@@ -164,28 +215,61 @@ describe('import du catalogue (e2e)', () => {
         mises_a_jour: 0,
         inchangees: 1,
         supprimees: 0,
+        rejetees: 0,
+        rejets: [],
         erreur: null,
         termine: true,
       });
     });
 
-    it('import en échec : rapport "echec" conservé, catalogue intact', async () => {
+    // US-07b, scénario 3
+    it('lignes rejetées : rapport "reussi" avec le numéro et le motif de chaque rejet', async () => {
+      const service = creerImportService(
+        db,
+        source('scpi_catalogue_20261106.csv', [scpi('A'), scpi('F'), { ...scpi('H'), bic: 'X' }]),
+        captureLogs().log,
+      );
+      await service.executer();
+
+      expect(await dernierRapport()).toMatchObject({
+        statut: 'reussi',
+        lues: 3,
+        inchangees: 2,
+        rejetees: 1,
+        rejets: [
+          { ligne: 4, nom: 'H', motif: 'bic : format invalide (8 ou 11 caractères attendus)' },
+        ],
+      });
+    });
+
+    // US-07b, scénario 2
+    it('aucune ligne valide : rapport "echec" avec les rejets, alerte, catalogue intact', async () => {
       const avant = await catalogue();
+      const { log, lignes: logs } = captureLogs();
       const service = creerImportService(
         db,
         source('scpi_catalogue_20261105.csv', [{ ...scpi('G'), cashback: 'x' }]),
-        captureLogs().log,
+        log,
       );
 
-      await expect(service.executer()).rejects.toThrow('cashback');
+      await expect(service.executer()).rejects.toThrow('aucune ligne valide');
 
       expect(await dernierRapport()).toMatchObject({
         fichier: 'scpi_catalogue_20261105.csv',
         statut: 'echec',
         lues: 0,
-        erreur: 'cashback : nombre attendu, reçu "x"',
+        rejetees: 1,
+        rejets: [{ ligne: 2, nom: 'G', motif: 'cashback : nombre attendu, reçu "x"' }],
+        erreur: 'aucune ligne valide : catalogue non modifié',
         termine: true,
       });
+      expect(logs).toContainEqual(
+        expect.objectContaining({
+          level: 'ERROR',
+          class: 'AlerteAdministrateur',
+          msg: 'fichier du catalogue rejeté : scpi_catalogue_20261105.csv',
+        }),
+      );
       expect(await catalogue()).toEqual(avant);
     });
 

@@ -2,7 +2,10 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import App from './App';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  sessionStorage.clear();
+});
 
 describe('App', () => {
   it('présente SCPI Invest+', () => {
@@ -31,11 +34,31 @@ describe('App', () => {
 
   it('donne accès à la connexion', () => {
     render(<App />);
-    const liens = [
-      ...screen.getAllByRole('link', { name: 'Se connecter' }),
-      screen.getByRole('link', { name: 'J’ai déjà un compte' }),
-    ];
-    liens.forEach((lien) => expect(lien.getAttribute('href')).toBe('/connexion'));
+    const lien = screen.getByRole('link', { name: 'Se connecter' });
+    expect(lien.getAttribute('href')).toBe('/connexion');
+  });
+
+  // « Créer mon compte » : dans l'en-tête et en bouton d'appel à l'action du héros ;
+  // « J'ai déjà un compte » n'est plus répété, la connexion passe par l'en-tête
+  it('affiche « Créer mon compte » dans l’en-tête et dans le héros', () => {
+    render(<App />);
+    expect(screen.getAllByRole('link', { name: /Créer mon compte/ })).toHaveLength(2);
+    expect(document.querySelector('header').textContent).toContain('Créer mon compte');
+    expect(document.querySelector('.heros').textContent).toContain('Créer mon compte');
+    expect(screen.queryByRole('link', { name: 'J’ai déjà un compte' })).toBeNull();
+  });
+
+  it('session ouverte : « Mon espace » à la place de la connexion et de l’inscription', () => {
+    sessionStorage.setItem('scpi-invest.session', 'jeton');
+    render(<App />);
+    expect(screen.queryByRole('link', { name: 'Se connecter' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Créer mon compte/ })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Mon espace' }).getAttribute('href')).toBe(
+      '/catalogue',
+    );
+    expect(screen.getByRole('link', { name: 'Accéder à mon espace' }).getAttribute('href')).toBe(
+      '/catalogue',
+    );
   });
 
   it('donne accès aux définitions des indicateurs', () => {

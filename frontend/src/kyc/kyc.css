@@ -1,4 +1,4 @@
-/* Formulaire KYC (US-04a) : complète compte.css (mêmes couleurs, mêmes champs) */
+/* Formulaire KYC (US-04a) : complète compte.css (modèle « bleu éditorial ») */
 .kyc__intro {
   margin-bottom: 24px;
   font-size: 15px;
@@ -8,20 +8,24 @@
 
 /* Barre de progression */
 .kyc-progression {
+  margin-top: 18px;
   margin-bottom: 28px;
+  padding: 16px;
 }
 
 .kyc-progression__texte {
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--bleu);
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bleu-vif);
 }
 
 .kyc-progression__barre {
-  height: 8px;
+  height: 4px;
   border-radius: 999px;
-  background: var(--bordure);
+  background: var(--papier);
   overflow: hidden;
 }
 
@@ -38,7 +42,7 @@
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
   font-size: 13px;
   color: var(--texte-secondaire);
@@ -60,9 +64,10 @@
 /* Étape */
 .kyc__titre-etape {
   margin: 0;
-  font-family: Manrope, sans-serif;
-  font-size: 20px;
-  font-weight: 800;
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
 }
 
 .kyc__titre-etape:focus {
@@ -79,32 +84,8 @@
   grid-column: 1 / -1;
 }
 
-/* Champs absents de compte.css */
-.kyc .champ input[type='date'],
-.kyc .champ input[type='tel'],
-.kyc .champ select {
-  width: 100%;
-  min-height: 46px;
-  padding: 0 14px;
-  border: 1px solid var(--bordure-champ);
-  border-radius: 8px;
-  font: inherit;
-  color: inherit;
-  background: #fff;
-  box-sizing: border-box;
-}
-
-.kyc .champ select:focus-visible {
-  outline: 2px solid var(--bleu-vif);
-  outline-offset: 1px;
-}
-
-.kyc .champ select[aria-invalid='true'] {
-  border-color: var(--erreur);
-}
-
 .kyc .champ input[readonly] {
-  background: var(--fond);
+  background: var(--sable);
   color: var(--texte-secondaire);
 }
 
@@ -160,19 +141,17 @@
   justify-content: flex-end;
   gap: 12px;
   margin-top: 8px;
+  margin-bottom: 20px;
 }
 
+/* Précédent et Suivant : même forme (pas de décalage entre deux boutons voisins) */
 .kyc__boutons .compte__bouton {
-  padding: 0 28px;
-}
-
-.kyc__suivant {
   min-width: 160px;
+  margin-top: 0;
 }
 
 .kyc__deconnexion {
   margin-top: 28px;
-  padding-top: 20px;
   border-top: 1px solid var(--bordure);
   font-size: 14px;
   color: var(--texte-secondaire);
@@ -183,8 +162,10 @@
   border: 0;
   background: none;
   font: inherit;
-  color: var(--bleu);
+  color: var(--bleu-vif);
+  font-weight: 600;
   text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
 }
 
@@ -215,9 +196,10 @@
 }
 
 .kyc-recap__etape {
+  background: var(--cadre);
   border: 1px solid var(--bordure);
-  border-radius: 12px;
-  padding: 16px 20px;
+  border-radius: var(--r-m);
+  padding: 20px 24px;
 }
 
 .kyc-recap__entete {
@@ -230,9 +212,9 @@
 
 .kyc-recap__entete h3 {
   margin: 0;
-  font-family: Manrope, sans-serif;
-  font-size: 16px;
-  font-weight: 800;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
 }
 
 .kyc-recap__liste {
@@ -281,4 +263,389 @@
   .kyc-telephone {
     grid-template-columns: 1fr;
   }
+}
+/* Pièces justificatives (US-04c) */
+.kyc-pieces {
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.kyc-piece {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--cadre);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+}
+
+.kyc-piece--erreur {
+  border-color: var(--erreur);
+}
+
+.kyc-piece__texte {
+  flex: 1;
+  min-width: 0;
+}
+
+.kyc-piece__libelle {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.kyc-piece__fichier {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.kyc-piece__nom {
+  overflow-wrap: anywhere;
+}
+
+.kyc-piece__statut {
+  color: var(--succes);
+  font-weight: 600;
+}
+
+.kyc-piece__actions {
+  position: relative; /* repère du champ fichier masqué */
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  font-size: 14px;
+}
+
+/* Champ fichier natif masqué (mais focusable) ; à sa place, le bouton .kyc-piece__bouton,
+   comme les boutons secondaires (compte__bouton--secondaire) */
+.kyc-piece__champ {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.kyc-piece__bouton {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border: 1.5px solid var(--encre);
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--encre);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.kyc-piece__bouton:hover {
+  background: var(--papier);
+}
+
+.kyc-piece__champ:focus-visible + .kyc-piece__bouton {
+  box-shadow: 0 0 0 2px var(--bleu-vif);
+}
+
+.kyc-piece__champ--masque {
+  display: none;
+}
+
+/* Avancement de l'envoi (barre comme celle des étapes) */
+.kyc-piece__avancement {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--texte-secondaire);
+}
+
+.kyc-piece__avancement-texte {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+
+.kyc-piece__barre {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--papier);
+  overflow: hidden;
+}
+
+.kyc-piece__barre span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bleu-vif);
+  transition: width 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kyc-piece__barre span {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .kyc-piece {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .kyc-piece__actions {
+    align-items: flex-start;
+  }
+}
+
+/* Liste de pays avec drapeau (nationalité) */
+.choix-pays {
+  position: relative;
+}
+
+.choix-pays__saisie {
+  position: relative;
+}
+
+.choix-pays__saisie .choix-pays__drapeau {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.kyc .champ .choix-pays__champ--drapeau {
+  padding-left: 48px;
+}
+
+.choix-pays__drapeau {
+  flex: none;
+  width: 22px;
+  height: 16px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--bordure);
+}
+
+.choix-pays__liste {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 264px;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--cadre);
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgb(14 26 51 / 12%);
+}
+
+.choix-pays__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.choix-pays__option[data-actif='true'] {
+  background: var(--papier);
+}
+
+.choix-pays__option[aria-selected='true'] {
+  font-weight: 600;
+  color: var(--bleu-vif);
+}
+
+.choix-pays__vide {
+  padding: 8px 12px;
+  color: var(--texte-secondaire);
+}
+
+/* Date de naissance : saisie JJ/MM/AAAA + calendrier par années (ChampDate.jsx) */
+.champ-date {
+  position: relative;
+}
+
+.champ-date__ligne {
+  position: relative;
+}
+
+.kyc .champ .champ-date input[type='text'] {
+  padding-right: 52px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.champ-date__bouton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: var(--bleu-vif);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.champ-date__bouton:hover,
+.champ-date__bouton[aria-expanded='true'] {
+  color: var(--bleu);
+}
+
+.champ-date__bouton svg,
+.calendrier__fleche svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.calendrier {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 304px;
+  max-width: calc(100vw - 32px);
+  padding: 12px;
+  background: var(--cadre);
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgb(14 26 51 / 12%);
+}
+
+.calendrier__entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.calendrier__titre {
+  font-weight: 700;
+  font-size: 15px;
+  text-transform: capitalize;
+}
+
+.calendrier__titre--bouton {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--bleu-vif);
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.calendrier__titre--bouton:hover {
+  background: var(--papier);
+  text-decoration: underline;
+}
+
+.calendrier__fleche {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--bleu-vif);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.calendrier__fleche:hover:not(:disabled) {
+  background: var(--papier);
+}
+
+.calendrier__fleche:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.calendrier__grille {
+  display: grid;
+  gap: 6px;
+}
+
+.calendrier__grille--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.calendrier__grille--7 {
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendrier__jour-nom {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texte-secondaire);
+  padding-bottom: 4px;
+}
+
+.calendrier__case {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--papier);
+  font: inherit;
+  font-size: 14px;
+  color: var(--texte);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.calendrier__case--jour {
+  min-height: 36px;
+  background: none;
+}
+
+.calendrier__case:hover:not(:disabled) {
+  border-color: var(--bleu-vif);
+}
+
+.calendrier__case:focus-visible,
+.calendrier__fleche:focus-visible,
+.calendrier__titre--bouton:focus-visible,
+.champ-date__bouton:focus-visible {
+  outline: 2px solid var(--bleu-vif);
+  outline-offset: 1px;
+}
+
+.calendrier__case[aria-pressed='true'] {
+  background: var(--bleu-vif);
+  color: #fff;
+  font-weight: 700;
+}
+
+.calendrier__case:disabled {
+  opacity: 0.3;
+  cursor: default;
 }

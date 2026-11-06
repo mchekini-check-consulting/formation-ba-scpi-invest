@@ -2,6 +2,7 @@
 // Code ISO 3166-1 à 2 lettres -> indicatif international. Les noms affichés sont ceux du
 // navigateur, en français (Intl.DisplayNames) : aucune traduction à maintenir ici.
 // Territoires sans habitants permanents (Antarctique, îles Bouvet...) volontairement absents.
+// Drapeaux : paquet flag-icons (ChoixPays.jsx). Choix par la recherche (US-04c) : filtrerPays.
 // prettier-ignore
 const INDICATIFS = {
   AD: '376', AE: '971', AF: '93', AG: '1', AI: '1', AL: '355', AM: '374', AO: '244',
@@ -68,3 +69,30 @@ export function indicatifDe(code) {
 export const PAYS = Object.keys(INDICATIFS)
   .map((code) => ({ code, nom: noms.of(code), indicatif: INDICATIFS[code] }))
   .sort((a, b) => (a.code === 'FR' ? -1 : b.code === 'FR' ? 1 : a.nom.localeCompare(b.nom, 'fr')));
+
+// Texte sans accents ni majuscules, pour la recherche (« etats » trouve « États-Unis »)
+export function normaliser(texte) {
+  return texte
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+export function paysParCode(code) {
+  return PAYS.find((p) => p.code === code) ?? null;
+}
+
+export function paysParNom(nom) {
+  const cherche = normaliser(nom ?? '');
+  return PAYS.find((p) => normaliser(p.nom) === cherche) ?? null;
+}
+
+// Pays dont le nom contient le texte saisi, ceux qui commencent par ce texte en premier
+export function filtrerPays(texte) {
+  const cherche = normaliser(texte);
+  if (!cherche) return PAYS;
+  const trouves = PAYS.filter((p) => normaliser(p.nom).includes(cherche));
+  const debut = (p) => (normaliser(p.nom).startsWith(cherche) ? 0 : 1);
+  return trouves.sort((a, b) => debut(a) - debut(b));
+}

@@ -21,13 +21,15 @@ const [identite, coordonnees, situation, declarations] = ETAPES;
 const AUJOURDHUI = new Date(2026, 10, 4); // 4 novembre 2026
 
 describe('Contenu du KYC (US-04a)', () => {
-  it('4 étapes dans l’ordre de la story, avec leurs champs', () => {
+  it('4 étapes dans l’ordre de la story, avec leurs champs, puis les pièces (US-04c)', () => {
     expect(ETAPES.map((e) => e.titre)).toEqual([
       'Identité',
       'Coordonnées',
       'Situation personnelle et professionnelle',
       'Déclarations réglementaires',
+      'Pièces justificatives',
     ]);
+    expect(ETAPES[4].champs).toEqual([]);
     const noms = (e) => e.champs.map((c) => c.nom);
     expect(noms(identite)).toEqual([
       'civilite',
@@ -142,6 +144,11 @@ describe('Règles de saisie', () => {
     expect(aideDe(cp, { pays: 'GB' })).toBe('Par exemple : SW1A 1AA.');
     expect(aideDe(cp, { pays: 'ZZ' })).toBeUndefined();
     expect(aideDe(identite.champs[0], {})).toBeUndefined();
+  });
+
+  it('nationalité : un pays de la liste (US-04c)', () => {
+    expect(erreursEtape(identite, { nationalite: 'FR' }).nationalite).toBeUndefined();
+    expect(erreursEtape(identite, { nationalite: 'Française' }).nationalite).toBe(MESSAGE_PAYS);
   });
 
   it('origine des fonds : au moins un choix', () => {

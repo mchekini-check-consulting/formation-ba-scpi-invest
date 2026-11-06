@@ -25,6 +25,11 @@ function afficher(props = {}) {
 
 const saisir = (libelle, valeur) =>
   fireEvent.change(screen.getByLabelText(libelle), { target: { value: valeur } });
+// Liste des pays avec recherche (ChoixPays) : nom tapé en entier puis sortie du champ
+const choisirPays = (libelle, nom) => {
+  saisir(libelle, nom);
+  fireEvent.blur(screen.getByLabelText(libelle));
+};
 const cocher = (libelle) => fireEvent.click(screen.getByLabelText(libelle));
 const cliquer = async (nom) => {
   await act(async () => fireEvent.click(screen.getByRole('button', { name: nom })));
@@ -60,20 +65,37 @@ const COMPLET = {
   usPerson: 'Non',
 };
 
+const piece = (type, nomFichier) => ({
+  type,
+  nomFichier,
+  format: 'application/pdf',
+  taille: 1000,
+  statut: 'deposee',
+  deposeLe: '2026-11-05T10:00:00.000Z',
+});
+// Pièces obligatoires pour COMPLET (France, non PPE, donation déclarée)
+const PIECES = [
+  piece('identite', 'cni.pdf'),
+  piece('domicile', 'facture.pdf'),
+  piece('rib', 'rib.pdf'),
+  piece('origine_fonds', 'donation.pdf'),
+];
+
 function remplirIdentite() {
   cocher('Madame');
   saisir('Nom', 'Martin');
   saisir('Prénom', 'Claire');
-  saisir('Date de naissance', '1980-01-15');
+  saisir('Date de naissance', '15/01/1980');
   saisir('Lieu de naissance', 'Lyon, France');
-  saisir('Nationalité', 'FR');
+  saisir('Nationalité', 'fran');
+  fireEvent.click(screen.getByRole('option', { name: 'France' }));
 }
 
 describe('Formulaire KYC en 4 étapes (US-04a)', () => {
-  it('commence à l’étape 1 « Identité », barre de progression à 1/4', () => {
+  it('commence à l’étape 1 « Identité », barre de progression à 1/5', () => {
     afficher();
     expect(titreEtape()).toBe('Identité');
-    expect(screen.getByText('Étape 1/4')).toBeDefined();
+    expect(screen.getByText('Étape 1/5')).toBeDefined();
     expect(progression()).toBe(1);
     expect(screen.queryByRole('button', { name: 'Précédent' })).toBeNull();
   });
@@ -83,7 +105,7 @@ describe('Formulaire KYC en 4 étapes (US-04a)', () => {
     remplirIdentite();
     await cliquer('Suivant');
     expect(titreEtape()).toBe('Coordonnées');
-    expect(screen.getByText('Étape 2/4')).toBeDefined();
+    expect(screen.getByText('Étape 2/5')).toBeDefined();
     expect(progression()).toBe(2);
     expect(screen.queryByRole('alert')).toBeNull();
   });
@@ -124,7 +146,7 @@ describe('Formulaire KYC en 4 étapes (US-04a)', () => {
   it('refuse un utilisateur mineur', async () => {
     afficher();
     remplirIdentite();
-    saisir('Date de naissance', '2010-05-01');
+    saisir('Date de naissance', '01/05/2010');
     await cliquer('Suivant');
     expect(titreEtape()).toBe('Identité');
     expect(document.getElementById('kyc-dateNaissance-erreur').textContent).toBe(
@@ -151,7 +173,7 @@ describe('Formulaire KYC en 4 étapes (US-04a)', () => {
     expect(progression()).toBe(1);
     expect(screen.getByLabelText('Nom').value).toBe('Martin');
     expect(screen.getByLabelText('Madame').checked).toBe(true);
-    expect(screen.getByLabelText('Date de naissance').value).toBe('1980-01-15');
+    expect(screen.getByLabelText('Date de naissance').value).toBe('15/01/1980');
     await cliquer('Suivant');
     expect(screen.getByLabelText('Ville').value).toBe('Lyon');
   });
@@ -176,8 +198,7 @@ describe('Coordonnées : pays, code postal et téléphone selon le pays', () => 
   it('pays en liste, indicatif qui suit le pays, erreurs effacées au changement de pays', async () => {
     const { enregistrer } = afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE });
     const pays = screen.getByLabelText('Pays');
-    expect(pays.tagName).toBe('SELECT');
-    expect(pays.options[1].textContent).toBe('France');
+    expect(pays.getAttribute('role')).toBe('combobox');
     const indicatif = screen.getByLabelText('Indicatif du pays');
     expect(indicatif.value).toBe('FR');
 
@@ -193,7 +214,7 @@ describe('Coordonnées : pays, code postal et téléphone selon le pays', () => 
     expect(document.getElementById('kyc-adresse-erreur')).not.toBeNull();
 
     // Belgique : l'indicatif suit, l'exemple de code postal change, erreurs liées effacées
-    saisir('Pays', 'BE');
+    choisirPays('Pays', 'Belgique');
     expect(screen.getByLabelText('Indicatif du pays').value).toBe('BE');
     expect(document.body.textContent).toContain('Par exemple : 1000.');
     expect(document.getElementById('kyc-codePostal-erreur')).toBeNull();
@@ -289,7 +310,7 @@ describe('Ville proposée selon le code postal (France)', () => {
     });
     await saisirCodePostal('1000');
     expect(chercherCommunes).not.toHaveBeenCalled();
-    await act(async () => saisir('Pays', 'FR'));
+    await act(async () => choisirPays('Pays', 'France'));
     await saisirCodePostal('7500');
     expect(chercherCommunes).not.toHaveBeenCalled();
     await saisirCodePostal('75999');
@@ -312,7 +333,7 @@ describe('Enregistrement à chaque étape (US-04b)', () => {
   it('scénario 1 : reprise à l’étape atteinte avec les réponses déjà saisies', () => {
     afficher({ etapeInitiale: 3, reponsesInitiales: IDENTITE });
     expect(titreEtape()).toBe('Situation personnelle et professionnelle');
-    expect(screen.getByText('Étape 3/4')).toBeDefined();
+    expect(screen.getByText('Étape 3/5')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Précédent' }));
     fireEvent.click(screen.getByRole('button', { name: 'Précédent' }));
     expect(screen.getByLabelText('Nom').value).toBe('Martin');
@@ -345,20 +366,23 @@ describe('Enregistrement à chaque étape (US-04b)', () => {
 });
 
 describe('Récapitulatif et validation (US-04b, scénario 3)', () => {
-  it('après l’étape 4 : récapitulatif des 4 étapes avec les réponses', async () => {
-    afficher({ etapeInitiale: 4, reponsesInitiales: COMPLET });
+  it('après l’étape 5 : récapitulatif des 5 étapes avec les réponses et les pièces', async () => {
+    afficher({ etapeInitiale: 5, reponsesInitiales: COMPLET, piecesInitiales: PIECES });
     await cliquer('Suivant');
     expect(titreEtape()).toBe('Récapitulatif');
     expect(screen.getByText('Récapitulatif', { selector: 'p' })).toBeDefined();
-    expect(progression()).toBe(4);
+    expect(progression()).toBe(5);
     const etapes = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     expect(etapes).toEqual([
       '1. Identité',
       '2. Coordonnées',
       '3. Situation personnelle et professionnelle',
       '4. Déclarations réglementaires',
+      '5. Pièces justificatives',
     ]);
     const texte = document.body.textContent;
+    expect(texte).toContain('donation.pdf');
+    expect(texte).toContain('Non fourni'); // verso de la carte, facultatif
     expect(texte).toContain('15/01/1980');
     expect(texte).toContain('Épargne issue de mes revenus, Donation');
     expect(texte).toContain('jean@exemple.fr');
@@ -366,21 +390,22 @@ describe('Récapitulatif et validation (US-04b, scénario 3)', () => {
   });
 
   it('« Modifier » ramène à l’étape choisie avec les réponses', async () => {
-    afficher({ etapeInitiale: 5, reponsesInitiales: COMPLET });
+    afficher({ etapeInitiale: 6, reponsesInitiales: COMPLET });
     await cliquer('Modifier l’étape Coordonnées');
     expect(titreEtape()).toBe('Coordonnées');
     expect(screen.getByLabelText('Ville').value).toBe('Lyon');
   });
 
-  it('« Précédent » ramène à l’étape 4', async () => {
-    afficher({ etapeInitiale: 5, reponsesInitiales: COMPLET });
+  it('« Précédent » ramène à l’étape 5, avec les pièces déposées', async () => {
+    afficher({ etapeInitiale: 6, reponsesInitiales: COMPLET, piecesInitiales: PIECES });
     await cliquer('Précédent');
-    expect(titreEtape()).toBe('Déclarations réglementaires');
+    expect(titreEtape()).toBe('Pièces justificatives');
+    expect(screen.getByText('rib.pdf')).toBeDefined();
   });
 
   it('« Valider » : KYC validé, puis direction l’écran suivant', async () => {
     const { valider, apresValidation } = afficher({
-      etapeInitiale: 5,
+      etapeInitiale: 6,
       reponsesInitiales: COMPLET,
     });
     await cliquer('Valider');
@@ -390,7 +415,7 @@ describe('Récapitulatif et validation (US-04b, scénario 3)', () => {
 
   it('échec de la validation : message, on reste sur le récapitulatif', async () => {
     const { apresValidation } = afficher({
-      etapeInitiale: 5,
+      etapeInitiale: 6,
       reponsesInitiales: COMPLET,
       valider: vi.fn().mockRejectedValue(new Error('panne')),
     });
@@ -403,7 +428,7 @@ describe('Récapitulatif et validation (US-04b, scénario 3)', () => {
   it('validation refusée par le backend (incomplet) : son message', async () => {
     const refus = Object.assign(new Error('Le formulaire KYC est incomplet'), { status: 400 });
     afficher({
-      etapeInitiale: 5,
+      etapeInitiale: 6,
       reponsesInitiales: COMPLET,
       valider: vi.fn().mockRejectedValue(refus),
     });

@@ -2,8 +2,14 @@
 // « Suivant » contrôle l'étape (champs manquants signalés en rouge), « Précédent »
 // revient en arrière sans perdre les réponses.
 // US-04b (SCPI-37) : réponses enregistrées à chaque « Suivant » (reprise à l'étape
-// atteinte), puis récapitulatif et « Valider ». Étapes numérotées 1 à 4, 5 = récapitulatif.
+// atteinte), puis récapitulatif et « Valider ».
+// US-04c (SCPI-44) : étape 5 « Pièces justificatives » (EtapePieces.jsx), avant le récapitulatif.
+// Étapes numérotées 1 à 5, 6 = récapitulatif.
 import { useEffect, useRef, useState } from 'react';
+import ChampDate from './ChampDate.jsx';
+import ChoixPays from './ChoixPays.jsx';
+import { codePostalValide } from './coordonnees.js';
+import EtapePieces from './EtapePieces.jsx';
 import {
   ETAPES,
   aideDe,
@@ -12,8 +18,8 @@ import {
   indicatifChoisi,
   reponsesAEnregistrer,
 } from './etapes.js';
-import { codePostalValide } from './coordonnees.js';
 import { PAYS } from './pays.js';
+import { idPiece, piecesManquantes } from './pieces.js';
 import Recapitulatif from './Recapitulatif.jsx';
 import './kyc.css';
 
@@ -34,19 +40,6 @@ function Aide({ champ, texte }) {
       {texte}
     </p>
   ) : null;
-}
-
-function ListePays(props) {
-  return (
-    <select {...props}>
-      <option value="">Choisir un pays…</option>
-      {PAYS.map((p) => (
-        <option key={p.code} value={p.code}>
-          {p.nom}
-        </option>
-      ))}
-    </select>
-  );
 }
 
 // Téléphone : liste des indicatifs (pays et +XX) puis le numéro
@@ -139,7 +132,7 @@ const normaliser = (texte) =>
     .replace(/[\s'’-]+/g, ' ')
     .trim();
 
-function Champ({ champ, reponses, erreur, changer, communes = [] }) {
+function Champ({ champ, reponses, erreur, changer, aujourdhui, communes = [] }) {
   const valeur = reponses[champ.nom];
   const proposees = champ.nom === 'ville' && communes.length > 0;
   const aide = proposees
@@ -177,13 +170,26 @@ function Champ({ champ, reponses, erreur, changer, communes = [] }) {
           ))}
         </select>
       ) : champ.type === 'pays' ? (
-        <ListePays {...commun} autoComplete={champ.autoComplete} />
+        <ChoixPays
+          id={commun.id}
+          valeur={valeur}
+          changer={(v) => changer(champ.nom, v)}
+          invalide={Boolean(erreur)}
+          decritPar={commun['aria-describedby']}
+        />
       ) : champ.type === 'tel' ? (
         <ChampTelephone
           champ={champ}
           commun={commun}
           indicatif={indicatifChoisi(champ, reponses)}
           changerIndicatif={(code) => changer(champ.indicatif, code)}
+        />
+      ) : champ.type === 'date' ? (
+        <ChampDate
+          {...commun}
+          valeur={valeur}
+          changer={(v) => changer(champ.nom, v)}
+          aujourdhui={aujourdhui}
         />
       ) : champ.type === 'liste' ? (
         <select {...commun}>
@@ -256,8 +262,11 @@ export default function FormulaireKyc({
   aujourdhui,
   etapeInitiale = 1,
   reponsesInitiales = {},
+  piecesInitiales = [],
   enregistrer = async () => {},
   valider = async () => {},
+  deposerPiece = async () => {},
+  supprimerPiece = async () => {},
   apresValidation = () => {},
   chercherCommunes = AUCUNE_COMMUNE,
 }) {
@@ -268,6 +277,8 @@ export default function FormulaireKyc({
   const [envoi, setEnvoi] = useState(false);
   const [erreurServeur, setErreurServeur] = useState('');
   const [communes, setCommunes] = useState({ codePostal: '', liste: [] });
+  const [pieces, setPieces] = useState(piecesInitiales);
+  const [envoiPiece, setEnvoiPiece] = useState(false);
   const titreEtape = useRef(null);
   const aBouge = useRef(false);
 
@@ -324,15 +335,25 @@ export default function FormulaireKyc({
 
   async function suivant(event) {
     event.preventDefault();
-    if (envoi) return;
+    if (envoi || envoiPiece) return;
     const etape = ETAPES[index];
-    const trouvees = erreursEtape(etape, reponses, aujourdhui);
-    setErreurs(trouvees);
     setErreurServeur('');
-    const premier = champsVisibles(etape, reponses).find((c) => trouvees[c.nom]);
-    if (premier) {
-      document.getElementById(idChamp(premier.nom))?.focus();
-      return;
+    if (etape.id === 'pieces') {
+      const manquantes = piecesManquantes(reponses, pieces);
+      setErreurs(manquantes);
+      const premiere = Object.keys(manquantes)[0];
+      if (premiere) {
+        document.getElementById(idPiece(premiere))?.focus();
+        return;
+      }
+    } else {
+      const trouvees = erreursEtape(etape, reponses, aujourdhui);
+      setErreurs(trouvees);
+      const premier = champsVisibles(etape, reponses).find((c) => trouvees[c.nom]);
+      if (premier) {
+        document.getElementById(idChamp(premier.nom))?.focus();
+        return;
+      }
     }
     setEnvoi(true);
     try {
@@ -367,6 +388,7 @@ export default function FormulaireKyc({
         <Recapitulatif
           titreRef={titreEtape}
           reponses={reponses}
+          pieces={pieces}
           modifier={aller}
           precedent={() => aller(recap - 1)}
           valider={validerKyc}
@@ -379,6 +401,19 @@ export default function FormulaireKyc({
 
   const etape = ETAPES[index];
   const nbErreurs = Object.keys(erreurs).length;
+  const etapePieces = etape.id === 'pieces';
+  let alerte = '';
+  if (etapePieces && nbErreurs > 0) {
+    alerte =
+      nbErreurs === 1
+        ? 'Une pièce est à déposer ou à corriger : elle est signalée en rouge.'
+        : `${nbErreurs} pièces sont à déposer ou à corriger : elles sont signalées en rouge.`;
+  } else if (nbErreurs > 0) {
+    alerte =
+      nbErreurs === 1
+        ? 'Un champ est à compléter ou à corriger : il est signalé en rouge.'
+        : `${nbErreurs} champs sont à compléter ou à corriger : ils sont signalés en rouge.`;
+  }
 
   return (
     <div className="kyc">
@@ -392,25 +427,37 @@ export default function FormulaireKyc({
         <h2 id="kyc-titre-etape" ref={titreEtape} tabIndex={-1} className="kyc__titre-etape">
           {etape.titre}
         </h2>
-        {nbErreurs > 0 && (
+        {alerte && (
           <p className="compte__alerte" role="alert">
-            {nbErreurs === 1
-              ? 'Un champ est à compléter ou à corriger : il est signalé en rouge.'
-              : `${nbErreurs} champs sont à compléter ou à corriger : ils sont signalés en rouge.`}
+            {alerte}
           </p>
         )}
-        <div className="kyc__champs">
-          {champsVisibles(etape, reponses).map((champ) => (
-            <Champ
-              key={champ.nom}
-              champ={champ}
-              reponses={reponses}
-              erreur={erreurs[champ.nom]}
-              changer={changer}
-              communes={communesProposees}
-            />
-          ))}
-        </div>
+        {etapePieces ? (
+          <EtapePieces
+            reponses={reponses}
+            pieces={pieces}
+            setPieces={setPieces}
+            erreurs={erreurs}
+            setErreurs={setErreurs}
+            deposer={deposerPiece}
+            supprimer={supprimerPiece}
+            setOccupe={setEnvoiPiece}
+          />
+        ) : (
+          <div className="kyc__champs">
+            {champsVisibles(etape, reponses).map((champ) => (
+              <Champ
+                key={champ.nom}
+                champ={champ}
+                reponses={reponses}
+                erreur={erreurs[champ.nom]}
+                changer={changer}
+                aujourdhui={aujourdhui}
+                communes={communesProposees}
+              />
+            ))}
+          </div>
+        )}
         {erreurServeur && (
           <p className="compte__alerte" role="alert">
             {erreurServeur}
@@ -426,7 +473,7 @@ export default function FormulaireKyc({
               Précédent
             </button>
           )}
-          <button type="submit" className="compte__bouton kyc__suivant" disabled={envoi}>
+          <button type="submit" className="compte__bouton" disabled={envoi || envoiPiece}>
             {envoi ? 'Enregistrement…' : 'Suivant'}
           </button>
         </div>

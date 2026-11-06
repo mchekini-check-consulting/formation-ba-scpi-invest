@@ -1,9 +1,10 @@
 // Contenu du formulaire KYC (US-04a, SCPI-21) : 4 étapes, leurs champs et les règles de
-// saisie. Tous les champs sont obligatoires, sauf `facultatif: true`. Un champ avec
-// `visible` n'est affiché (et contrôlé) que si la condition est vraie. `regle` : contrôle
-// de vraisemblance (coordonnees.js). Type `pays` : liste des pays (pays.js), valeur = code
-// ISO à 2 lettres. Type `tel` : numéro + liste d'indicatifs (valeur de l'indicatif dans
-// le champ nommé par `indicatif`).
+// saisie, puis l'étape des pièces justificatives (US-04c, SCPI-44, règles dans pieces.js).
+// Tous les champs sont obligatoires, sauf `facultatif: true`. Un champ avec `visible` n'est
+// affiché (et contrôlé) que si la condition est vraie. `regle` : contrôle de vraisemblance
+// (coordonnees.js). Type `pays` : liste des pays avec recherche (ChoixPays.jsx, pays.js),
+// valeur = code ISO à 2 lettres. Type `tel` : numéro + liste d'indicatifs (valeur de
+// l'indicatif dans le champ nommé par `indicatif`).
 // L'enregistrement, la reprise et la validation relèvent de l'US-04b (SCPI-37).
 import {
   adresseValide,
@@ -59,7 +60,7 @@ export const ETAPES = [
         nom: 'nationalite',
         libelle: 'Nationalité',
         type: 'pays',
-        aide: 'Le pays dont vous avez la nationalité.',
+        aide: 'Tapez le nom du pays pour le trouver.',
       },
     ],
   },
@@ -113,7 +114,6 @@ export const ETAPES = [
         libelle: 'Adresse e-mail',
         type: 'email',
         lectureSeule: true,
-        aide: 'L’adresse de votre compte.',
       },
     ],
   },
@@ -228,6 +228,8 @@ export const ETAPES = [
       },
     ],
   },
+  // US-04c : dépôt des fichiers (EtapePieces.jsx), pas de champ de saisie
+  { id: 'pieces', titre: 'Pièces justificatives', champs: [] },
 ];
 
 export function champsVisibles(etape, reponses) {

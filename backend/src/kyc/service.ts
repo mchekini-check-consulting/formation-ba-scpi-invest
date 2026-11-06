@@ -2,6 +2,7 @@ import type { ReponsesKyc } from '../db/schema.js';
 import { HttpError } from '../logging/http-error.js';
 import { loggable } from '../logging/service.js';
 import { ETAPE_RECAPITULATIF, champsIncomplets, nettoyer } from './champs.js';
+import { piecesManquantes } from './pieces.js';
 
 export type StatutKyc = 'en_cours' | 'complete';
 
@@ -23,17 +24,22 @@ export type DepotKyc = {
     reponses: ReponsesKyc,
     le: Date,
   ): Promise<boolean>;
-  // Passe le KYC en cours au statut complété ; false s'il n'était plus en cours
+  // Passe le KYC en cours au statut complété et ses pièces au statut « en cours de
+  // vérification » (US-04c) ; false s'il n'était plus en cours
   valider(utilisateurId: string, le: Date): Promise<boolean>;
+  // Types des pièces justificatives déposées (US-04c)
+  typesPiecesDeposees(utilisateurId: string): Promise<string[]>;
 };
 
 export const KYC_DEJA_VALIDE = 'Votre KYC est déjà validé : il ne peut plus être modifié.';
 export const KYC_INCOMPLET =
   'Le formulaire KYC est incomplet : complétez toutes les étapes avant de le valider.';
+export const PIECES_MANQUANTES =
+  'Des pièces justificatives obligatoires n’ont pas été déposées : ajoutez-les avant de valider votre KYC.';
 
 const NOUVEAU: EtatKyc = { statut: 'en_cours', etape: 1, reponses: {}, valideLe: null };
 
-// Couche service du KYC (US-04b) : reprise du formulaire là où l'utilisateur l'a laissé,
+// Couche service du KYC (US-04b, US-04c pour les pièces) : reprise du formulaire là où l'utilisateur l'a laissé,
 // enregistrement à chaque étape, validation (statut « complété » et date). Les réponses
 // sont des données personnelles : elles ne passent jamais dans les logs.
 export function creerKycService(depot: DepotKyc, maintenant: () => Date = () => new Date()) {
@@ -77,6 +83,10 @@ export function creerKycService(depot: DepotKyc, maintenant: () => Date = () => 
     const le = maintenant();
     if (!etat || champsIncomplets(etat.reponses, le).length > 0) {
       throw new HttpError(400, KYC_INCOMPLET);
+    }
+    const deposees = await depot.typesPiecesDeposees(utilisateurId);
+    if (piecesManquantes(etat.reponses, deposees).length > 0) {
+      throw new HttpError(400, PIECES_MANQUANTES);
     }
     if (!(await depot.valider(utilisateurId, le))) {
       throw new HttpError(409, KYC_DEJA_VALIDE);

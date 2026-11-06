@@ -15,7 +15,7 @@ jobs:
       components: ${{ steps.detect.outputs.components }}
       sha: ${{ steps.detect.outputs.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: detect
@@ -32,7 +32,7 @@ jobs:
       contents: read
       id-token: write           # jeton OIDC -> rôle IAM
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: mchekini-check-consulting/formation-ba-gitops/ci-template/build-push@main
         with:
           component: ${{ matrix.component }}
@@ -48,7 +48,7 @@ jobs:
     permissions:
       contents: write           # push du commit avec GITHUB_TOKEN (ne relance pas la CI)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: mchekini-check-consulting/formation-ba-gitops/ci-template/update-tag@main
         with:
           components: ${{ needs.changes.outputs.components }}
