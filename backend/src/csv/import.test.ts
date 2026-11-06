@@ -10,7 +10,7 @@ import {
   TABLE_VALEUR_RECONSTITUTION,
 } from '../db/schema.js';
 import { convertirLigne, empreinte } from './convert.js';
-import { importScpis } from './import.js';
+import { FichierInvalide, importScpis, numeroter, type BilanImport } from './import.js';
 
 // Fausse base : enregistre chaque écriture (opération + table + valeurs) ; les SCPI déjà
 // en base sont passées en paramètre ; une SCPI ajoutée reçoit l'id 1, 2, ...
@@ -58,39 +58,52 @@ async function* lignes(...rows: Record<string, string>[]) {
   yield* rows;
 }
 
-// Une ligne du CSV, toutes colonnes vides sauf celles précisées
+// Une ligne valide du CSV : colonnes obligatoires remplies, facultatives vides, sauf
+// celles précisées
 function ligneCsv(valeurs: Record<string, string>): Record<string, string> {
-  const colonnes = [
-    'Nom',
-    'taux_distribution',
-    'minimum_souscription',
-    'localisation',
-    'secteurs',
-    'prix_part',
-    'capitalisation',
-    'Gerant',
-    'frais_souscription',
-    'frais_gestion',
-    'delai_jouissance',
-    'frequence_loyers',
-    'valeur_reconstitution',
-    'iban',
-    'bic',
-    'decote_demembrement',
-    'demembrement',
-    'cashback',
-    'versement_programme',
-    'publicite',
-  ];
-  return { ...Object.fromEntries(colonnes.map((c) => [c, ''])), ...valeurs };
+  return {
+    Nom: 'SCPI',
+    taux_distribution: '',
+    minimum_souscription: '1000',
+    localisation: 'France,100',
+    secteurs: 'Bureaux,100',
+    prix_part: '200',
+    capitalisation: '1000000',
+    Gerant: 'Gérant',
+    frais_souscription: '10',
+    frais_gestion: '10',
+    delai_jouissance: '3',
+    frequence_loyers: 'Mensuelle',
+    valeur_reconstitution: '',
+    iban: 'FR7630001007941234567890185',
+    bic: 'BNPAFRPPXXX',
+    decote_demembrement: '',
+    demembrement: 'Non',
+    cashback: '',
+    versement_programme: 'Non',
+    publicite: 'Texte',
+    ...valeurs,
+  };
 }
+
+// Bilan sans rejet, compteurs précisés
+const bilan = (compteurs: Partial<BilanImport>): BilanImport => ({
+  lues: 1,
+  ajoutees: 0,
+  mises_a_jour: 0,
+  inchangees: 0,
+  supprimees: 0,
+  rejetees: 0,
+  rejets: [],
+  ...compteurs,
+});
 
 const annee = new Date().getFullYear();
 
 describe('importScpis', () => {
   it('insère la SCPI puis ses valeurs multiples, rattachées à son id', async () => {
     const base = fausseBase();
-    const bilan = await importScpis(
+    const resultat = await importScpis(
       base.db,
       lignes(
         ligneCsv({
@@ -115,7 +128,7 @@ describe('importScpis', () => {
       ),
     );
 
-    expect(bilan).toEqual({ lues: 1, ajoutees: 1, mises_a_jour: 0, inchangees: 0, supprimees: 0 });
+    expect(resultat).toEqual(bilan({ ajoutees: 1 }));
     const insertions = base.insertions;
     expect(insertions.map((i) => i.table)).toEqual([
       TABLE_SCPI_CATALOG,
@@ -159,7 +172,7 @@ describe('importScpis', () => {
     ]);
   });
 
-  it('cases multiples vides : seule la SCPI est insérée ; chaque SCPI a son id', async () => {
+  it('colonnes facultatives vides : inconnues, rien d’inséré ; chaque SCPI a son id', async () => {
     const base = fausseBase();
     await importScpis(
       base.db,
@@ -167,32 +180,172 @@ describe('importScpis', () => {
     );
     const insertions = base.insertions;
 
+    expect(insertions[0].valeurs).toMatchObject({ nom: 'A', cashback: null });
     expect(insertions.map((i) => i.table)).toEqual([
       TABLE_SCPI_CATALOG,
+      TABLE_PRIX_PART,
+      TABLE_LOCALISATION,
+      TABLE_SECTEURS,
       TABLE_SCPI_CATALOG,
       TABLE_TAUX_DISTRIBUTION,
+      TABLE_PRIX_PART,
+      TABLE_LOCALISATION,
+      TABLE_SECTEURS,
     ]);
-    expect(insertions[2].valeurs).toEqual([{ taux: '4', annee: annee - 1, scpi_id: 2 }]);
+    expect(insertions[5].valeurs).toEqual([{ taux: '4', annee: annee - 1, scpi_id: 2 }]);
   });
 
-  it('valeur invalide : erreur qui nomme la colonne, rien après', async () => {
+  // US-07b, scénario 3
+  it('ligne invalide : rejetée avec son numéro et son motif, les autres importées', async () => {
     const base = fausseBase();
-    await expect(
-      importScpis(
-        base.db,
-        lignes(ligneCsv({ Nom: 'A' }), ligneCsv({ Nom: 'B', secteurs: 'Spatial,100' })),
+    const resultat = await importScpis(
+      base.db,
+      lignes(
+        ligneCsv({ Nom: 'A' }),
+        ligneCsv({ Nom: 'B', taux_distribution: 'abc' }),
+        ligneCsv({ Nom: 'C', iban: 'FR76123' }),
+        ligneCsv({ Nom: 'D', demembrement: 'Oui' }),
+        ligneCsv({ Nom: '' }),
+        ligneCsv({ Nom: 'E' }),
       ),
-    ).rejects.toThrow('secteurs : secteur inconnu "Spatial"');
-    expect(base.ecritures.map((i) => i.table)).toEqual([TABLE_SCPI_CATALOG]);
+    );
+
+    expect(resultat).toEqual(
+      bilan({
+        lues: 6,
+        ajoutees: 2,
+        rejetees: 4,
+        rejets: [
+          { ligne: 3, nom: 'B', motif: 'taux_distribution : nombre attendu, reçu "abc"' },
+          { ligne: 4, nom: 'C', motif: 'iban : format invalide' },
+          {
+            ligne: 5,
+            nom: 'D',
+            motif: 'decote_demembrement : obligatoire quand demembrement = Oui',
+          },
+          { ligne: 6, nom: null, motif: 'Nom : champ obligatoire vide' },
+        ],
+      }),
+    );
+    const noms = base.insertions
+      .filter((i) => i.table === TABLE_SCPI_CATALOG)
+      .map((i) => (i.valeurs as { nom: string }).nom);
+    expect(noms).toEqual(['A', 'E']);
+  });
+
+  it('numéro de ligne : celui posé à la lecture du fichier (lignes vides sautées)', async () => {
+    const base = fausseBase();
+    const resultat = await importScpis(
+      base.db,
+      lignes(numeroter(ligneCsv({ Nom: 'A' }), 2), numeroter(ligneCsv({ Nom: 'B', bic: 'X' }), 9)),
+    );
+    expect(resultat.rejets).toEqual([
+      { ligne: 9, nom: 'B', motif: 'bic : format invalide (8 ou 11 caractères attendus)' },
+    ]);
+  });
+
+  it('ligne rejetée d’une SCPI déjà en base : gardée telle quelle, ni modifiée ni supprimée', async () => {
+    const base = fausseBase([
+      { id: 7, nom: 'A', empreinte: null },
+      { id: 8, nom: 'B', empreinte: null },
+    ]);
+    const resultat = await importScpis(
+      base.db,
+      lignes(ligneCsv({ Nom: 'A', prix_part: '' }), ligneCsv({ Nom: 'B' })),
+    );
+
+    expect(resultat).toMatchObject({ lues: 2, mises_a_jour: 1, supprimees: 0, rejetees: 1 });
+    expect(base.ecritures.filter((e) => e.table === TABLE_SCPI_CATALOG)).toEqual([
+      { op: 'update', table: TABLE_SCPI_CATALOG, valeurs: expect.objectContaining({ nom: 'B' }) },
+    ]);
+  });
+
+  // US-07b, scénario 4
+  it('même Nom sur deux lignes : les deux rejetées, doublon signalé', async () => {
+    const base = fausseBase();
+    const resultat = await importScpis(
+      base.db,
+      lignes(ligneCsv({ Nom: 'A' }), ligneCsv({ Nom: 'B' }), ligneCsv({ Nom: 'A', Gerant: 'X' })),
+    );
+
+    expect(resultat).toEqual(
+      bilan({
+        lues: 3,
+        ajoutees: 1,
+        rejetees: 2,
+        rejets: [
+          { ligne: 2, nom: 'A', motif: 'Nom en double dans le fichier (aussi ligne 4)' },
+          { ligne: 4, nom: 'A', motif: 'Nom en double dans le fichier (aussi ligne 2)' },
+        ],
+      }),
+    );
+  });
+
+  it('aucune ligne valide : fichier refusé avec les rejets, rien n’est écrit', async () => {
+    const base = fausseBase([{ id: 7, nom: 'Z', empreinte: null }]);
+    const erreur = await importScpis(base.db, lignes(ligneCsv({ Nom: 'A', bic: '' }))).catch(
+      (e: unknown) => e,
+    );
+
+    expect(erreur).toBeInstanceOf(FichierInvalide);
+    expect(erreur).toMatchObject({
+      message: 'aucune ligne valide : catalogue non modifié',
+      rejets: [{ ligne: 2, nom: 'A', motif: 'bic : champ obligatoire vide' }],
+    });
+    expect(base.ecritures).toEqual([]);
+  });
+
+  // US-07b, scénario 2
+  it.each([
+    [
+      'colonnes absentes',
+      { Nom: 'A', prix_part: '200' },
+      'colonnes absentes (séparateur attendu : virgule) : taux_distribution, minimum_souscription',
+    ],
+    [
+      'mauvais séparateur',
+      { 'Nom;taux_distribution': 'A;5' },
+      'colonnes absentes (séparateur attendu : virgule) : Nom, taux_distribution',
+    ],
+  ])('fichier invalide (%s) : refusé entier, rien n’est écrit', async (_cas, ligne, motif) => {
+    const base = fausseBase([{ id: 7, nom: 'A', empreinte: null }]);
+    const erreur = importScpis(base.db, lignes(ligne));
+    await expect(erreur).rejects.toBeInstanceOf(FichierInvalide);
+    await expect(erreur).rejects.toThrow(motif);
+    expect(base.ecritures).toEqual([]);
+  });
+
+  it('fichier illisible (erreur de lecture du CSV) : refusé entier', async () => {
+    const base = fausseBase();
+    async function* illisible() {
+      yield ligneCsv({ Nom: 'A' });
+      throw new Error('Invalid Record Length: expect 20, got 3 on line 3');
+    }
+    await expect(importScpis(base.db, illisible())).rejects.toThrow(
+      'fichier illisible : Invalid Record Length: expect 20, got 3 on line 3',
+    );
+    expect(base.ecritures).toEqual([]);
+  });
+
+  // US-07b, scénario 5
+  it('erreur technique pendant l’écriture : erreur d’origine relancée, pas FichierInvalide', async () => {
+    // L'annulation elle-même est faite par PostgreSQL (transaction) : testée par la
+    // fausse transaction qui échoue
+    const db = {
+      transaction: () => Promise.reject(new Error('connexion perdue')),
+    } as unknown as Db;
+    const erreur = await importScpis(db, lignes(ligneCsv({ Nom: 'A' }))).catch((e: unknown) => e);
+    expect(erreur).toEqual(new Error('connexion perdue'));
+    expect(erreur).not.toBeInstanceOf(FichierInvalide);
   });
 
   it('SCPI en base avec la même empreinte : inchangée, aucune écriture', async () => {
     const ligne = ligneCsv({ Nom: 'A', prix_part: '200' });
     const base = fausseBase([{ id: 7, nom: 'A', empreinte: empreinte(convertirLigne(ligne)) }]);
 
-    const bilan = await importScpis(base.db, lignes(ligne));
+    const resultat = await importScpis(base.db, lignes(ligne));
 
-    expect(bilan).toEqual({ lues: 1, ajoutees: 0, mises_a_jour: 0, inchangees: 1, supprimees: 0 });
+    expect(resultat).toEqual(bilan({ inchangees: 1 }));
     expect(base.ecritures).toEqual([]);
   });
 
@@ -201,9 +354,9 @@ describe('importScpis', () => {
     const base = fausseBase([{ id: 7, nom: 'A', empreinte: empreinte(convertirLigne(ancienne)) }]);
     const nouvelle = ligneCsv({ Nom: 'A', prix_part: '210' });
 
-    const bilan = await importScpis(base.db, lignes(nouvelle));
+    const resultat = await importScpis(base.db, lignes(nouvelle));
 
-    expect(bilan).toEqual({ lues: 1, ajoutees: 0, mises_a_jour: 1, inchangees: 0, supprimees: 0 });
+    expect(resultat).toEqual(bilan({ mises_a_jour: 1 }));
     expect(base.ecritures.map((e) => [e.op, e.table])).toEqual([
       ['update', TABLE_SCPI_CATALOG],
       ['delete', TABLE_TAUX_DISTRIBUTION],
@@ -213,6 +366,8 @@ describe('importScpis', () => {
       ['delete', TABLE_SECTEURS],
       ['delete', TABLE_DECOTE_DEMEMBREMENT],
       ['insert', TABLE_PRIX_PART],
+      ['insert', TABLE_LOCALISATION],
+      ['insert', TABLE_SECTEURS],
     ]);
     expect(base.ecritures[0].valeurs).toMatchObject({
       nom: 'A',
@@ -224,17 +379,8 @@ describe('importScpis', () => {
 
   it('SCPI importée avant l’empreinte (vide en base) : mise à jour', async () => {
     const base = fausseBase([{ id: 7, nom: 'A', empreinte: null }]);
-    const bilan = await importScpis(base.db, lignes(ligneCsv({ Nom: 'A' })));
-    expect(bilan).toEqual({ lues: 1, ajoutees: 0, mises_a_jour: 1, inchangees: 0, supprimees: 0 });
-  });
-
-  it('même Nom deux fois dans le fichier : la seconde ligne met à jour la première', async () => {
-    const base = fausseBase();
-    const bilan = await importScpis(
-      base.db,
-      lignes(ligneCsv({ Nom: 'A' }), ligneCsv({ Nom: 'A', Gerant: 'X' })),
-    );
-    expect(bilan).toEqual({ lues: 2, ajoutees: 1, mises_a_jour: 1, inchangees: 0, supprimees: 0 });
+    const resultat = await importScpis(base.db, lignes(ligneCsv({ Nom: 'A' })));
+    expect(resultat).toEqual(bilan({ mises_a_jour: 1 }));
   });
 
   it('SCPI en base absentes du fichier : supprimées, comptées au bilan', async () => {
@@ -244,17 +390,18 @@ describe('importScpis', () => {
       { id: 9, nom: 'C', empreinte: null },
     ]);
 
-    const bilan = await importScpis(base.db, lignes(ligneCsv({ Nom: 'B' })));
+    const resultat = await importScpis(base.db, lignes(ligneCsv({ Nom: 'B' })));
 
-    expect(bilan).toEqual({ lues: 1, ajoutees: 0, mises_a_jour: 1, inchangees: 0, supprimees: 2 });
+    expect(resultat).toEqual(bilan({ mises_a_jour: 1, supprimees: 2 }));
     expect(base.ecritures.at(-1)).toEqual({ op: 'delete', table: TABLE_SCPI_CATALOG });
   });
 
+  // US-07b, scénario 2 (cas du fichier vide, US-07a)
   it('fichier sans aucune SCPI : refusé, rien n’est supprimé', async () => {
     const base = fausseBase([{ id: 7, nom: 'A', empreinte: null }]);
-    await expect(importScpis(base.db, lignes())).rejects.toThrow(
-      'fichier sans aucune SCPI : catalogue non modifié',
-    );
+    const erreur = importScpis(base.db, lignes());
+    await expect(erreur).rejects.toBeInstanceOf(FichierInvalide);
+    await expect(erreur).rejects.toThrow('fichier sans aucune SCPI : catalogue non modifié');
     expect(base.ecritures).toEqual([]);
   });
 });
