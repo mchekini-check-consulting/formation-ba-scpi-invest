@@ -8,7 +8,9 @@
 
 /* Barre de progression */
 .kyc-progression {
+  margin-top: 18px;
   margin-bottom: 28px;
+  padding: 16px;
 }
 
 .kyc-progression__texte {
@@ -139,15 +141,17 @@
   justify-content: flex-end;
   gap: 12px;
   margin-top: 8px;
+  margin-bottom: 20px;
 }
 
-.kyc__suivant {
+/* Précédent et Suivant : même forme (pas de décalage entre deux boutons voisins) */
+.kyc__boutons .compte__bouton {
   min-width: 160px;
+  margin-top: 0;
 }
 
 .kyc__deconnexion {
   margin-top: 28px;
-  padding-top: 20px;
   border-top: 1px solid var(--bordure);
   font-size: 14px;
   color: var(--texte-secondaire);

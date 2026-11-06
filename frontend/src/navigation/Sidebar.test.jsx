@@ -90,10 +90,10 @@ describe('Sidebar de navigation (US-06)', () => {
     expect(screen.getByRole('link', { name: 'Catalogue' }).getAttribute('aria-current')).toBeNull();
   });
 
-  it('logo vers l’accueil', () => {
+  it('logo vers l’accueil du catalogue', () => {
     afficher();
-    fireEvent.click(within(menu()).getByRole('link', { name: 'SCPI Invest+ — accueil' }));
-    expect(adresse()).toBe('/');
+    fireEvent.click(within(menu()).getByRole('link', { name: 'SCPI Invest+ — catalogue' }));
+    expect(adresse()).toBe('/catalogue');
   });
 
   it('flèche : déplie puis replie la barre', () => {

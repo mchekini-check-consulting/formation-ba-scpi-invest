@@ -2,7 +2,8 @@
 // visuel du modèle retenu « bleu éditorial » (mockups/accueil.html) ;
 // présente la plateforme ; un bouton d'inscription dans le héros, la connexion dans l'en-tête
 import './App.css';
-import { EnTete, LienCompte, Logo } from './MiseEnPage.jsx';
+import { jeton } from './auth.js';
+import { ESPACE, EnTete, Fleche, LienCompte, LienInterne, Logo } from './MiseEnPage.jsx';
 
 // « Comment ça marche » décrit le parcours ; « Pourquoi choisir » ne garde que ce qui
 // distingue la plateforme, sans répéter les étapes
@@ -231,14 +232,21 @@ function App() {
                 votre portefeuille grâce à l’import automatique de vos relevés.
               </p>
               <div className="heros__cta">
-                <LienCompte
-                  vers="inscription"
-                  origine="heros-inscription"
-                  className="btn btn--bleu btn--lg"
-                  fleche
-                >
-                  Créer mon compte
-                </LienCompte>
+                {jeton() ? (
+                  <LienInterne to={ESPACE} className="btn btn--bleu btn--lg">
+                    <span>Accéder à mon espace</span>
+                    <Fleche />
+                  </LienInterne>
+                ) : (
+                  <LienCompte
+                    vers="inscription"
+                    origine="heros-inscription"
+                    className="btn btn--bleu btn--lg"
+                    fleche
+                  >
+                    Créer mon compte
+                  </LienCompte>
+                )}
               </div>
               <ul className="heros__notes">
                 <li>

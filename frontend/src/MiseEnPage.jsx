@@ -7,6 +7,7 @@
 // passent par startTransition (BrowserRouter useTransitions, main.jsx).
 import { ViewTransition } from 'react';
 import { Link, useInRouterContext } from 'react-router';
+import { jeton } from './auth.js';
 import BoutonDeconnexion from './BoutonDeconnexion.jsx';
 import LogoIcone from './LogoIcone.jsx';
 
@@ -62,8 +63,10 @@ export function LienCompte({ vers, origine, className, fleche = false, children 
 
 // En-tête : logo vers l'accueil, menu facultatif au centre, boutons de compte à droite
 // (masqués sur les écrans du compte) ; écrans connectés : bouton de déconnexion à la
-// place (seDeconnecter)
+// place (seDeconnecter). Session ouverte (accueil, indicateurs) : « Mon espace » à la
+// place de la connexion et de l'inscription.
 export function EnTete({ menu, actions = true, seDeconnecter }) {
+  const connecte = Boolean(jeton());
   return (
     <header className={menu ? 'entete entete--avec-menu' : 'entete'}>
       <ViewTransition name="logo" share="au-premier-plan">
@@ -85,7 +88,14 @@ export function EnTete({ menu, actions = true, seDeconnecter }) {
           <BoutonDeconnexion onClick={seDeconnecter} />
         </div>
       )}
-      {actions && !seDeconnecter && (
+      {actions && !seDeconnecter && connecte && (
+        <div className="entete__actions">
+          <LienInterne to={ESPACE} className="btn btn--sombre">
+            Mon espace
+          </LienInterne>
+        </div>
+      )}
+      {actions && !seDeconnecter && !connecte && (
         <div className="entete__actions">
           <LienCompte vers="connexion" origine="entete-connexion" className="btn btn--clair">
             Se connecter
@@ -98,6 +108,10 @@ export function EnTete({ menu, actions = true, seDeconnecter }) {
     </header>
   );
 }
+
+// Entrée de l'espace connecté : le Catalogue, qui renvoie au KYC ou au formulaire
+// investisseur tant qu'ils ne sont pas validés (ExigerKycComplete, Catalogue.jsx)
+export const ESPACE = '/catalogue';
 
 // Pastille blanche avec une flèche, à droite des grands boutons bleus
 export function Fleche() {

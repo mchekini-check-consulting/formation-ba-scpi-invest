@@ -2,7 +2,10 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import App from './App';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  sessionStorage.clear();
+});
 
 describe('App', () => {
   it('présente SCPI Invest+', () => {
@@ -43,6 +46,19 @@ describe('App', () => {
     expect(document.querySelector('header').textContent).toContain('Créer mon compte');
     expect(document.querySelector('.heros').textContent).toContain('Créer mon compte');
     expect(screen.queryByRole('link', { name: 'J’ai déjà un compte' })).toBeNull();
+  });
+
+  it('session ouverte : « Mon espace » à la place de la connexion et de l’inscription', () => {
+    sessionStorage.setItem('scpi-invest.session', 'jeton');
+    render(<App />);
+    expect(screen.queryByRole('link', { name: 'Se connecter' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Créer mon compte/ })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Mon espace' }).getAttribute('href')).toBe(
+      '/catalogue',
+    );
+    expect(screen.getByRole('link', { name: 'Accéder à mon espace' }).getAttribute('href')).toBe(
+      '/catalogue',
+    );
   });
 
   it('donne accès aux définitions des indicateurs', () => {
