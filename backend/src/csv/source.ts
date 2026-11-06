@@ -9,6 +9,7 @@ import {
 import { parse } from 'csv-parse';
 // pipeline de Node : transmet les erreurs du flux au parseur
 import { pipeline, Transform, type Readable } from 'node:stream';
+import { ENCODAGE_INVALIDE } from './erreurs.js';
 import { numeroter } from './import.js';
 import type { SourceCsv } from './service.js';
 
@@ -169,7 +170,10 @@ export function decoderUtf8(): Transform {
     try {
       done(null, fn());
     } catch {
-      done(new Error('encodage invalide (UTF-8 attendu)'));
+      // code : traduit en message pour le BA par erreurDeLecture (erreurs.ts)
+      done(
+        Object.assign(new Error('encodage invalide (UTF-8 attendu)'), { code: ENCODAGE_INVALIDE }),
+      );
     }
   };
   return new Transform({
@@ -186,8 +190,11 @@ export function decoderUtf8(): Transform {
 
 // Lignes du CSV (en-tête = noms des colonnes), lues au fil du flux. Chaque ligne porte
 // son numéro dans le fichier (NUMERO_LIGNE, en-tête = 1), pour le rapport des rejets.
-export function lignesCsv(body: Readable): AsyncIterable<Record<string, string>> {
-  return pipeline(
+// Erreur de lecture : complétée par derniere_ligne_lue (dernière ligne lue sans erreur),
+// seul repère pour situer un guillemet jamais fermé (csv-parse signale la fin du fichier).
+export async function* lignesCsv(body: Readable): AsyncGenerator<Record<string, string>> {
+  let derniere = 1; // en-tête
+  const flux = pipeline(
     body,
     decoderUtf8(),
     parse({
@@ -195,10 +202,21 @@ export function lignesCsv(body: Readable): AsyncIterable<Record<string, string>>
       trim: true,
       skip_empty_lines: true,
       bom: true,
-      on_record: (record: Record<string, string>, { lines }) => numeroter(record, lines),
+      on_record: (record: Record<string, string>, { lines }) => {
+        derniere = lines;
+        return numeroter(record, lines);
+      },
     }),
     () => {},
   ) as AsyncIterable<Record<string, string>>;
+  try {
+    yield* flux;
+  } catch (err) {
+    if (typeof err === 'object' && err !== null) {
+      Object.assign(err, { derniere_ligne_lue: derniere });
+    }
+    throw err;
+  }
 }
 
 // Source du service d'import : le fichier fixe de S3_URL dans R2

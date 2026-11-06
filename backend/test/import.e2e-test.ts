@@ -1,9 +1,11 @@
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { Readable } from 'node:stream';
 import type { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { importScpis, type BilanImport } from '../src/csv/import.js';
 import { lancerSurUnSeulReplica } from '../src/csv/planification.js';
 import { creerImportService, type SourceCsv } from '../src/csv/service.js';
+import { lignesCsv } from '../src/csv/source.js';
 import { depotOutilsImport } from '../src/db/depots.js';
 import { captureLogs } from '../src/logging/capture.js';
 import { createDb, createPool, type Db } from '../src/db/index.js';
@@ -167,7 +169,7 @@ describe('import du catalogue (e2e)', () => {
 
   it('fichier vide : refusé, catalogue intact', async () => {
     const avant = await catalogue();
-    await expect(importScpis(db, lignes())).rejects.toThrow('fichier sans aucune SCPI');
+    await expect(importScpis(db, lignes())).rejects.toThrow('Fichier vide : aucune SCPI');
     expect(await catalogue()).toEqual(avant);
   });
 
@@ -188,7 +190,7 @@ describe('import du catalogue (e2e)', () => {
       (
         await pool.query(
           `select fichier, statut, lues, ajoutees, mises_a_jour, inchangees, supprimees,
-                  rejetees, rejets, erreur, fin >= debut as termine
+                  rejetees, rejets, erreur, erreur_detail, fin >= debut as termine
            from import_rapport order by id desc limit 1`,
         )
       ).rows[0];
@@ -219,6 +221,7 @@ describe('import du catalogue (e2e)', () => {
         rejetees: 0,
         rejets: [],
         erreur: null,
+        erreur_detail: null,
         termine: true,
       });
     });
@@ -253,7 +256,7 @@ describe('import du catalogue (e2e)', () => {
         log,
       );
 
-      await expect(service.executer()).rejects.toThrow('aucune ligne valide');
+      await expect(service.executer()).rejects.toThrow('Aucune ligne valide');
 
       expect(await dernierRapport()).toMatchObject({
         fichier: 'scpi_catalogue_20261105.csv',
@@ -261,7 +264,15 @@ describe('import du catalogue (e2e)', () => {
         lues: 0,
         rejetees: 1,
         rejets: [{ ligne: 2, nom: 'G', motif: 'cashback : nombre attendu, reçu "x"' }],
-        erreur: 'aucune ligne valide : catalogue non modifié',
+        erreur: 'Aucune ligne valide : la seule ligne est rejetée, catalogue non modifié',
+        erreur_detail: {
+          ligne: null,
+          constat: 'Aucune ligne valide : la seule ligne est rejetée, catalogue non modifié',
+          cause: null,
+          action:
+            'Corriger les lignes rejetées (numéro et motif dans la liste des lignes rejetées), puis déposer à nouveau le fichier',
+          technique: null,
+        },
         termine: true,
       });
       expect(logs).toContainEqual(
@@ -272,6 +283,61 @@ describe('import du catalogue (e2e)', () => {
         }),
       );
       expect(await catalogue()).toEqual(avant);
+    });
+
+    // US-07b, scénario 2 : vrai fichier CSV lu comme dans R2 (lignesCsv)
+    it('fichier illisible : rapport "echec" avec le motif en blocs (erreur_detail)', async () => {
+      const avant = await catalogue();
+      const entete = Object.keys(scpi('X')).join(',');
+      const valeurs = (nom: string) =>
+        Object.values(scpi(nom))
+          .map((v) => (v.includes(',') ? `"${v}"` : v))
+          .join(',');
+      const contenu = `${entete}\n${valeurs('A')}\n${valeurs('I').replace('"5.1,4.9"', '5.1,4.9')}\n`;
+      const service = creerImportService(
+        db,
+        {
+          fichier: 'scpi_catalogue_20261107.csv',
+          lire: async () => lignesCsv(Readable.from([contenu])),
+          archiver: async () => 'archives/scpi_catalogue_20261107.csv',
+        },
+        captureLogs().log,
+      );
+
+      await expect(service.executer()).rejects.toThrow('Ligne 3 : 21 valeurs au lieu de 20');
+
+      expect(await dernierRapport()).toMatchObject({
+        statut: 'echec',
+        erreur:
+          'Ligne 3 : 21 valeurs au lieu de 20. Cause probable : une valeur contient une virgule sans être entourée de guillemets (taux, secteurs, localisation…)',
+        erreur_detail: {
+          ligne: 3,
+          constat: '21 valeurs au lieu de 20',
+          cause:
+            'une valeur contient une virgule sans être entourée de guillemets (taux, secteurs, localisation…)',
+          action: expect.stringContaining('elle doit compter 20 valeurs'),
+          technique: 'Invalid Record Length: columns length is 20, got 21 on line 3',
+        },
+        rejetees: 0,
+        termine: true,
+      });
+      expect(await catalogue()).toEqual(avant);
+    });
+
+    it('erreur technique : rapport "echec" sans motif en blocs', async () => {
+      const service = creerImportService(
+        db,
+        source('scpi.csv', [scpi('A')]),
+        captureLogs().log,
+        undefined,
+        () => Promise.reject(new Error('connexion perdue')),
+      );
+      await expect(service.executer()).rejects.toThrow('connexion perdue');
+      expect(await dernierRapport()).toMatchObject({
+        statut: 'echec',
+        erreur: 'connexion perdue',
+        erreur_detail: null,
+      });
     });
 
     it('aucun fichier : rapport "aucun_fichier", catalogue intact', async () => {

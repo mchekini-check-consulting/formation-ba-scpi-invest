@@ -5,6 +5,7 @@ import { TABLE_IMPORT_RAPPORT } from '../db/schema.js';
 import { businessLog, logger } from '../logging/logger.js';
 import { loggable } from '../logging/service.js';
 import { alerteAdministrateur, type Alerter } from './alerte.js';
+import { texteAlerte } from './erreurs.js';
 import { FichierInvalide, importScpis, type BilanImport } from './import.js';
 
 type Lignes = AsyncIterable<Record<string, string>>;
@@ -19,8 +20,9 @@ export type SourceCsv = {
 // Couche service de l'import du catalogue (US-07a) : une ligne dans import_rapport par
 // exécution, ouverte "en_cours" puis terminée :
 //   - "aucun_fichier" : rien à importer, catalogue inchangé ;
-//   - "echec" (avec le motif) : import annulé, alerte à l'administrateur (US-07b), erreur
-//     journalisée par loggable et relancée ;
+//   - "echec" (avec le motif ; en blocs dans erreur_detail si le fichier est refusé) :
+//     import annulé, alerte à l'administrateur (US-07b), erreur journalisée par loggable
+//     et relancée ;
 //   - "reussi" (avec le bilan et les lignes rejetées) : puis archivage du fichier ; un
 //     archivage impossible
 //     n'annule pas l'import (déjà enregistré), il est noté dans le rapport et les logs.
@@ -59,20 +61,22 @@ export function creerImportService(
       }
       bilan = await importer(db, lignes);
     } catch (err) {
+      const refuse = err instanceof FichierInvalide;
       // Lignes rejetées quand le fichier est refusé faute de ligne valide
-      const rejets = err instanceof FichierInvalide ? err.rejets : [];
+      const rejets = refuse ? err.rejets : [];
       // Base injoignable : le rapport reste "en_cours", l'erreur d'origine est relancée
       await terminer(rapport.id, {
         statut: 'echec',
         erreur: message(err),
+        // motif en blocs pour l'écran du rapport ; vide pour une erreur technique
+        erreur_detail: refuse ? err.detail : null,
         ...(rejets.length > 0 && { rejetees: rejets.length, rejets }),
       }).catch(() => undefined);
-      const sujet =
-        err instanceof FichierInvalide
-          ? `fichier du catalogue rejeté : ${fichier}`
-          : `import du catalogue annulé (erreur technique) : ${fichier}`;
+      const [sujet, motif] = refuse
+        ? [`fichier du catalogue rejeté : ${fichier}`, texteAlerte(fichier, err.detail)]
+        : [`import du catalogue annulé (erreur technique) : ${fichier}`, message(err)];
       // Une alerte impossible à envoyer ne doit pas masquer l'erreur d'origine
-      await alerter(sujet, message(err)).catch(() => undefined);
+      await alerter(sujet, motif).catch(() => undefined);
       throw err;
     }
 
