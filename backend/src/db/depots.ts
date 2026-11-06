@@ -1,10 +1,11 @@
 import { randomBytes } from 'node:crypto';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import type { Db } from './index.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
 import type { DepotKyc, EtatKyc } from '../kyc/service.js';
 import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.js';
+import type { DepotOutilsImport } from '../outils/service.js';
 import {
   acceptationCgu,
   kyc,
@@ -12,6 +13,8 @@ import {
   parametre,
   profilInvestisseur,
   questionnaireInvestisseur,
+  TABLE_IMPORT_RAPPORT,
+  TABLE_SCPI_CATALOG,
 } from './schema.js';
 
 // Accès aux données (testé par test/*.e2e-test.ts sur une vraie base)
@@ -184,6 +187,37 @@ export function depotPieces(db: Db): DepotPieces {
       await db
         .delete(kycPiece)
         .where(and(eq(kycPiece.utilisateurId, utilisateurId), eq(kycPiece.type, type)));
+    },
+  };
+}
+
+// Outil de test de l'import du catalogue (dev) : rapports d'exécution complets et
+// catalogue avec toutes ses tables liées, pour diagnostiquer
+export function depotOutilsImport(db: Db): DepotOutilsImport {
+  const rapports = (limite: number) =>
+    db
+      .select()
+      .from(TABLE_IMPORT_RAPPORT)
+      .orderBy(desc(TABLE_IMPORT_RAPPORT.debut), desc(TABLE_IMPORT_RAPPORT.id))
+      .limit(limite);
+  return {
+    rapports,
+    async dernierRapport() {
+      const [rapport] = await rapports(1);
+      return rapport ?? null;
+    },
+    catalogue() {
+      return db.query.TABLE_SCPI_CATALOG.findMany({
+        orderBy: [asc(TABLE_SCPI_CATALOG.nom)],
+        with: {
+          taux_distribution: true,
+          localisation: true,
+          secteurs: true,
+          prix_part: true,
+          valeur_reconstitution: true,
+          decote_demembrement: true,
+        },
+      });
     },
   };
 }

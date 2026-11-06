@@ -2,6 +2,8 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { parse } from 'csv-parse';
@@ -80,6 +82,48 @@ export async function streamCsv(
     throw new Error(`fichier vide ou introuvable : ${bucket}/${key}`);
   }
   return response.Body as Readable; // en Node.js, Body est un flux Readable
+}
+
+// ---- Outil de test de l'import (dev uniquement, outils-service.ts)
+
+// Remplace le fichier lu par l'import par le contenu envoyé, tel quel (un fichier mal
+// encodé doit arriver intact pour vérifier que l'import le refuse)
+export async function deposerCsv(
+  client: Pick<S3Client, 'send'>,
+  bucket: string,
+  key: string,
+  contenu: Buffer,
+): Promise<void> {
+  await client.send(
+    new PutObjectCommand({ Bucket: bucket, Key: key, Body: contenu, ContentType: 'text/csv' }),
+  );
+}
+
+export type DescriptionCsv = {
+  taille: number | null;
+  modifieLe: string | null;
+  etag: string | null;
+  typeContenu: string | null;
+};
+
+// Métadonnées du fichier déposé, sans le lire ; null : aucun fichier
+export async function decrireCsv(
+  client: Pick<S3Client, 'send'>,
+  bucket: string,
+  key: string,
+): Promise<DescriptionCsv | null> {
+  try {
+    const r = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return {
+      taille: r.ContentLength ?? null,
+      modifieLe: r.LastModified?.toISOString() ?? null,
+      etag: r.ETag ?? null,
+      typeContenu: r.ContentType ?? null,
+    };
+  } catch (err) {
+    if (err instanceof Error && (err.name === 'NotFound' || err.name === 'NoSuchKey')) return null;
+    throw err;
+  }
 }
 
 // ---- Archivage (US-07a, scénario 4)

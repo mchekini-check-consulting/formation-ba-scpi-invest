@@ -6,6 +6,7 @@ import { importScpis, type BilanImport } from '../src/csv/import.js';
 import { lancerSurUnSeulReplica } from '../src/csv/planification.js';
 import { creerImportService, type SourceCsv } from '../src/csv/service.js';
 import { lignesCsv } from '../src/csv/source.js';
+import { depotOutilsImport } from '../src/db/depots.js';
 import { captureLogs } from '../src/logging/capture.js';
 import { createDb, createPool, type Db } from '../src/db/index.js';
 import { migrate } from '../src/migrate.js';
@@ -376,5 +377,57 @@ describe('import du catalogue (e2e)', () => {
     // Réplica en retard de quelques secondes (verrou libéré entre-temps) : pas de second import
     expect(await lancerSurUnSeulReplica(pool, executer('replica-3'))).toBe('deja_fait');
     expect(imports).toHaveLength(1);
+  });
+
+  it('outil de test (dev) : lancement à la main malgré un import récent', async () => {
+    const imports: string[] = [];
+    const executer = async () => {
+      imports.push('manuel');
+    };
+    expect(await lancerSurUnSeulReplica(pool, executer, false)).toBe('lance');
+    expect(imports).toEqual(['manuel']);
+  });
+
+  it('outil de test (dev) : rapports du plus récent au plus ancien, catalogue complet', async () => {
+    await pool.query('delete from import_rapport');
+    await pool.query(
+      `insert into import_rapport (fichier, statut, debut, erreur) values
+         ('ancien.csv', 'echec', now() - interval '2 hours', 'encodage invalide'),
+         ('recent.csv', 'reussi', now(), null)`,
+    );
+    await importScpis(db, lignes(scpi('A'), scpi('B')));
+    const depot = depotOutilsImport(db);
+
+    const rapports = await depot.rapports(10);
+    expect(rapports.map((r) => [r.fichier, r.statut, r.erreur])).toEqual([
+      ['recent.csv', 'reussi', null],
+      ['ancien.csv', 'echec', 'encodage invalide'],
+    ]);
+    expect(rapports[0]).toMatchObject({
+      rejets: [],
+      lues: 0,
+      debut: expect.any(Date),
+      erreur_detail: null,
+    });
+    expect(await depot.rapports(1)).toHaveLength(1);
+    expect((await depot.dernierRapport())?.fichier).toBe('recent.csv');
+
+    const scpis = await depot.catalogue();
+    expect(scpis.map((s) => s.nom)).toEqual(['A', 'B']);
+    expect(scpis[0]).toMatchObject({
+      gerant: 'Gérant A',
+      empreinte: expect.any(String),
+      taux_distribution: expect.arrayContaining([
+        expect.objectContaining({ taux: '5.1', annee: 2025 }),
+      ]),
+      localisation: [expect.objectContaining({ pays: 'France' })],
+      secteurs: expect.any(Array),
+      prix_part: [expect.objectContaining({ prix: '200' })],
+      valeur_reconstitution: [expect.objectContaining({ valeur: '215.5' })],
+      decote_demembrement: [expect.objectContaining({ duree: 5, decote: 80 })],
+    });
+
+    await pool.query('delete from import_rapport');
+    expect(await depot.dernierRapport()).toBeNull();
   });
 });

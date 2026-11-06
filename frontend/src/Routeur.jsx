@@ -17,6 +17,8 @@ import Confidentialite from './legal/Confidentialite.jsx';
 import Contact from './legal/Contact.jsx';
 import MentionsLegales from './legal/MentionsLegales.jsx';
 import { CHEMINS_INACTIFS } from './navigation/entrees.js';
+import { CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
+import ImportCatalogue from './outils/ImportCatalogue.jsx';
 
 // Email pré-rempli transmis par l'adresse (?email=...)
 function useEmailDeLAdresse() {
@@ -76,6 +78,8 @@ export default function Routeur() {
           <Route key={chemin} path={chemin} element={<Navigate to="/catalogue" replace />} />
         ))}
         <Route path="/indicateurs" element={<Indicateurs />} />
+        {/* Outil de test de l'import du catalogue (dev et poste uniquement, sans connexion) */}
+        <Route path={CHEMIN_IMPORT_CATALOGUE} element={<ImportCatalogue />} />
         {/* Pages légales du pied de page (US-01b) */}
         <Route path="/mentions-legales" element={<MentionsLegales />} />
         <Route path="/contact" element={<Contact />} />

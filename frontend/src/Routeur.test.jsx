@@ -19,6 +19,11 @@ function afficher(chemin, recherche = '') {
 const titre = () => screen.getByRole('heading', { level: 1 }).textContent;
 
 describe('Routeur', () => {
+  it('/outils/import-catalogue : outil de test de l’import (dev et poste)', () => {
+    afficher('/outils/import-catalogue');
+    expect(titre()).toBe('Import du catalogue');
+  });
+
   it('/ : landing page', () => {
     afficher('/');
     expect(titre()).toContain('Choisissez vos SCPI en confiance');

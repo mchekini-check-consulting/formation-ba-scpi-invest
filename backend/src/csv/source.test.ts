@@ -2,7 +2,9 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   NoSuchKey,
+  PutObjectCommand,
 } from '@aws-sdk/client-s3';
 import { describe, expect, it, vi } from 'vitest';
 import { Readable } from 'node:stream';
@@ -13,6 +15,8 @@ import {
   archiverCsv,
   cleArchive,
   dateFichier,
+  decrireCsv,
+  deposerCsv,
   downloadCsv,
   lignesCsv,
   s3Client,
@@ -123,6 +127,59 @@ describe('streamCsv', () => {
     await expect(streamCsv({ send }, 'scpi', 'scpi.csv')).rejects.toThrow(
       'fichier vide ou introuvable : scpi/scpi.csv',
     );
+  });
+});
+
+describe('outil de test : dépôt et description du fichier', () => {
+  it('deposerCsv : écrit le contenu tel quel à la place du fichier lu par l’import', async () => {
+    const send = vi.fn().mockResolvedValue({});
+    const contenu = Buffer.from('Nom\nHorizon\n');
+    await deposerCsv({ send }, 'scpi', 'scpi.csv', contenu);
+
+    const envoi = send.mock.calls[0][0] as PutObjectCommand;
+    expect(envoi).toBeInstanceOf(PutObjectCommand);
+    expect(envoi.input).toEqual({
+      Bucket: 'scpi',
+      Key: 'scpi.csv',
+      Body: contenu,
+      ContentType: 'text/csv',
+    });
+  });
+
+  it('decrireCsv : taille, date, etag et type, sans lire le fichier', async () => {
+    const send = vi.fn().mockResolvedValue({
+      ContentLength: 4096,
+      LastModified: new Date('2026-11-06T13:32:00Z'),
+      ETag: '"abc"',
+      ContentType: 'text/csv',
+    });
+    expect(await decrireCsv({ send }, 'scpi', 'scpi.csv')).toEqual({
+      taille: 4096,
+      modifieLe: '2026-11-06T13:32:00.000Z',
+      etag: '"abc"',
+      typeContenu: 'text/csv',
+    });
+    expect(send.mock.calls[0][0]).toBeInstanceOf(HeadObjectCommand);
+  });
+
+  it('decrireCsv : métadonnées absentes -> null champ par champ', async () => {
+    const send = vi.fn().mockResolvedValue({});
+    expect(await decrireCsv({ send }, 'scpi', 'scpi.csv')).toEqual({
+      taille: null,
+      modifieLe: null,
+      etag: null,
+      typeContenu: null,
+    });
+  });
+
+  it('decrireCsv : aucun fichier -> null', async () => {
+    const absent = Object.assign(new Error('NotFound'), { name: 'NotFound' });
+    expect(await decrireCsv({ send: vi.fn().mockRejectedValue(absent) }, 'scpi', 'x')).toBeNull();
+  });
+
+  it('decrireCsv : autre erreur (accès refusé) relancée', async () => {
+    const send = vi.fn().mockRejectedValue(new Error('AccessDenied'));
+    await expect(decrireCsv({ send }, 'scpi', 'x')).rejects.toThrow('AccessDenied');
   });
 });
 
