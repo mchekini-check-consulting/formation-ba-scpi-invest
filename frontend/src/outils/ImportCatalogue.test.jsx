@@ -68,6 +68,21 @@ const ECHEC = {
   erreur: 'encodage invalide (UTF-8 attendu)',
 };
 
+// Fichier refusé, motif en blocs (erreur_detail, backend/src/csv/erreurs.ts)
+const REFUS = {
+  ...ECHEC,
+  id: 13,
+  fin: '2026-11-06T13:45:00.272Z',
+  erreur: 'Ligne 3 : 21 valeurs au lieu de 20. Cause probable : virgule sans guillemets',
+  erreur_detail: {
+    ligne: 3,
+    constat: '21 valeurs au lieu de 20',
+    cause: 'une valeur contient une virgule sans être entourée de guillemets',
+    action: 'Corriger cette ligne : elle doit compter 20 valeurs',
+    technique: 'Invalid Record Length: columns length is 20, got 21 on line 3',
+  },
+};
+
 const SCPI = {
   id: 1,
   nom: 'Horizon Santé',
@@ -345,6 +360,74 @@ describe('outil d’import du catalogue (dev)', () => {
     expect(valeur(resultat, 'Durée')).toBe('40 ms');
     expect(valeur(resultat, 'Rapport')).toBe('n° 11');
     expect(resultat.textContent).not.toContain('Lignes lues');
+  });
+
+  it('fichier refusé : motif en blocs (où, constat, cause, à faire, détail technique)', async () => {
+    afficher(
+      fauxApi({
+        lancerImport: vi.fn().mockResolvedValue({
+          issue: 'lance',
+          erreur: REFUS.erreur,
+          dureeMs: 272,
+          rapport: REFUS,
+        }),
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Lancer l’import maintenant' }));
+    const resultat = await screen.findByRole('status');
+    expect(resultat.textContent).toContain('✗ Import refusé : catalogue inchangé');
+    const blocs = [...resultat.querySelectorAll('.motif__bloc')].map((b) => [
+      b.querySelector('.motif__titre').textContent,
+      b.querySelector('p').textContent,
+    ]);
+    expect(blocs).toEqual([
+      ['Où', 'scpi.csv, ligne 3'],
+      ['Constat', '21 valeurs au lieu de 20'],
+      ['Cause probable', 'une valeur contient une virgule sans être entourée de guillemets'],
+      ['À faire', 'Corriger cette ligne : elle doit compter 20 valeurs'],
+    ]);
+    const technique = within(resultat).getByText('Détail technique').closest('details');
+    expect(technique.open).toBe(false);
+    expect(technique.textContent).toContain('got 21 on line 3');
+    expect(within(resultat).queryByText('Motif', { selector: 'dt' })).toBeNull();
+    expect(valeur(resultat, 'Rapport')).toBe('n° 13');
+  });
+
+  it('motif du fichier entier, sans cause ni action ni nom de fichier', async () => {
+    const rapport = {
+      ...REFUS,
+      fichier: null,
+      erreur_detail: {
+        ligne: null,
+        constat: 'Fichier vide',
+        cause: null,
+        action: null,
+        technique: null,
+      },
+    };
+    afficher(
+      fauxApi({
+        lancerImport: vi
+          .fn()
+          .mockResolvedValue({ issue: 'lance', erreur: 'x', dureeMs: 1, rapport }),
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Lancer l’import maintenant' }));
+    const resultat = await screen.findByRole('status');
+    expect([...resultat.querySelectorAll('.motif__bloc p')].map((p) => p.textContent)).toEqual([
+      'fichier entier',
+      'Fichier vide',
+    ]);
+    expect(within(resultat).queryByText('Détail technique')).toBeNull();
+  });
+
+  it('détail d’un rapport refusé : motif en blocs à la place de la ligne « Erreur »', async () => {
+    afficher(fauxApi({ lireRapports: vi.fn().mockResolvedValue([REFUS, REUSSI]) }));
+    const detail = await screen.findByRole('region', { name: 'Rapport n° 13' });
+    const motif = within(detail).getByRole('region', { name: 'Motif du refus' });
+    expect(motif.textContent).toContain('scpi.csv, ligne 3');
+    expect(motif.textContent).toContain('Corriger cette ligne');
+    expect(within(detail).queryByText('Erreur', { selector: 'dt' })).toBeNull();
   });
 
   it('import sans rapport renvoyé (base injoignable) : échec déduit de l’erreur', async () => {

@@ -403,7 +403,12 @@ describe('import du catalogue (e2e)', () => {
       ['recent.csv', 'reussi', null],
       ['ancien.csv', 'echec', 'encodage invalide'],
     ]);
-    expect(rapports[0]).toMatchObject({ rejets: [], lues: 0, debut: expect.any(Date) });
+    expect(rapports[0]).toMatchObject({
+      rejets: [],
+      lues: 0,
+      debut: expect.any(Date),
+      erreur_detail: null,
+    });
     expect(await depot.rapports(1)).toHaveLength(1);
     expect((await depot.dernierRapport())?.fichier).toBe('recent.csv');
 

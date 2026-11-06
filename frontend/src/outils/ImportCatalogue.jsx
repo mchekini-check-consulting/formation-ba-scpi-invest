@@ -275,7 +275,9 @@ function ResultatImport({ mutation }) {
       ['Rejetées', rapport.rejetees],
     );
   }
-  if (erreur) lignes.push(['Motif', erreur]);
+  const detail = rapport?.erreur_detail;
+  // Fichier refusé : le motif en blocs ; erreur technique : le message tel quel
+  if (erreur && !detail) lignes.push(['Motif', erreur]);
   lignes.push(['Durée', duree(dureeMs)]);
   if (rapport) lignes.push(['Rapport', `n° ${rapport.id}`]);
   return (
@@ -284,8 +286,44 @@ function ResultatImport({ mutation }) {
       titre={titre}
       suite={rapport?.rejetees > 0 ? 'Détail dans l’onglet « Lignes rejetées ».' : undefined}
     >
+      {detail && <MotifEnBlocs detail={detail} fichier={rapport.fichier} />}
       <Infos lignes={lignes} />
     </Confirmation>
+  );
+}
+
+// Motif d'un fichier refusé (erreur_detail du rapport) : où, constat, cause probable,
+// à faire, et le message d'origine replié (détail technique)
+const BLOCS_MOTIF = [
+  ['constat', 'Constat'],
+  ['cause', 'Cause probable'],
+  ['action', 'À faire'],
+];
+
+function MotifEnBlocs({ detail, fichier }) {
+  const ou = detail.ligne === null ? 'fichier entier' : `ligne ${detail.ligne}`;
+  return (
+    <div className="motif">
+      <div className="motif__bloc">
+        <span className="motif__titre">Où</span>
+        <p>
+          {fichier ? `${fichier}, ` : ''}
+          {ou}
+        </p>
+      </div>
+      {BLOCS_MOTIF.filter(([cle]) => detail[cle]).map(([cle, libelle]) => (
+        <div key={cle} className={`motif__bloc motif__bloc--${cle}`}>
+          <span className="motif__titre">{libelle}</span>
+          <p>{detail[cle]}</p>
+        </div>
+      ))}
+      {detail.technique && (
+        <details className="motif__technique">
+          <summary>Détail technique</summary>
+          <code>{detail.technique}</code>
+        </details>
+      )}
+    </div>
   );
 }
 
@@ -502,9 +540,15 @@ function DetailRapport({ rapport, maintenant }) {
           ['Durée', rapport.fin ? dureeEntre(rapport.debut, rapport.fin) : 'pas terminé'],
           ['Fichier', rapport.fichier],
           ...COMPTEURS.map(([cle, libelle]) => [libelle, rapport[cle]]),
-          ['Erreur', rapport.erreur],
+          ...(rapport.erreur_detail ? [] : [['Erreur', rapport.erreur]]),
         ]}
       />
+      {rapport.erreur_detail && (
+        <section className="outils__motif" aria-label="Motif du refus">
+          <h4>Motif du refus</h4>
+          <MotifEnBlocs detail={rapport.erreur_detail} fichier={rapport.fichier} />
+        </section>
+      )}
       <Rejets rapport={rapport} />
       <details>
         <summary>Données brutes (JSON)</summary>
