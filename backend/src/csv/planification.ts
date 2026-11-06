@@ -19,18 +19,22 @@ export type Issue = 'lance' | 'deja_en_cours' | 'deja_fait';
 // Plusieurs réplicas (preprod, prod : 2) déclenchent tous à 2h : un seul importe.
 // - verrou pris par un autre réplica : "deja_en_cours" ;
 // - import déjà démarré dans l'heure (horloges décalées de quelques secondes) : "deja_fait".
+// Lancement à la main (outil de test, verifierRecent = false) : seul le verrou compte.
 export async function lancerSurUnSeulReplica(
   pool: Pick<Pool, 'connect'>,
   executer: () => Promise<unknown>,
+  verifierRecent = true,
 ): Promise<Issue> {
   const client = await pool.connect();
   try {
     const { rows } = await client.query('select pg_try_advisory_lock($1) as libre', [VERROU]);
     if (!rows[0].libre) return 'deja_en_cours';
     try {
-      const recent = await client.query(
-        `select 1 from import_rapport where debut > now() - interval '1 hour' limit 1`,
-      );
+      const recent = verifierRecent
+        ? await client.query(
+            `select 1 from import_rapport where debut > now() - interval '1 hour' limit 1`,
+          )
+        : { rows: [] };
       if (recent.rows.length > 0) return 'deja_fait';
       await executer();
       return 'lance';
@@ -98,4 +102,16 @@ export function demarrerImportNocturne(
   );
   void tache.trigger(); // erreurs journalisées par planifierImport, jamais propagées
   return tache;
+}
+
+// Horaire et prochaine exécution, pour l'outil de test (dev) ; null : import désactivé
+export function decrirePlanification(
+  tache: Pick<Cron, 'getPattern' | 'nextRun'> | null,
+): { horaire: string; fuseau: string; prochain: string | null } | null {
+  if (!tache) return null;
+  return {
+    horaire: tache.getPattern() ?? HORAIRE,
+    fuseau: FUSEAU,
+    prochain: tache.nextRun()?.toISOString() ?? null,
+  };
 }

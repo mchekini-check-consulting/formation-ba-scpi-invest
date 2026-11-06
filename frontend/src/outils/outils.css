@@ -1,0 +1,505 @@
+/* Outil de test de l'import du catalogue (dev), maquette « C · Console de test ».
+   Charte commune (couleurs, boutons, titres) dans index.css ; tout sous .outils. */
+
+.outils .pastille-dev,
+.pied__dev .pastille-dev {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--ocre);
+  color: #5a3410;
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.outils .pastille-dev::before,
+.pied__dev .pastille-dev::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b4561a;
+}
+
+.outils__corps {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.outils__ferme {
+  padding: 80px 40px;
+  display: grid;
+  gap: 18px;
+  justify-items: start;
+}
+
+/* --- Colonne sombre : actions et informations ---------------------------- */
+
+.outils__gauche {
+  background: var(--nuit);
+  color: #dfe6f6;
+  border-radius: var(--r-l);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.outils__gauche h1 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 28px;
+  color: #fff;
+  line-height: 1.15;
+  margin-top: 12px;
+}
+
+.outils__sous-titre {
+  font-size: 13.5px;
+  color: var(--texte-sur-nuit);
+  margin-top: 6px;
+}
+
+.outils__action,
+.outils__bloc {
+  background: var(--nuit-2);
+  border-radius: var(--r-m);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.outils__bloc {
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 10%);
+}
+
+.outils__action h2,
+.outils__bloc h2 {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bleu-pied);
+  font-weight: 700;
+}
+
+.outils__gauche .btn {
+  justify-content: center;
+}
+
+.outils__gauche .btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.outils__depot {
+  display: block;
+  border: 1.5px dashed #4a5f95;
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--texte-sur-nuit);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.outils__depot:hover {
+  border-color: var(--bleu-pied);
+  color: #fff;
+}
+
+.outils__depot input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.outils__depot strong {
+  color: #fff;
+}
+
+.outils__infos {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.outils__infos > div {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.outils__infos dt {
+  color: var(--texte-sur-nuit);
+}
+
+.outils__infos dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.outils__infos small,
+.outils__depot small {
+  opacity: 0.75;
+}
+
+/* Message de fin d'une action (envoi, import) */
+.confirmation {
+  display: grid;
+  gap: 10px;
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 13.5px;
+}
+
+.confirmation--ok {
+  background: rgb(47 158 107 / 16%);
+  border: 1px solid rgb(143 224 181 / 35%);
+}
+
+.confirmation--ko {
+  background: rgb(214 87 69 / 16%);
+  border: 1px solid rgb(255 180 168 / 35%);
+}
+
+.confirmation__titre {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.confirmation--ok .confirmation__titre span {
+  color: #8fe0b5;
+}
+
+.confirmation--ko .confirmation__titre span {
+  color: #ffb4a8;
+}
+
+.confirmation__suite {
+  color: var(--texte-sur-nuit);
+}
+
+.outils__erreur {
+  font-size: 14px;
+  color: #fff;
+  background: var(--rouge);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.outils__erreur-texte {
+  font-size: 13.5px;
+  color: #ffb4a8;
+}
+
+.outils__info {
+  font-size: 14px;
+  color: var(--encre-douce);
+}
+
+.outils__gauche .outils__info {
+  color: var(--texte-sur-nuit);
+}
+
+.progression {
+  height: 6px;
+  border-radius: 6px;
+  background: var(--nuit);
+  overflow: hidden;
+}
+
+.progression i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--bleu-vif);
+  border-radius: 6px;
+  transition: width 0.2s;
+}
+
+.progression--continue i {
+  width: 40%;
+  animation: progression-continue 1.2s ease-in-out infinite;
+}
+
+@keyframes progression-continue {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+/* --- Partie droite : chiffres clés et données ---------------------------- */
+
+.outils__droite {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.outils__kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.outils__kpis > div {
+  background: var(--papier);
+  border-radius: var(--r-m);
+  padding: 18px 20px;
+}
+
+.outils__kpis strong {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 400;
+  display: block;
+  line-height: 1.1;
+}
+
+.outils__kpis strong .statut {
+  font-family: var(--sans);
+  font-size: 15px;
+  vertical-align: middle;
+}
+
+.outils__kpis span {
+  font-size: 13px;
+  color: var(--encre-douce);
+}
+
+.outils__panneau {
+  background: var(--papier);
+  border-radius: var(--r-l);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.outils .onglets {
+  display: inline-flex;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.outils .onglets button {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--encre-douce);
+  cursor: pointer;
+}
+
+.outils .onglets button[aria-selected='true'] {
+  background: var(--nuit);
+  color: #fff;
+}
+
+.outils__recherche {
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font: inherit;
+  font-size: 14px;
+  background: #fff;
+  max-width: 340px;
+}
+
+.outils__tableau {
+  background: #fff;
+  border: 1px solid var(--ligne);
+  border-radius: var(--r-m);
+  overflow: auto;
+  max-height: 520px;
+}
+
+.outils table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.outils th {
+  text-align: left;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--discret);
+  font-weight: 600;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--ligne);
+  background: #fcfbf8;
+  position: sticky;
+  top: 0;
+  white-space: nowrap;
+}
+
+.outils td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #efebe3;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.outils tr:last-child td {
+  border-bottom: 0;
+}
+
+.outils .num {
+  text-align: right;
+}
+
+.outils tr.cliquable {
+  cursor: pointer;
+}
+
+.outils tbody tr:hover {
+  background: #f7f9fd;
+}
+
+.outils tbody tr[aria-selected='true'] {
+  background: var(--bleu-ciel);
+}
+
+.outils__erreur-cellule {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--rouge);
+}
+
+.outils__detail {
+  background: #fff;
+  border: 1px solid var(--ligne);
+  border-radius: var(--r-m);
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.outils__detail h3 {
+  font-size: 16px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.outils__detail .outils__infos {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  column-gap: 24px;
+}
+
+.outils__detail .outils__infos dt {
+  color: var(--discret);
+}
+
+.outils__detail summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.outils pre {
+  background: var(--nuit);
+  color: #dfe6f6;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 12.5px;
+  overflow: auto;
+  max-height: 420px;
+  margin: 10px 0 0;
+}
+
+.outils .statut {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.outils .statut::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.outils .statut--reussi {
+  background: #e3f3ea;
+  color: var(--vert);
+}
+
+.outils .statut--echec {
+  background: #fbe6e2;
+  color: var(--rouge);
+}
+
+.outils .statut--aucun_fichier {
+  background: #ece9e2;
+  color: var(--discret);
+}
+
+.outils .statut--en_cours {
+  background: #e6eefb;
+  color: var(--bleu-vif);
+}
+
+/* --- Bouton du pied de page de l'accueil (dev uniquement, App.jsx) -------- */
+
+.pied__dev {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1.5px dashed var(--ocre);
+  color: var(--ocre);
+  background: rgb(246 197 140 / 8%);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-weight: 600;
+}
+
+.pied__dev:hover {
+  background: rgb(246 197 140 / 18%);
+  color: var(--ocre);
+}
+
+@media (max-width: 1000px) {
+  .outils__corps {
+    grid-template-columns: 1fr;
+  }
+
+  .outils__kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

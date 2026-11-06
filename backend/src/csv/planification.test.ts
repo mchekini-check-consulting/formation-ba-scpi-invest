@@ -3,6 +3,7 @@ import type { Cron } from 'croner';
 import type { Db } from '../db/index.js';
 import { captureLogs } from '../logging/capture.js';
 import {
+  decrirePlanification,
   demarrerImportNocturne,
   HORAIRE,
   lancerSurUnSeulReplica,
@@ -60,6 +61,17 @@ describe('lancerSurUnSeulReplica', () => {
     expect(await lancerSurUnSeulReplica(pool, executer)).toBe('deja_fait');
 
     expect(executer).not.toHaveBeenCalled();
+    expect(deverrouille(requetes)).toBe(true);
+  });
+
+  it('lancement à la main : import récent ignoré, verrou toujours pris', async () => {
+    const { pool, requetes } = fauxPool({ recent: true });
+    const executer = vi.fn().mockResolvedValue(undefined);
+
+    expect(await lancerSurUnSeulReplica(pool, executer, false)).toBe('lance');
+
+    expect(executer).toHaveBeenCalledOnce();
+    expect(requetes.some((r) => r.includes('import_rapport'))).toBe(false);
     expect(deverrouille(requetes)).toBe(true);
   });
 
@@ -193,5 +205,32 @@ describe('demarrerImportNocturne', () => {
       CSV_IMPORT_CRON: '*/5 * * * *',
     });
     expect(tache?.getPattern()).toBe('*/5 * * * *');
+  });
+});
+
+describe('decrirePlanification', () => {
+  it('import désactivé : null', () => {
+    expect(decrirePlanification(null)).toBeNull();
+  });
+
+  it('horaire, fuseau et prochaine exécution', () => {
+    const tache = {
+      getPattern: () => '*/5 * * * *',
+      nextRun: () => new Date('2026-11-07T01:00:00Z'),
+    };
+    expect(decrirePlanification(tache)).toEqual({
+      horaire: '*/5 * * * *',
+      fuseau: 'Europe/Paris',
+      prochain: '2026-11-07T01:00:00.000Z',
+    });
+  });
+
+  it('tâche arrêtée : pas de prochaine exécution, horaire par défaut', () => {
+    const tache = { getPattern: () => undefined, nextRun: () => null };
+    expect(decrirePlanification(tache)).toEqual({
+      horaire: HORAIRE,
+      fuseau: 'Europe/Paris',
+      prochain: null,
+    });
   });
 });
