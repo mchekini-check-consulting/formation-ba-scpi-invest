@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ErreurApi } from '../auth.js';
 import Catalogue from './Catalogue.jsx';
+import { photoScpi } from './photos.js';
 
 afterEach(cleanup);
 
@@ -127,10 +128,31 @@ describe('Catalogue : liste des SCPI (US-08)', () => {
     }
   });
 
+  it('photo en haut de chaque carte, différente d’une SCPI à l’autre', async () => {
+    await afficher();
+    const [premiere, seconde] = cartes();
+    const photo = premiere.querySelector('.scpi__photo img');
+    expect(photo.getAttribute('alt')).toBe(''); // décorative
+    expect(photo.getAttribute('src')).toBe(photoScpi(1));
+    expect(seconde.querySelector('.scpi__photo img').getAttribute('src')).toBe(photoScpi(2));
+    expect(photoScpi(1)).not.toBe(photoScpi(2));
+  });
+
   it('titre « Catalogue SCPI » et sous-titre', async () => {
     await afficher();
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Catalogue SCPI');
     expect(texte()).toContain('Découvrez notre sélection de SCPI partenaires');
+  });
+
+  it('en-tête figé : titre, sous-titre, nombre de SCPI et date, hors de la liste', async () => {
+    await afficher();
+    const entete = document.querySelector('.application__entete');
+    expect(entete.querySelector('h1').textContent).toBe('Catalogue SCPI');
+    const contenu = entete.textContent.replaceAll(String.fromCharCode(160), ' ');
+    expect(contenu).toContain('Découvrez notre sélection de SCPI partenaires');
+    expect(contenu).toContain('14 SCPI disponibles');
+    expect(contenu).toContain('Données mises à jour le 05/11/2026');
+    expect(entete.querySelector('.scpi')).toBeNull();
   });
 
   it('boutons « En savoir plus » et « Investir » : pas encore actifs, bulle « Bientôt disponible »', async () => {
@@ -257,6 +279,10 @@ describe('Catalogue (accès après validation du profil, US-05b)', () => {
     const { seDeconnecter, allerA } = await afficher();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Se déconnecter' }));
+    });
+    expect(seDeconnecter).not.toHaveBeenCalled(); // confirmation demandée d'abord
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Oui' }));
     });
     expect(seDeconnecter).toHaveBeenCalled();
     expect(allerA).toHaveBeenCalledWith('/');

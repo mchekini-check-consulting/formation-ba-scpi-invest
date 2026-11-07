@@ -5,29 +5,48 @@
   padding-top: 20px;
 }
 
-/* Sous-titre collé au titre de la page */
-.catalogue__sous-titre {
-  margin: -18px 0 20px;
-  font-size: 17px;
-  color: var(--texte-secondaire);
+/* En-tête figé, sans fond coloré (même fond que la page, fin trait en bas) : titre,
+   sous-titre, puis nombre de SCPI et date */
+.application__entete:has(.catalogue__sous-titre) {
+  margin-top: -20px;
+  padding-top: 22px;
+  padding-bottom: 16px;
 }
 
+.application__entete:has(.catalogue__sous-titre) .application__titre {
+  margin: 0 0 4px;
+  color: var(--bleu);
+}
+
+/* Bleu moyen : lisible sur le fond beige (contraste 5,4 : 1) */
+.catalogue__sous-titre {
+  margin: 0;
+  font-size: 17px;
+  color: #2d5bbf;
+}
+
+/* Sous le sous-titre : pastille du nombre de SCPI, date à côté */
 .catalogue__entete {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px 16px;
-  margin: 4px 0 20px;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 12px 0 0;
 }
 
+/* Nombre de SCPI en pastille blanche bordée */
 .catalogue__total {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   margin: 0;
-  font-weight: 600;
+  padding: 6px 14px;
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+  background: #fff;
+  font-weight: 700;
   font-size: 15px;
+  white-space: nowrap;
   color: var(--bleu);
 }
 
@@ -36,15 +55,18 @@
   height: 18px;
 }
 
+/* Date seule, poussée tout à droite du bandeau */
 .catalogue__maj {
-  margin: 0;
-  font-size: 14px;
+  margin: 0 0 0 auto;
+  text-align: right;
+  font-size: 13px;
   color: var(--texte-secondaire);
 }
 
+/* 4 SCPI par ligne sur ordinateur ; 3, 2 puis 1 quand l'écran rétrécit */
 .catalogue__liste {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin: 0;
   padding: 0;
@@ -52,7 +74,26 @@
 }
 
 /* Carte SCPI : variante « jauge segmentée » (maquette D) */
+@media (max-width: 1199px) {
+  .catalogue__liste {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .catalogue__liste {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .catalogue__liste {
+    grid-template-columns: 1fr;
+  }
+}
+
 .scpi {
+  container-type: inline-size; /* la carte adapte ses boutons à sa propre largeur */
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -60,6 +101,23 @@
   border: 1px solid var(--bordure);
   border-radius: var(--r-m);
   background: #fff;
+}
+
+/* Photo en haut de la carte, bord à bord */
+.scpi__photo {
+  position: relative;
+  margin: -18px -20px 2px;
+  aspect-ratio: 16 / 8;
+  border-radius: var(--r-m) var(--r-m) 0 0;
+  overflow: hidden;
+  background: var(--sable);
+}
+
+.scpi__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .scpi__nom {
@@ -199,6 +257,14 @@
   grid-template-columns: 1fr 1fr; /* deux boutons de même largeur */
   gap: 10px;
   padding-top: 4px;
+}
+
+/* Carte étroite (4 par ligne sur un portable) : boutons l'un sous l'autre, même largeur */
+@container (max-width: 290px) {
+  .scpi__actions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
 .scpi__bouton {

@@ -286,6 +286,8 @@ describe('FormulaireInvestisseur (US-05a)', () => {
   it('déconnexion toujours possible', async () => {
     const { seDeconnecter, allerA } = await afficher();
     await cliquer('Se déconnecter');
+    expect(seDeconnecter).not.toHaveBeenCalled(); // confirmation demandée d'abord
+    await cliquer('Oui');
     expect(seDeconnecter).toHaveBeenCalled();
     expect(allerA).toHaveBeenCalledWith('/');
   });

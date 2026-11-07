@@ -118,6 +118,8 @@ describe('Écran /connaissance-client (après la création de compte ou la conne
     afficher({ seDeconnecter, allerA });
     const bouton = await screen.findByRole('button', { name: 'Se déconnecter' });
     await act(async () => fireEvent.click(bouton));
+    expect(seDeconnecter).not.toHaveBeenCalled(); // confirmation demandée d'abord
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Oui' })));
     expect(seDeconnecter).toHaveBeenCalledOnce();
     expect(allerA).toHaveBeenCalledWith('/');
   });

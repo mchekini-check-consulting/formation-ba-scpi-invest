@@ -183,6 +183,8 @@ describe('Mise en page des écrans de l’application (US-06)', () => {
     await act(async () =>
       fireEvent.click(within(menuApp).getByRole('button', { name: 'Se déconnecter' })),
     );
+    expect(deconnecte).toBe(false); // confirmation demandée d'abord
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Oui' })));
     expect(deconnecte).toBe(true);
   });
 });

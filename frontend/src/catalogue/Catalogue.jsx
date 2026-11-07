@@ -10,6 +10,7 @@ import { deconnecter } from '../auth.js';
 import { lireQuestionnaire } from '../investisseur/api.js';
 import PageApplication from '../navigation/PageApplication.jsx';
 import { listerScpis } from './api.js';
+import { photosPage } from './photos.js';
 import './catalogue.css';
 import {
   SEGMENTS,
@@ -119,9 +120,13 @@ function BoutonBientot({ principal, children }) {
   );
 }
 
-function CarteScpi({ scpi, anneeTaux }) {
+function CarteScpi({ scpi, anneeTaux, photo }) {
   return (
     <li className="scpi">
+      {/* Photo décorative (le nom de la SCPI est juste dessous) : pas un bien réel de la SCPI */}
+      <div className="scpi__photo">
+        <img src={photo} alt="" loading="lazy" decoding="async" />
+      </div>
       <h2 className="scpi__nom">{scpi.nom}</h2>
       <p className="scpi__gerant">{formaterTexte(scpi.gerant)}</p>
       <div className="scpi__taux">
@@ -189,22 +194,42 @@ function Pagination({ page, nombrePages, allerPage }) {
   );
 }
 
-function ListeScpis({ donnees, allerPage }) {
+// En-tête figé en haut de l'écran : sous-titre, puis nombre de SCPI et date de mise à
+// jour une fois la liste chargée
+function EnteteCatalogue({ donnees }) {
   return (
     <>
-      <div className="catalogue__entete">
-        <p className="catalogue__total">
-          <Icone nom="immeuble" />
-          {donnees.total} SCPI disponibles
-        </p>
-        <p className="catalogue__maj">Données mises à jour le {formaterDate(donnees.misAJourLe)}</p>
-      </div>
+      <p className="catalogue__sous-titre">Découvrez notre sélection de SCPI partenaires</p>
+      {donnees && (
+        <div className="catalogue__entete">
+          <p className="catalogue__total">
+            <Icone nom="immeuble" />
+            {donnees.total} SCPI disponibles
+          </p>
+          <p className="catalogue__maj">
+            Données mises à jour le {formaterDate(donnees.misAJourLe)}
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
+function ListeScpis({ donnees, allerPage }) {
+  const photos = photosPage(donnees.scpis);
+  return (
+    <>
       {donnees.total === 0 ? (
         <p className="compte__texte">Aucune SCPI n’est disponible pour le moment.</p>
       ) : (
         <ul className="catalogue__liste">
           {donnees.scpis.map((scpi) => (
-            <CarteScpi key={scpi.id} scpi={scpi} anneeTaux={donnees.anneeTaux} />
+            <CarteScpi
+              key={scpi.id}
+              scpi={scpi}
+              anneeTaux={donnees.anneeTaux}
+              photo={photos.get(scpi.id)}
+            />
           ))}
         </ul>
       )}
@@ -273,8 +298,8 @@ export default function Catalogue({
       actif="catalogue"
       seDeconnecter={quitter}
       chargerIdentite={chargerIdentite}
+      entete={<EnteteCatalogue donnees={donnees} />}
     >
-      <p className="catalogue__sous-titre">Découvrez notre sélection de SCPI partenaires</p>
       {alerte && (
         <p className="compte__alerte" role="alert">
           {alerte}
