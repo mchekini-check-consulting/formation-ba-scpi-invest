@@ -32,9 +32,13 @@ export default function ConfirmationDeconnexion({ onOui, onNon, retour }) {
   }
 
   return createPortal(
+    // Voile : clic à côté de la fenêtre = « Non » ; clavier (Échap, Tab) géré ici aussi, les
+    // touches frappées dans la fenêtre remontant jusqu'au voile
     <div
       className="confirmation"
+      role="presentation"
       onMouseDown={(evenement) => evenement.target === evenement.currentTarget && onNon()}
+      onKeyDown={surTouche}
     >
       <div
         className="confirmation__fenetre"
@@ -42,7 +46,6 @@ export default function ConfirmationDeconnexion({ onOui, onNon, retour }) {
         aria-modal="true"
         aria-labelledby={idTitre}
         aria-describedby={idMessage}
-        onKeyDown={surTouche}
       >
         <h2 id={idTitre} className="confirmation__titre">
           Se déconnecter ?

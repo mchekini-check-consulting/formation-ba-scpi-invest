@@ -8,7 +8,6 @@
   flex-direction: row;
   align-items: flex-start;
   gap: 14px;
-  min-height: 100vh;
   min-height: 100dvh;
 }
 
@@ -26,7 +25,6 @@
   }
 
   .application__zone {
-    min-height: 100vh;
     min-height: 100dvh;
     padding: var(--marge-page) var(--marge-page) var(--marge-page) 0;
   }
@@ -87,7 +85,6 @@
   top: 0;
   flex: none;
   width: var(--largeur);
-  height: 100vh;
   height: 100dvh;
   display: flex;
   flex-direction: column;
