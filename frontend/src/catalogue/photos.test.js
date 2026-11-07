@@ -29,6 +29,24 @@ describe('photo d’illustration de chaque SCPI', () => {
     expect(new Set(douze.values()).size).toBe(12);
   });
 
+  it('SCPI du catalogue actuel : photo attitrée d’après son nom, quel que soit l’identifiant', () => {
+    // Même photo en local et sur dev, où la même SCPI n'a pas le même identifiant
+    expect(photoScpi(43, 'Transitions Europe')).toBe(PHOTOS[42]);
+    expect(photoScpi(7, 'Transitions Europe')).toBe(PHOTOS[42]);
+    expect(photoScpi(46, 'Comète')).toBe(PHOTOS[45]);
+    const page = photosPage([
+      { id: 1, nom: 'Transitions Europe' },
+      { id: 2, nom: 'Comète' },
+    ]);
+    expect(page.get(1)).toBe(PHOTOS[42]);
+    expect(page.get(2)).toBe(PHOTOS[45]);
+  });
+
+  it('SCPI inconnue (nouvelle) : photo d’après son identifiant', () => {
+    expect(photoScpi(2, 'Nouvelle SCPI')).toBe(PHOTOS[1]);
+    expect(photoScpi(2)).toBe(PHOTOS[1]);
+  });
+
   it('identifiant absent ou invalide : une photo quand même', () => {
     for (const id of [undefined, null, 0, -3, 'x']) {
       expect(PHOTOS).toContain(photoScpi(id));
