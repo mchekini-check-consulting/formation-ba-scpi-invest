@@ -27,7 +27,7 @@ function afficher({ utilisateur = JEAN, kyc, lire } = {}) {
 describe('Accès bloqué tant que le KYC n’est pas validé (US-04b, scénario 2)', () => {
   it('KYC non validé : redirection vers le formulaire KYC, écran non affiché', async () => {
     const { allerA } = afficher({ kyc: { statut: 'en_cours', etape: 2 } });
-    await vi.waitFor(() => expect(allerA).toHaveBeenCalledWith('/kyc'));
+    await vi.waitFor(() => expect(allerA).toHaveBeenCalledWith('/connaissance-client'));
     expect(screen.queryByText('Écran protégé')).toBeNull();
   });
 

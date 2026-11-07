@@ -3,6 +3,7 @@ import type { Cron } from 'croner';
 import type { Db } from '../db/index.js';
 import { captureLogs } from '../logging/capture.js';
 import {
+  decrirePlanification,
   demarrerImportNocturne,
   HORAIRE,
   lancerSurUnSeulReplica,
@@ -63,6 +64,17 @@ describe('lancerSurUnSeulReplica', () => {
     expect(deverrouille(requetes)).toBe(true);
   });
 
+  it('lancement à la main : import récent ignoré, verrou toujours pris', async () => {
+    const { pool, requetes } = fauxPool({ recent: true });
+    const executer = vi.fn().mockResolvedValue(undefined);
+
+    expect(await lancerSurUnSeulReplica(pool, executer, false)).toBe('lance');
+
+    expect(executer).toHaveBeenCalledOnce();
+    expect(requetes.some((r) => r.includes('import_rapport'))).toBe(false);
+    expect(deverrouille(requetes)).toBe(true);
+  });
+
   it('import en échec : erreur relancée, verrou et connexion libérés', async () => {
     const { pool, client, requetes } = fauxPool();
 
@@ -100,7 +112,14 @@ describe('planifierImport', () => {
 
     expect(executer).toHaveBeenCalledOnce();
     expect(lignes).toEqual([
-      expect.objectContaining({ issue: 'lance', msg: 'import planifié du catalogue : lance' }),
+      expect.objectContaining({
+        level: 'INFO',
+        layer: 'service', // logs métier : visible dans Grafana
+        class: 'PlanificationImport',
+        method: 'declencher',
+        issue: 'lance',
+        msg: 'import planifié du catalogue : lance',
+      }),
     ]);
   });
 
@@ -113,7 +132,9 @@ describe('planifierImport', () => {
     expect(lignes).toEqual([
       expect.objectContaining({
         level: 'ERROR',
-        error: 'base injoignable',
+        layer: 'service',
+        error: 'Error',
+        errorMessage: 'base injoignable',
         msg: 'import planifié du catalogue en échec',
       }),
     ]);
@@ -123,7 +144,7 @@ describe('planifierImport', () => {
     const { log, lignes } = captureLogs();
     tache = planifierImport(fauxPool().pool, () => Promise.reject('coupure'), log);
     await tache.trigger();
-    expect(lignes[0]).toMatchObject({ level: 'ERROR', error: 'coupure' });
+    expect(lignes[0]).toMatchObject({ level: 'ERROR', errorMessage: 'coupure' });
   });
 
   it('horaire 2h par défaut', () => {
@@ -193,5 +214,32 @@ describe('demarrerImportNocturne', () => {
       CSV_IMPORT_CRON: '*/5 * * * *',
     });
     expect(tache?.getPattern()).toBe('*/5 * * * *');
+  });
+});
+
+describe('decrirePlanification', () => {
+  it('import désactivé : null', () => {
+    expect(decrirePlanification(null)).toBeNull();
+  });
+
+  it('horaire, fuseau et prochaine exécution', () => {
+    const tache = {
+      getPattern: () => '*/5 * * * *',
+      nextRun: () => new Date('2026-11-07T01:00:00Z'),
+    };
+    expect(decrirePlanification(tache)).toEqual({
+      horaire: '*/5 * * * *',
+      fuseau: 'Europe/Paris',
+      prochain: '2026-11-07T01:00:00.000Z',
+    });
+  });
+
+  it('tâche arrêtée : pas de prochaine exécution, horaire par défaut', () => {
+    const tache = { getPattern: () => undefined, nextRun: () => null };
+    expect(decrirePlanification(tache)).toEqual({
+      horaire: HORAIRE,
+      fuseau: 'Europe/Paris',
+      prochain: null,
+    });
   });
 });

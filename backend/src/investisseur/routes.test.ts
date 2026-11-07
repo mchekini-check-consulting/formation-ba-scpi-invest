@@ -29,7 +29,7 @@ describe('routes du questionnaire investisseur', () => {
     const { app, lignes } = application({ lire });
 
     const res = await request(app)
-      .get('/questionnaire-investisseur')
+      .get('/formulaire-investisseur')
       .set('Authorization', 'Bearer jeton')
       .expect(200);
 
@@ -43,7 +43,7 @@ describe('routes du questionnaire investisseur', () => {
     const { app, lignes } = application({ enregistrerEtape });
 
     await request(app)
-      .put('/questionnaire-investisseur/etapes/3')
+      .put('/formulaire-investisseur/etapes/3')
       .set('Authorization', 'Bearer jeton')
       .send({ objectifs: ['retraite'] })
       .expect(200, { etapeCourante: 4, reponses: {} });
@@ -59,7 +59,7 @@ describe('routes du questionnaire investisseur', () => {
         new HttpError(400, 'Merci de répondre à toutes les questions de l’étape.'),
       );
     const { app } = application({ enregistrerEtape });
-    const res = await request(app).put('/questionnaire-investisseur/etapes/1').expect(400);
+    const res = await request(app).put('/formulaire-investisseur/etapes/1').expect(400);
     expect(res.body.message).toBe('Merci de répondre à toutes les questions de l’étape.');
     expect(enregistrerEtape).toHaveBeenCalledWith('u1', 1, {});
   });
@@ -69,7 +69,7 @@ describe('routes du questionnaire investisseur', () => {
     const { app, lignes } = application({ reinitialiserEtape });
 
     await request(app)
-      .delete('/questionnaire-investisseur/etapes/2')
+      .delete('/formulaire-investisseur/etapes/2')
       .set('Authorization', 'Bearer jeton')
       .expect(200, { etapeCourante: 2, reponses: {} });
 
@@ -80,7 +80,7 @@ describe('routes du questionnaire investisseur', () => {
   it('DELETE sans session : 401', async () => {
     const reinitialiserEtape = vi.fn();
     const { app } = application({ reinitialiserEtape }, false);
-    await request(app).delete('/questionnaire-investisseur/etapes/1').expect(401);
+    await request(app).delete('/formulaire-investisseur/etapes/1').expect(401);
     expect(reinitialiserEtape).not.toHaveBeenCalled();
   });
 
@@ -88,7 +88,7 @@ describe('routes du questionnaire investisseur', () => {
     const profil = vi.fn().mockResolvedValue({ profil: 'prudent', avertissements: ['horizon'] });
     const { app } = application({ profil });
     await request(app)
-      .get('/questionnaire-investisseur/profil')
+      .get('/formulaire-investisseur/profil')
       .set('Authorization', 'Bearer jeton')
       .expect(200, { profil: 'prudent', avertissements: ['horizon'] });
     expect(profil).toHaveBeenCalledWith('u1');
@@ -98,7 +98,7 @@ describe('routes du questionnaire investisseur', () => {
     const valider = vi.fn().mockResolvedValue({ profil: 'dynamique', avertissements: [] });
     const { app, lignes } = application({ valider });
     await request(app)
-      .post('/questionnaire-investisseur/validation')
+      .post('/formulaire-investisseur/validation')
       .set('Authorization', 'Bearer jeton')
       .send({ certification: true })
       .expect(201, { profil: 'dynamique', avertissements: [] });
@@ -112,19 +112,27 @@ describe('routes du questionnaire investisseur', () => {
       .mockRejectedValue(new HttpError(400, 'Merci de certifier l’exactitude de vos réponses.'));
     const { app } = application({ valider });
     await request(app)
-      .post('/questionnaire-investisseur/validation')
+      .post('/formulaire-investisseur/validation')
       .set('Authorization', 'Bearer jeton')
       .expect(400);
     expect(valider).toHaveBeenCalledWith('u1', {});
   });
 
+  it('anciennes adresses (/questionnaire-investisseur, /questionnaire) : 404', async () => {
+    const lire = vi.fn();
+    const { app } = application({ lire });
+    await request(app).get('/questionnaire-investisseur').expect(404);
+    await request(app).get('/questionnaire').expect(404);
+    expect(lire).not.toHaveBeenCalled();
+  });
+
   it('sans session : 401, le service n’est pas appelé', async () => {
     const lire = vi.fn();
     const { app } = application({ lire }, false);
-    await request(app).get('/questionnaire-investisseur').expect(401);
-    await request(app).put('/questionnaire-investisseur/etapes/1').expect(401);
-    await request(app).get('/questionnaire-investisseur/profil').expect(401);
-    await request(app).post('/questionnaire-investisseur/validation').expect(401);
+    await request(app).get('/formulaire-investisseur').expect(401);
+    await request(app).put('/formulaire-investisseur/etapes/1').expect(401);
+    await request(app).get('/formulaire-investisseur/profil').expect(401);
+    await request(app).post('/formulaire-investisseur/validation').expect(401);
     expect(lire).not.toHaveBeenCalled();
   });
 });

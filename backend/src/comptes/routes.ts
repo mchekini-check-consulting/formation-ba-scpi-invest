@@ -5,10 +5,10 @@ import type { CompteService } from './service.js';
 // Couche contrôleur des comptes :
 //   POST /comptes  { email, motDePasse, confirmation, cguAcceptees }
 //                  -> 201 { utilisateur: { id, email }, jeton }  (jeton = session, 7 jours)
-//   POST /connexions  { email, motDePasse }
+//   POST /comptes/connexion  { email, motDePasse }
 //                  -> 200 { utilisateur: { id, email }, jeton }
 //                  -> 401 { message: 'Email ou mot de passe incorrect' }
-//   GET  /moi      (Authorization: Bearer <jeton>) -> { id, email }, 401 sinon
+//   GET  /comptes/moi  (Authorization: Bearer <jeton>) -> { id, email }, 401 sinon
 export function routesComptes(service: CompteService, fournisseur: FournisseurIdentite): Router {
   const routeur = Router();
 
@@ -23,7 +23,7 @@ export function routesComptes(service: CompteService, fournisseur: FournisseurId
   };
 
   routeur.post('/comptes', creerCompte);
-  routeur.post('/connexions', connecter);
-  routeur.get('/moi', exigerConnexion(fournisseur), moi);
+  routeur.post('/comptes/connexion', connecter);
+  routeur.get('/comptes/moi', exigerConnexion(fournisseur), moi);
   return routeur;
 }

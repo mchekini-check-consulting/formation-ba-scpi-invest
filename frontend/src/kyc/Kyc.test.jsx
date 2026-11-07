@@ -23,7 +23,7 @@ function afficher(props) {
   );
 }
 
-describe('Écran /kyc (après la création de compte ou la connexion)', () => {
+describe('Écran /connaissance-client (après la création de compte ou la connexion)', () => {
   it('US-04a scénario 1 : formulaire KYC à l’étape 1, sans sidebar, email du compte', async () => {
     afficher();
     expect(await screen.findByRole('heading', { level: 2, name: 'Identité' })).toBeDefined();

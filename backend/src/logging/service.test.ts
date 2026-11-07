@@ -1,3 +1,4 @@
+import { DrizzleQueryError } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { captureLogs } from './capture.js';
 import { HttpError } from './http-error.js';
@@ -71,6 +72,29 @@ describe('loggable (layer service)', () => {
       error: 'Error',
       errorMessage: 'base indisponible',
     });
+  });
+
+  it('erreur SQL : ni la requête ni ses valeurs dans le log', async () => {
+    const { log, lignes } = captureLogs();
+    const service = loggable(
+      'CompteService',
+      {
+        async creer(): Promise<never> {
+          throw new DrizzleQueryError('insert into "user" values ($1)', ['jean@mail.fr'], {
+            code: '23505',
+          } as unknown as Error);
+        },
+      },
+      log,
+    );
+    await expect(service.creer()).rejects.toThrow('jean@mail.fr'); // l'erreur reste intacte
+    expect(lignes[0]).toMatchObject({
+      level: 'ERROR',
+      error: 'DrizzleQueryError',
+      errorMessage: 'requête SQL en échec',
+      errorCode: '23505',
+    });
+    expect(JSON.stringify(lignes)).not.toMatch(/jean@mail\.fr|insert into/);
   });
 
   it('valeur levée qui n’est pas une Error', async () => {

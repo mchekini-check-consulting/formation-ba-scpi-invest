@@ -108,8 +108,75 @@ export function toSecteur(value: string, colonne: string) {
   });
 }
 
-// Une ligne du CSV convertie : la fiche de la SCPI et ses valeurs multiples
+// ---- Contrôles de l'US-07b
+
+// Colonnes attendues dans l'en-tête du fichier ; une colonne absente rejette tout le fichier
+export const COLONNES = [
+  'Nom',
+  'taux_distribution',
+  'minimum_souscription',
+  'localisation',
+  'secteurs',
+  'prix_part',
+  'capitalisation',
+  'Gerant',
+  'frais_souscription',
+  'frais_gestion',
+  'delai_jouissance',
+  'frequence_loyers',
+  'valeur_reconstitution',
+  'iban',
+  'bic',
+  'decote_demembrement',
+  'demembrement',
+  'cashback',
+  'versement_programme',
+  'publicite',
+] as const;
+
+// Colonnes qui ne peuvent pas être vides (US-07c). Facultatives : taux_distribution,
+// valeur_reconstitution, cashback ; decote_demembrement : obligatoire si demembrement = Oui.
+// Une donnée facultative vide reste inconnue (null), jamais remplacée par zéro.
+export const COLONNES_OBLIGATOIRES = COLONNES.filter(
+  (c) =>
+    !['taux_distribution', 'valeur_reconstitution', 'cashback', 'decote_demembrement'].includes(c),
+);
+
+// Forme de l'IBAN : code pays, 2 chiffres de clé, puis 11 à 30 lettres ou chiffres ; 27
+// caractères pour la France. La clé (modulo 97) n'est pas vérifiée : le fichier actuel
+// contient des IBAN fictifs. Espaces acceptés (IBAN écrit par groupes de 4).
+export function verifierIban(value: string): void {
+  const iban = value.replaceAll(' ', '').toUpperCase();
+  const forme = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/.test(iban);
+  if (!forme || (iban.startsWith('FR') && iban.length !== 27)) {
+    // valeur jamais recopiée dans le motif (rapport et logs)
+    throw new Error('iban : format invalide');
+  }
+}
+
+// BIC : 4 lettres (banque), 2 lettres (pays), 2 lettres ou chiffres (ville), agence facultative
+export function verifierBic(value: string): void {
+  if (!/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(value.toUpperCase())) {
+    throw new Error('bic : format invalide (8 ou 11 caractères attendus)');
+  }
+}
+
+// Contrôles d'une ligne qui ne relèvent pas de la conversion d'une colonne
+function verifierLigne(row: Record<string, string>): void {
+  for (const colonne of COLONNES_OBLIGATOIRES) {
+    if (!row[colonne]) throw new Error(`${colonne} : champ obligatoire vide`);
+  }
+  verifierIban(row.iban);
+  verifierBic(row.bic);
+  if (toBoolean(row.demembrement, 'demembrement') && !row.decote_demembrement) {
+    throw new Error('decote_demembrement : obligatoire quand demembrement = Oui');
+  }
+}
+
+// Une ligne du CSV convertie : la fiche de la SCPI et ses valeurs multiples.
+// Ligne invalide : erreur dont le message (colonne : motif) devient le motif du rejet.
 export function convertirLigne(row: Record<string, string>) {
+  verifierLigne(row);
   return {
     fiche: {
       nom: row.Nom,

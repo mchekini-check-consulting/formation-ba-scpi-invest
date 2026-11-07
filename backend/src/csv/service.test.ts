@@ -1,7 +1,9 @@
+import { DrizzleQueryError } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import type { Db } from '../db/index.js';
 import { captureLogs } from '../logging/capture.js';
-import type { BilanImport } from './import.js';
+import type { Alerter } from './alerte.js';
+import { FichierInvalide, type BilanImport } from './import.js';
 import { creerImportService, type SourceCsv } from './service.js';
 
 const BILAN: BilanImport = {
@@ -10,7 +12,11 @@ const BILAN: BilanImport = {
   mises_a_jour: 1,
   inchangees: 1,
   supprimees: 1,
+  rejetees: 0,
+  rejets: [],
 };
+const { rejets: _sansRejets, ...COMPTEURS } = BILAN;
+const REJET = { ligne: 3, nom: 'B', motif: 'iban : format invalide' };
 const DEBUT = new Date('2026-11-04T01:00:00Z');
 const FIN = new Date('2026-11-04T01:00:05Z');
 const FICHIER = 'scpi_catalogue.csv';
@@ -60,12 +66,27 @@ function fausseSource(surcharge: Partial<SourceCsv> = {}) {
 
 function service(
   importer: () => Promise<BilanImport>,
-  { base = fausseBase(), source = fausseSource().source } = {},
+  {
+    base = fausseBase(),
+    source = fausseSource().source,
+    alerter = (async () => {}) as Alerter,
+  } = {},
 ) {
   const { log, lignes } = captureLogs();
   const horloge = [DEBUT, FIN];
-  const s = creerImportService(base.db, source, log, () => horloge.shift()!, importer);
-  return { executer: () => s.executer(), base, lignes };
+  const alertes: [string, string][] = [];
+  const s = creerImportService(
+    base.db,
+    source,
+    log,
+    () => horloge.shift()!,
+    importer,
+    (sujet, motif) => {
+      alertes.push([sujet, motif]);
+      return alerter(sujet, motif);
+    },
+  );
+  return { executer: () => s.executer(), base, lignes, alertes };
 }
 
 describe('ImportService.executer', () => {
@@ -94,10 +115,13 @@ describe('ImportService.executer', () => {
       msg: 'import du catalogue terminé',
       fichier: FICHIER,
       archive: ARCHIVE,
-      ...BILAN,
+      ...COMPTEURS,
     });
+    expect(lignes[0].durationMs).toEqual(expect.any(Number));
     expect(lignes[0]).not.toHaveProperty('erreur');
-    expect(lignes[1]).toMatchObject({ level: 'INFO', msg: 'ImportService.executer ok' });
+    expect(lignes[0]).not.toHaveProperty('rejets');
+    // Une seule ligne par exécution (pas de doublon « ImportService.executer ok »)
+    expect(lignes).toHaveLength(1);
   });
 
   it('aucun fichier déposé : rapport "aucun_fichier", ni import ni archivage', async () => {
@@ -143,7 +167,7 @@ describe('ImportService.executer', () => {
 
   it('import en échec : rapport "echec" avec le motif, pas d’archivage, erreur relancée', async () => {
     const { source, appels } = fausseSource();
-    const { executer, base, lignes } = service(
+    const { executer, base, lignes, alertes } = service(
       () => Promise.reject(new Error('capitalisation : nombre attendu, reçu "abc"')),
       { source },
     );
@@ -153,10 +177,32 @@ describe('ImportService.executer', () => {
     expect(appels).toEqual(['lire']);
     expect(base.ecritures[1]).toEqual({
       op: 'cloture',
-      valeurs: { fin: FIN, statut: 'echec', erreur: 'capitalisation : nombre attendu, reçu "abc"' },
+      valeurs: {
+        fin: FIN,
+        statut: 'echec',
+        erreur: 'capitalisation : nombre attendu, reçu "abc"',
+        erreur_detail: null, // erreur technique : pas de motif en blocs
+      },
     });
-    expect(lignes).toHaveLength(1);
-    expect(lignes[0]).toMatchObject({ level: 'ERROR', msg: 'ImportService.executer en échec' });
+    // L'alerte (ligne error, alerte.ts) est la seule trace : pas de 2e ligne en échec
+    expect(alertes).toHaveLength(1);
+    expect(lignes).toEqual([]);
+  });
+
+  it('erreur SQL : l’alerte journalisée ne contient ni la requête ni ses valeurs', async () => {
+    const { executer, alertes } = service(() =>
+      Promise.reject(
+        new DrizzleQueryError(
+          'insert into scpi values ($1)',
+          ['valeur'],
+          undefined as unknown as Error,
+        ),
+      ),
+    );
+    await expect(executer()).rejects.toBeInstanceOf(DrizzleQueryError);
+    expect(alertes).toEqual([
+      [`import du catalogue annulé (erreur technique) : ${FICHIER}`, 'requête SQL en échec'],
+    ]);
   });
 
   it('lecture du fichier en échec : rapport "echec"', async () => {
@@ -170,6 +216,101 @@ describe('ImportService.executer', () => {
     const { executer, base } = service(() => Promise.reject('coupure'));
     await expect(executer()).rejects.toBe('coupure');
     expect(base.ecritures[1].valeurs).toMatchObject({ statut: 'echec', erreur: 'coupure' });
+  });
+
+  // US-07b, scénario 3
+  it('lignes rejetées : rapport "reussi" avec les rejets, log au niveau warn sans le détail', async () => {
+    const avecRejet = { ...BILAN, rejetees: 1, rejets: [REJET] };
+    const { executer, base, lignes, alertes } = service(() => Promise.resolve(avecRejet));
+
+    await executer();
+
+    expect(base.ecritures[1].valeurs).toMatchObject({
+      statut: 'reussi',
+      rejetees: 1,
+      rejets: [REJET],
+    });
+    expect(lignes[0]).toMatchObject({ level: 'WARN', rejetees: 1 });
+    expect(lignes[0]).not.toHaveProperty('rejets');
+    expect(alertes).toEqual([]);
+  });
+
+  it('import réussi ou aucun fichier : pas d’alerte', async () => {
+    const reussi = service(() => Promise.resolve(BILAN));
+    await reussi.executer();
+    const vide = service(() => Promise.resolve(BILAN), {
+      source: fausseSource({ lire: async () => null }).source,
+    });
+    await vide.executer();
+    expect([...reussi.alertes, ...vide.alertes]).toEqual([]);
+  });
+
+  // US-07b, scénario 2
+  it('fichier rejeté : motif en blocs au rapport et dans l’alerte ; rejets s’il y en a', async () => {
+    const detail = {
+      ligne: null,
+      constat: 'Aucune ligne valide',
+      cause: null,
+      action: 'Corriger les lignes rejetées',
+      technique: null,
+    };
+    const { executer, base, alertes } = service(() =>
+      Promise.reject(new FichierInvalide(detail, [REJET])),
+    );
+
+    await expect(executer()).rejects.toThrow('Aucune ligne valide');
+
+    expect(base.ecritures[1].valeurs).toEqual({
+      fin: FIN,
+      statut: 'echec',
+      erreur: 'Aucune ligne valide',
+      erreur_detail: detail,
+      rejetees: 1,
+      rejets: [REJET],
+    });
+    expect(alertes).toEqual([
+      [
+        `fichier du catalogue rejeté : ${FICHIER}`,
+        `Où : ${FICHIER}, fichier entier\nConstat : Aucune ligne valide\nÀ faire : Corriger les lignes rejetées`,
+      ],
+    ]);
+  });
+
+  it('fichier rejeté sans ligne rejetée : motif en blocs, compteurs de rejets inchangés', async () => {
+    const detail = {
+      ligne: 3,
+      constat: '21 valeurs au lieu de 20',
+      cause: 'virgule sans guillemets',
+      action: 'Corriger cette ligne',
+      technique: 'Invalid Record Length',
+    };
+    const { executer, base } = service(() => Promise.reject(new FichierInvalide(detail)));
+
+    await expect(executer()).rejects.toThrow(
+      'Ligne 3 : 21 valeurs au lieu de 20. Cause probable : virgule sans guillemets',
+    );
+    expect(base.ecritures[1].valeurs).toEqual({
+      fin: FIN,
+      statut: 'echec',
+      erreur: 'Ligne 3 : 21 valeurs au lieu de 20. Cause probable : virgule sans guillemets',
+      erreur_detail: detail,
+    });
+  });
+
+  // US-07b, scénario 5
+  it('erreur technique : alerte "import annulé", erreur d’origine relancée', async () => {
+    const { executer, alertes } = service(() => Promise.reject(new Error('connexion perdue')));
+    await expect(executer()).rejects.toThrow('connexion perdue');
+    expect(alertes).toEqual([
+      [`import du catalogue annulé (erreur technique) : ${FICHIER}`, 'connexion perdue'],
+    ]);
+  });
+
+  it('alerte impossible à envoyer : l’erreur d’origine est relancée', async () => {
+    const { executer } = service(() => Promise.reject(new Error('connexion perdue')), {
+      alerter: () => Promise.reject(new Error('SMTP injoignable')),
+    });
+    await expect(executer()).rejects.toThrow('connexion perdue');
   });
 
   it('rapport impossible à clore : l’erreur d’origine est relancée', async () => {

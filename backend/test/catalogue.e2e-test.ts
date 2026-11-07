@@ -28,13 +28,13 @@ function scpi(nom: string, taux: string, autres: Record<string, string> = {}) {
     delai_jouissance: '4',
     frequence_loyers: 'Trimestrielle',
     valeur_reconstitution: '215.5',
-    iban: '',
-    bic: '',
+    iban: 'FR7630001007941234567890185',
+    bic: 'BNPAFRPPXXX',
     decote_demembrement: '',
     demembrement: 'Non',
     cashback: '',
     versement_programme: 'Non',
-    publicite: '',
+    publicite: `Texte ${nom}`,
     ...autres,
   };
 }
@@ -68,15 +68,20 @@ describe('Catalogue (e2e)', () => {
 
   it('scénarios 1 à 4 : tri par taux N-1, 12 par page, N/C en fin de liste', async () => {
     const db = createDb(pool);
-    // 13 SCPI avec un taux (de 1 % à 13 %) + 1 SCPI récente sans taux ni données facultatives
+    // 13 SCPI avec un taux (de 1 % à 13 %) + 1 SCPI récente sans taux (seule donnée
+    // facultative à l'import, US-07c)
     const avecTaux = Array.from({ length: 13 }, (_, i) => scpi(`SCPI ${i + 1}`, `${i + 1},0.5`));
-    const recente = scpi('Nouvelle', '', {
-      capitalisation: '',
-      Gerant: '',
-      localisation: '',
-      secteurs: '',
-    });
-    await importScpis(db, lignes(recente, ...avecTaux));
+    await importScpis(db, lignes(scpi('Nouvelle', ''), ...avecTaux));
+    // Société de gestion, capitalisation, secteurs et pays absents en base (données
+    // antérieures aux contrôles de l'import) : affichés N/C, jamais 0
+    await pool.query(
+      `update scpi_catalog set gerant = ' ', capitalisation = null where nom = 'Nouvelle'`,
+    );
+    for (const table of ['scpi_secteurs', 'scpi_localisation']) {
+      await pool.query(
+        `delete from ${table} where scpi_id = (select id from scpi_catalog where nom = 'Nouvelle')`,
+      );
+    }
     const fin = new Date('2026-11-05T02:00:00Z');
     await pool.query(
       `insert into import_rapport (statut, fin) values ('reussi', $1), ('echec', now())`,

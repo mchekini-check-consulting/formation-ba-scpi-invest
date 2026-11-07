@@ -26,19 +26,19 @@ function application(service: Partial<PiecesKycService>, connecte = true) {
 }
 
 describe('routes des pièces justificatives', () => {
-  it('GET /kyc/pieces : pièces de l’utilisateur connecté', async () => {
+  it('GET /connaissance-client/pieces : pièces de l’utilisateur connecté', async () => {
     const lister = vi.fn().mockResolvedValue([RIB]);
     const { app } = application({ lister });
-    const res = await request(app).get('/kyc/pieces').expect(200);
+    const res = await request(app).get('/connaissance-client/pieces').expect(200);
     expect(res.body).toEqual([RIB]);
     expect(lister).toHaveBeenCalledWith('u1');
   });
 
-  it('PUT /kyc/pieces/:type : fichier brut et nom, sans nom de fichier dans les logs', async () => {
+  it('PUT /connaissance-client/pieces/:typePiece : fichier brut et nom, sans nom de fichier dans les logs', async () => {
     const deposer = vi.fn().mockResolvedValue(RIB);
     const { app, lignes } = application({ deposer });
     const res = await request(app)
-      .put('/kyc/pieces/rib')
+      .put('/connaissance-client/pieces/rib')
       .query({ nom: 'rib-claire-martin.pdf' })
       .set('Content-Type', 'application/pdf')
       .send(PDF)
@@ -47,7 +47,11 @@ describe('routes des pièces justificatives', () => {
     const [utilisateur, type, fichier] = deposer.mock.calls[0];
     expect([utilisateur, type, fichier.nom]).toEqual(['u1', 'rib', 'rib-claire-martin.pdf']);
     expect(Buffer.compare(fichier.contenu, PDF)).toBe(0);
-    expect(lignes.at(-1)).toMatchObject({ layer: 'controller', method: 'deposerPiece' });
+    expect(lignes.at(-1)).toMatchObject({
+      layer: 'controller',
+      method: 'deposerPiece',
+      route: '/connaissance-client/pieces/:typePiece',
+    });
     expect(JSON.stringify(lignes)).not.toContain('claire');
   });
 
@@ -55,7 +59,7 @@ describe('routes des pièces justificatives', () => {
     const deposer = vi.fn();
     const { app } = application({ deposer });
     const res = await request(app)
-      .put('/kyc/pieces/rib')
+      .put('/connaissance-client/pieces/rib')
       .set('Content-Type', 'application/pdf')
       .send(Buffer.alloc(TAILLE_MAX + 1))
       .expect(413);
@@ -67,33 +71,33 @@ describe('routes des pièces justificatives', () => {
     const deposer = vi.fn();
     const { app } = application({ deposer });
     await request(app)
-      .put('/kyc/pieces/rib')
+      .put('/connaissance-client/pieces/rib')
       .set('Content-Encoding', 'inconnu')
       .send(PDF)
       .expect(400);
     expect(deposer).not.toHaveBeenCalled();
   });
 
-  it('DELETE /kyc/pieces/:type : 204', async () => {
+  it('DELETE /connaissance-client/pieces/:typePiece : 204', async () => {
     const supprimer = vi.fn().mockResolvedValue(undefined);
     const { app } = application({ supprimer });
-    await request(app).delete('/kyc/pieces/rib').expect(204);
+    await request(app).delete('/connaissance-client/pieces/rib').expect(204);
     expect(supprimer).toHaveBeenCalledWith('u1', 'rib');
   });
 
   it('règle métier non respectée : statut et message', async () => {
     const supprimer = vi.fn().mockRejectedValue(new HttpError(409, 'KYC validé'));
     const { app } = application({ supprimer });
-    const res = await request(app).delete('/kyc/pieces/rib').expect(409);
+    const res = await request(app).delete('/connaissance-client/pieces/rib').expect(409);
     expect(res.body.message).toBe('KYC validé');
   });
 
   it('sans connexion : 401 sur les trois routes', async () => {
     const service = { lister: vi.fn(), deposer: vi.fn(), supprimer: vi.fn() };
     const { app } = application(service, false);
-    await request(app).get('/kyc/pieces').expect(401);
-    await request(app).put('/kyc/pieces/rib').send(PDF).expect(401);
-    await request(app).delete('/kyc/pieces/rib').expect(401);
+    await request(app).get('/connaissance-client/pieces').expect(401);
+    await request(app).put('/connaissance-client/pieces/rib').send(PDF).expect(401);
+    await request(app).delete('/connaissance-client/pieces/rib').expect(401);
     expect(service.deposer).not.toHaveBeenCalled();
   });
 });

@@ -19,6 +19,11 @@ function afficher(chemin, recherche = '') {
 const titre = () => screen.getByRole('heading', { level: 1 }).textContent;
 
 describe('Routeur', () => {
+  it('/outils/import-catalogue : outil de test de l’import (dev et poste)', () => {
+    afficher('/outils/import-catalogue');
+    expect(titre()).toBe('Import du catalogue');
+  });
+
   it('/ : landing page', () => {
     afficher('/');
     expect(titre()).toContain('Choisissez vos SCPI en confiance');
@@ -46,9 +51,15 @@ describe('Routeur', () => {
     expect(screen.getByLabelText('Adresse e-mail').value).toBe('');
   });
 
-  it('/kyc : écran qui suit la création de compte et la connexion', () => {
+  it('/connaissance-client : écran qui suit la création de compte et la connexion', () => {
+    afficher('/connaissance-client');
+    expect(titre()).toBe('Connaissance client (KYC)');
+  });
+
+  it('/kyc (ancienne adresse) : redirigé vers /connaissance-client', () => {
     afficher('/kyc');
     expect(titre()).toBe('Connaissance client (KYC)');
+    expect(localStorage.getItem('scpi-invest.derniere-page')).toBe('/connaissance-client');
   });
 
   it('/formulaire-investisseur : écran protégé, rien sans session ni KYC validé', () => {

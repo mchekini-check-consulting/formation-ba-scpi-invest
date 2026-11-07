@@ -2,11 +2,15 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { parse } from 'csv-parse';
 // pipeline de Node : transmet les erreurs du flux au parseur
-import { pipeline, type Readable } from 'node:stream';
+import { pipeline, Transform, type Readable } from 'node:stream';
+import { ENCODAGE_INVALIDE } from './erreurs.js';
+import { numeroter } from './import.js';
 import type { SourceCsv } from './service.js';
 
 // Lecture du CSV des SCPI dans un stockage compatible S3 (Cloudflare R2 aujourd'hui).
@@ -80,6 +84,48 @@ export async function streamCsv(
   return response.Body as Readable; // en Node.js, Body est un flux Readable
 }
 
+// ---- Outil de test de l'import (dev uniquement, outils-service.ts)
+
+// Remplace le fichier lu par l'import par le contenu envoyé, tel quel (un fichier mal
+// encodé doit arriver intact pour vérifier que l'import le refuse)
+export async function deposerCsv(
+  client: Pick<S3Client, 'send'>,
+  bucket: string,
+  key: string,
+  contenu: Buffer,
+): Promise<void> {
+  await client.send(
+    new PutObjectCommand({ Bucket: bucket, Key: key, Body: contenu, ContentType: 'text/csv' }),
+  );
+}
+
+export type DescriptionCsv = {
+  taille: number | null;
+  modifieLe: string | null;
+  etag: string | null;
+  typeContenu: string | null;
+};
+
+// Métadonnées du fichier déposé, sans le lire ; null : aucun fichier
+export async function decrireCsv(
+  client: Pick<S3Client, 'send'>,
+  bucket: string,
+  key: string,
+): Promise<DescriptionCsv | null> {
+  try {
+    const r = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return {
+      taille: r.ContentLength ?? null,
+      modifieLe: r.LastModified?.toISOString() ?? null,
+      etag: r.ETag ?? null,
+      typeContenu: r.ContentType ?? null,
+    };
+  } catch (err) {
+    if (err instanceof Error && (err.name === 'NotFound' || err.name === 'NoSuchKey')) return null;
+    throw err;
+  }
+}
+
 // ---- Archivage (US-07a, scénario 4)
 
 // AAAAMMJJ du jour à Paris (le serveur peut être à l'heure universelle)
@@ -114,13 +160,63 @@ export async function archiverCsv(
   }
 }
 
-// Lignes du CSV (en-tête = noms des colonnes), lues au fil du flux
-export function lignesCsv(body: Readable): AsyncIterable<Record<string, string>> {
-  return pipeline(
+// Décode le fichier en UTF-8 et refuse le fichier entier (US-07b, scénario 2) dès qu'un
+// octet n'est pas de l'UTF-8 (fichier enregistré en Latin-1 / Windows-1252 par exemple),
+// au lieu de le remplacer en silence par "�". Un "�" écrit tel quel dans un fichier UTF-8
+// valide reste accepté : c'est une donnée, pas un problème d'encodage.
+export function decoderUtf8(): Transform {
+  const decodeur = new TextDecoder('utf-8', { fatal: true }); // retire aussi le BOM
+  const decoder = (fn: () => string, done: (err?: Error | null, texte?: string) => void) => {
+    try {
+      done(null, fn());
+    } catch {
+      // code : traduit en message pour le BA par erreurDeLecture (erreurs.ts)
+      done(
+        Object.assign(new Error('encodage invalide (UTF-8 attendu)'), { code: ENCODAGE_INVALIDE }),
+      );
+    }
+  };
+  return new Transform({
+    readableObjectMode: true, // pousse du texte, pas des octets
+    // texte déjà décodé (tests) : transmis tel quel
+    transform: (chunk: Buffer | string, _encoding, done) =>
+      decoder(
+        () => (typeof chunk === 'string' ? chunk : decodeur.decode(chunk, { stream: true })),
+        done,
+      ),
+    flush: (done) => decoder(() => decodeur.decode(), done),
+  });
+}
+
+// Lignes du CSV (en-tête = noms des colonnes), lues au fil du flux. Chaque ligne porte
+// son numéro dans le fichier (NUMERO_LIGNE, en-tête = 1), pour le rapport des rejets.
+// Erreur de lecture : complétée par derniere_ligne_lue (dernière ligne lue sans erreur),
+// seul repère pour situer un guillemet jamais fermé (csv-parse signale la fin du fichier).
+export async function* lignesCsv(body: Readable): AsyncGenerator<Record<string, string>> {
+  let derniere = 1; // en-tête
+  const flux = pipeline(
     body,
-    parse({ columns: true, trim: true, skip_empty_lines: true, bom: true }),
+    decoderUtf8(),
+    parse({
+      columns: true,
+      trim: true,
+      skip_empty_lines: true,
+      bom: true,
+      on_record: (record: Record<string, string>, { lines }) => {
+        derniere = lines;
+        return numeroter(record, lines);
+      },
+    }),
     () => {},
   ) as AsyncIterable<Record<string, string>>;
+  try {
+    yield* flux;
+  } catch (err) {
+    if (typeof err === 'object' && err !== null) {
+      Object.assign(err, { derniere_ligne_lue: derniere });
+    }
+    throw err;
+  }
 }
 
 // Source du service d'import : le fichier fixe de S3_URL dans R2
