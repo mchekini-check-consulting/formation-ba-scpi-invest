@@ -9,7 +9,7 @@ const fichiers = import.meta.glob('./photos/*.webp', {
 });
 
 export const PHOTOS = Object.keys(fichiers)
-  .sort()
+  .sort((a, b) => a.localeCompare(b))
   .map((chemin) => fichiers[chemin]);
 
 function rang(id) {
