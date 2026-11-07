@@ -50,11 +50,6 @@
   color: var(--bleu);
 }
 
-.catalogue__total .scpi__icone {
-  width: 18px;
-  height: 18px;
-}
-
 /* Date seule, poussée tout à droite du bandeau */
 .catalogue__maj {
   margin: 0 0 0 auto;
@@ -174,6 +169,11 @@
   flex: none;
   width: 16px;
   height: 16px;
+}
+
+.catalogue__total .scpi__icone {
+  width: 18px;
+  height: 18px;
 }
 
 .scpi__segments {

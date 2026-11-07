@@ -51,10 +51,6 @@
   background: var(--papier);
 }
 
-.application__entete .application__titre {
-  margin-bottom: 4px;
-}
-
 .application__titre {
   margin-bottom: 24px;
   font-family: var(--serif);
@@ -62,6 +58,10 @@
   font-weight: 600;
   line-height: 1.15;
   text-wrap: balance;
+}
+
+.application__entete .application__titre {
+  margin-bottom: 4px;
 }
 
 .sr-only {
