@@ -79,7 +79,7 @@ export function creerCompte(demande, base = apiBase()) {
 // US-03a : connexion par email et mot de passe ; identifiants incorrects -> ErreurApi 401
 // « Email ou mot de passe incorrect »
 export function connecter(demande, base = apiBase()) {
-  return ouvrirSession(`${base}/connexions`, demande);
+  return ouvrirSession(`${base}/comptes/connexion`, demande);
 }
 
 // Appel d'une route réservée aux utilisateurs connectés (session dans l'en-tête
@@ -102,7 +102,7 @@ export async function utilisateurConnecte(base = apiBase()) {
   if (!jeton()) {
     return null;
   }
-  const reponse = await fetch(`${base}/moi`, { headers: enTetes() });
+  const reponse = await fetch(`${base}/comptes/moi`, { headers: enTetes() });
   if (reponse.status === 401) {
     memoriser(null); // session expirée ou fermée
     return null;

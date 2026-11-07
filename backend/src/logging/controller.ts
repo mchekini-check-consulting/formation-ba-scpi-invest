@@ -60,7 +60,7 @@ function levelOf(route: string, status: number): Level {
   return route === '/health' ? 'debug' : 'info';
 }
 
-// Premier segment de la route (/kyc/pieces/:type -> kyc), comme la classe du
+// Premier segment de la route (/connaissance-client/pieces/:typePiece -> connaissance-client), comme la classe du
 // contrôleur en Java ; "app" pour les routes de app.ts (/, /health) et les 404.
 function controllerName(route: string): string {
   const segment = route.split('/')[1]; // undefined pour "unmatched"

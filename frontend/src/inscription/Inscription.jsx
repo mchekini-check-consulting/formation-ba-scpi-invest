@@ -40,7 +40,7 @@ export default function Inscription({
     setErreurServeur('');
     try {
       await creer({ email: email.trim(), motDePasse, confirmation, cguAcceptees });
-      allerA('/kyc');
+      allerA('/connaissance-client');
     } catch (err) {
       setErreurServeur(err.message);
       setEnvoiEnCours(false);

@@ -9,10 +9,10 @@ import { MESSAGE_FORMAT, TAILLE_MAX } from './pieces.js';
 import type { PiecesKycService } from './pieces-service.js';
 
 // Couche contrôleur des pièces justificatives (US-04c), sur le KYC de l'utilisateur connecté :
-//   GET    /kyc/pieces              -> [{ type, nomFichier, format, taille, statut, deposeLe }]
-//   PUT    /kyc/pieces/:type?nom=…  corps = le fichier brut (PDF, JPG ou PNG, 10 Mo maximum)
-//                                   -> la pièce déposée ; 400 format, 409 KYC déjà validé
-//   DELETE /kyc/pieces/:type        -> 204 ; 404 aucune pièce, 409 KYC déjà validé
+//   GET    /connaissance-client/pieces                   -> [{ type, nomFichier, format, taille, statut, deposeLe }]
+//   PUT    /connaissance-client/pieces/:typePiece?nom=…  corps = le fichier brut (PDF, JPG ou PNG, 10 Mo maximum)
+//                                                        -> la pièce déposée ; 400 format, 409 KYC déjà validé
+//   DELETE /connaissance-client/pieces/:typePiece        -> 204 ; 404 aucune pièce, 409 KYC déjà validé
 export function routesPiecesKyc(
   service: PiecesKycService,
   fournisseur: FournisseurIdentite,
@@ -39,20 +39,20 @@ export function routesPiecesKyc(
     res.json(await service.lister(utilisateur(res)));
   };
   const deposerPiece: RequestHandler = async (req, res) => {
-    const piece = await service.deposer(utilisateur(res), req.params.type, {
+    const piece = await service.deposer(utilisateur(res), req.params.typePiece, {
       nom: req.query.nom,
       contenu: req.body,
     });
     res.json(piece);
   };
   const supprimerPiece: RequestHandler = async (req, res) => {
-    await service.supprimer(utilisateur(res), req.params.type);
+    await service.supprimer(utilisateur(res), req.params.typePiece);
     res.status(204).end();
   };
 
   const connecte = exigerConnexion(fournisseur);
-  routeur.get('/kyc/pieces', connecte, listerPieces);
-  routeur.put('/kyc/pieces/:type', connecte, lireFichier, deposerPiece);
-  routeur.delete('/kyc/pieces/:type', connecte, supprimerPiece);
+  routeur.get('/connaissance-client/pieces', connecte, listerPieces);
+  routeur.put('/connaissance-client/pieces/:typePiece', connecte, lireFichier, deposerPiece);
+  routeur.delete('/connaissance-client/pieces/:typePiece', connecte, supprimerPiece);
   return routeur;
 }

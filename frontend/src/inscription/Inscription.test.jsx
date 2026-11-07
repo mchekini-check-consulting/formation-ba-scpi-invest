@@ -51,7 +51,7 @@ describe('Inscription', () => {
       confirmation: MDP,
       cguAcceptees: true,
     });
-    expect(allerA).toHaveBeenCalledWith('/kyc');
+    expect(allerA).toHaveBeenCalledWith('/connaissance-client');
   });
 
   it('scénario 2 : email déjà utilisé, message du serveur affiché', async () => {

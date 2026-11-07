@@ -58,7 +58,7 @@ describe('Connexion', () => {
     await envoyer();
 
     expect(connecter).toHaveBeenCalledWith({ email: 'jean@exemple.fr', motDePasse: MDP });
-    expect(allerA).toHaveBeenCalledWith('/kyc');
+    expect(allerA).toHaveBeenCalledWith('/connaissance-client');
   });
 
   it('scénario 4 : identifiants incorrects, message sans préciser le champ faux', async () => {
@@ -105,8 +105,10 @@ describe('Connexion', () => {
   });
 
   it('destination après connexion : formulaire KYC tant que le KYC n’existe pas', () => {
-    expect(destinationApresConnexion({ etapeCourante: 3, valide: false })).toBe('/kyc');
-    expect(destinationApresConnexion(null)).toBe('/kyc');
+    expect(destinationApresConnexion({ etapeCourante: 3, valide: false })).toBe(
+      '/connaissance-client',
+    );
+    expect(destinationApresConnexion(null)).toBe('/connaissance-client');
     expect(destinationApresConnexion({ etapeCourante: 6, valide: true })).toBe('/catalogue');
   });
 
@@ -141,7 +143,7 @@ describe('Connexion', () => {
     expect(allerA).toHaveBeenCalledWith('/catalogue');
   });
 
-  it('avancement indisponible : parcours par défaut (/kyc)', async () => {
+  it('avancement indisponible : parcours par défaut (/connaissance-client)', async () => {
     const allerA = vi.fn();
     render(
       <Connexion
@@ -153,6 +155,6 @@ describe('Connexion', () => {
     saisir('Adresse e-mail', 'jean@exemple.fr');
     saisir('Mot de passe', MDP);
     await envoyer();
-    expect(allerA).toHaveBeenCalledWith('/kyc');
+    expect(allerA).toHaveBeenCalledWith('/connaissance-client');
   });
 });

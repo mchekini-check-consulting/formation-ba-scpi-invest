@@ -55,7 +55,7 @@ describe('création de compte (e2e)', () => {
 
     // Session reconnue grâce au jeton (Authorization: Bearer)
     const bearer = `Bearer ${jeton}`;
-    await request(app).get('/moi').set('Authorization', bearer).expect(200, utilisateur);
+    await request(app).get('/comptes/moi').set('Authorization', bearer).expect(200, utilisateur);
     const session = await request(app)
       .get('/auth/get-session')
       .set('Authorization', bearer)
@@ -80,7 +80,7 @@ describe('création de compte (e2e)', () => {
 
     // Déconnexion : session supprimée, jeton refusé
     await request(app).post('/auth/sign-out').set('Authorization', bearer).expect(200);
-    await request(app).get('/moi').set('Authorization', bearer).expect(401);
+    await request(app).get('/comptes/moi').set('Authorization', bearer).expect(401);
   });
 
   it('email déjà utilisé : 409, aucun second compte', async () => {
@@ -95,21 +95,24 @@ describe('création de compte (e2e)', () => {
 
   it('connexion (US-03a) : nouvelle session avec les bons identifiants, sinon 401', async () => {
     const connexion = await request(app)
-      .post('/connexions')
+      .post('/comptes/connexion')
       .send({ email: ' Jean.Dupont@Exemple.fr ', motDePasse: COMPTE.motDePasse })
       .expect(200);
     const { utilisateur, jeton } = connexion.body;
     expect(utilisateur.email).toBe('jean.dupont@exemple.fr');
-    await request(app).get('/moi').set('Authorization', `Bearer ${jeton}`).expect(200, utilisateur);
+    await request(app)
+      .get('/comptes/moi')
+      .set('Authorization', `Bearer ${jeton}`)
+      .expect(200, utilisateur);
 
     // Même message pour un mauvais mot de passe et un email inconnu
     const message = { message: 'Email ou mot de passe incorrect' };
     await request(app)
-      .post('/connexions')
+      .post('/comptes/connexion')
       .send({ email: 'jean.dupont@exemple.fr', motDePasse: 'Mauvais!Mdp123' })
       .expect(401, message);
     await request(app)
-      .post('/connexions')
+      .post('/comptes/connexion')
       .send({ email: 'inconnu@exemple.fr', motDePasse: COMPTE.motDePasse })
       .expect(401, message);
   });

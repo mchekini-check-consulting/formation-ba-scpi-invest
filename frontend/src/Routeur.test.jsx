@@ -51,9 +51,15 @@ describe('Routeur', () => {
     expect(screen.getByLabelText('Adresse e-mail').value).toBe('');
   });
 
-  it('/kyc : écran qui suit la création de compte et la connexion', () => {
+  it('/connaissance-client : écran qui suit la création de compte et la connexion', () => {
+    afficher('/connaissance-client');
+    expect(titre()).toBe('Connaissance client (KYC)');
+  });
+
+  it('/kyc (ancienne adresse) : redirigé vers /connaissance-client', () => {
     afficher('/kyc');
     expect(titre()).toBe('Connaissance client (KYC)');
+    expect(localStorage.getItem('scpi-invest.derniere-page')).toBe('/connaissance-client');
   });
 
   it('/formulaire-investisseur : écran protégé, rien sans session ni KYC validé', () => {
