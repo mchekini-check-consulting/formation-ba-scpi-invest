@@ -112,7 +112,14 @@ describe('planifierImport', () => {
 
     expect(executer).toHaveBeenCalledOnce();
     expect(lignes).toEqual([
-      expect.objectContaining({ issue: 'lance', msg: 'import planifié du catalogue : lance' }),
+      expect.objectContaining({
+        level: 'INFO',
+        layer: 'service', // logs métier : visible dans Grafana
+        class: 'PlanificationImport',
+        method: 'declencher',
+        issue: 'lance',
+        msg: 'import planifié du catalogue : lance',
+      }),
     ]);
   });
 
@@ -125,7 +132,9 @@ describe('planifierImport', () => {
     expect(lignes).toEqual([
       expect.objectContaining({
         level: 'ERROR',
-        error: 'base injoignable',
+        layer: 'service',
+        error: 'Error',
+        errorMessage: 'base injoignable',
         msg: 'import planifié du catalogue en échec',
       }),
     ]);
@@ -135,7 +144,7 @@ describe('planifierImport', () => {
     const { log, lignes } = captureLogs();
     tache = planifierImport(fauxPool().pool, () => Promise.reject('coupure'), log);
     await tache.trigger();
-    expect(lignes[0]).toMatchObject({ level: 'ERROR', error: 'coupure' });
+    expect(lignes[0]).toMatchObject({ level: 'ERROR', errorMessage: 'coupure' });
   });
 
   it('horaire 2h par défaut', () => {
