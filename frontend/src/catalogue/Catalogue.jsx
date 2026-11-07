@@ -1,25 +1,228 @@
-// Catalogue des SCPI : écran provisoire, accessible seulement une fois le profil
-// investisseur validé (US-05b). Profil non validé (certification non cochée, étapes
-// non complétées) -> formulaire investisseur, qui reprend là où l'utilisateur en
-// était (écran du résultat du profil si les 5 étapes sont complétées).
-// Sans session -> connexion.
+// Catalogue des SCPI (US-08), accessible seulement une fois le profil investisseur
+// validé (US-05b). Profil non validé (certification non cochée, étapes non complétées)
+// -> formulaire investisseur, qui reprend là où l'utilisateur en était (écran du
+// résultat du profil si les 5 étapes sont complétées). Sans session -> connexion.
 // Affiché avec la sidebar de navigation, entrée Catalogue sélectionnée (US-06).
-import { useEffect, useState } from 'react';
+// Liste : 12 SCPI par page, triées par taux de distribution N-1 décroissant (tri fait
+// par le backend), nombre total de SCPI et date de mise à jour des données.
+import { useEffect, useId, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import { lireQuestionnaire } from '../investisseur/api.js';
 import PageApplication from '../navigation/PageApplication.jsx';
+import { listerScpis } from './api.js';
+import './catalogue.css';
+import {
+  SEGMENTS,
+  formaterCapitalisation,
+  formaterDate,
+  formaterTaux,
+  formaterTexte,
+  segmentsPleins,
+} from './format.js';
 
 function naviguer(url) {
   window.location.assign(url);
 }
 
+// Sans session -> connexion ; autre erreur -> message affiché
+function signalerErreur(err, allerA, setAlerte) {
+  if (err.status === 401) {
+    allerA('/connexion');
+  } else {
+    setAlerte(err.message);
+  }
+}
+
+// Jauge segmentée du taux : échelle fixe de 0 à 10 %, 1 segment = 1 %. Décorative : le
+// taux est écrit juste au-dessus.
+function JaugeTaux({ taux }) {
+  const pleins = segmentsPleins(taux);
+  return (
+    <div className="scpi__jauge" aria-hidden="true">
+      <div className="scpi__segments">
+        {Array.from({ length: SEGMENTS }, (_, i) => (
+          <i
+            key={i}
+            className={i < pleins ? 'scpi__segment scpi__segment--plein' : 'scpi__segment'}
+          />
+        ))}
+      </div>
+      <div className="scpi__echelle">
+        <span>0 %</span>
+        <span>5 %</span>
+        <span>10 %</span>
+      </div>
+    </div>
+  );
+}
+
+// Petites icônes décoratives (traits), lues comme rien par un lecteur d'écran
+const ICONES = {
+  tendance: 'M3 17l6-6 4 4 8-8M15 7h6v6',
+  immeuble: 'M5 21V4h10v17M15 9h4v12M3 21h18M8 8h4M8 12h4M8 16h4',
+  info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01',
+  fleche: 'M5 12h14M13 6l6 6-6 6',
+};
+
+function Icone({ nom }) {
+  return (
+    <svg
+      className="scpi__icone"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d={ICONES[nom]} />
+    </svg>
+  );
+}
+
+// Emoji en couleur devant le libellé (décoratif, ignoré par les lecteurs d'écran)
+function Info({ emoji, libelle, valeur }) {
+  return (
+    <div className="scpi__info">
+      <dt>
+        <span className="scpi__emoji" aria-hidden="true">
+          {emoji}
+        </span>
+        {libelle}
+      </dt>
+      <dd className={valeur === 'N/C' ? 'scpi__nc' : undefined}>{valeur}</dd>
+    </div>
+  );
+}
+
+// Bouton visible mais pas encore actif : aucun effet au clic, bulle « Bientôt disponible »
+// au survol et au focus clavier (aria-disabled plutôt que disabled : un bouton disabled ne
+// réagit ni au survol dans tous les navigateurs, ni au clavier).
+function BoutonBientot({ principal, children }) {
+  const idBulle = useId();
+  return (
+    <span className="scpi__bouton-zone">
+      <button
+        type="button"
+        className={principal ? 'scpi__bouton scpi__bouton--principal' : 'scpi__bouton'}
+        aria-disabled="true"
+        aria-describedby={idBulle}
+      >
+        {children}
+      </button>
+      <span id={idBulle} role="tooltip" className="scpi__bulle">
+        Bientôt disponible
+      </span>
+    </span>
+  );
+}
+
+function CarteScpi({ scpi, anneeTaux }) {
+  return (
+    <li className="scpi">
+      <h2 className="scpi__nom">{scpi.nom}</h2>
+      <p className="scpi__gerant">{formaterTexte(scpi.gerant)}</p>
+      <div className="scpi__taux">
+        <p className="scpi__taux-titre">
+          <Icone nom="tendance" />
+          Taux de distribution {anneeTaux}
+        </p>
+        <p
+          className={
+            scpi.tauxDistribution == null ? 'scpi__taux-valeur scpi__nc' : 'scpi__taux-valeur'
+          }
+        >
+          {formaterTaux(scpi.tauxDistribution)}
+        </p>
+        <JaugeTaux taux={scpi.tauxDistribution} />
+      </div>
+      <dl className="scpi__infos">
+        <Info emoji="📍" libelle="Principal pays" valeur={formaterTexte(scpi.zoneGeographique)} />
+        <Info emoji="🏢" libelle="Secteur principal" valeur={formaterTexte(scpi.categorie)} />
+        <Info
+          emoji="💳"
+          libelle="Capitalisation"
+          valeur={formaterCapitalisation(scpi.capitalisation)}
+        />
+      </dl>
+      {/* Boutons affichés mais pas encore actifs (fonctionnalités à venir) */}
+      <div className="scpi__actions">
+        <BoutonBientot>
+          <Icone nom="info" />
+          En savoir plus
+        </BoutonBientot>
+        <BoutonBientot principal>
+          Investir
+          <Icone nom="fleche" />
+        </BoutonBientot>
+      </div>
+    </li>
+  );
+}
+
+function Pagination({ page, nombrePages, allerPage }) {
+  if (nombrePages <= 1) return null;
+  return (
+    <nav className="pagination" aria-label="Pagination du catalogue">
+      <button
+        type="button"
+        className="compte__bouton compte__bouton--secondaire"
+        disabled={page <= 1}
+        onClick={() => allerPage(page - 1)}
+      >
+        Précédent
+      </button>
+      <span className="pagination__position" aria-live="polite">
+        Page {page} sur {nombrePages}
+      </span>
+      <button
+        type="button"
+        className="compte__bouton compte__bouton--secondaire"
+        disabled={page >= nombrePages}
+        onClick={() => allerPage(page + 1)}
+      >
+        Suivant
+      </button>
+    </nav>
+  );
+}
+
+function ListeScpis({ donnees, allerPage }) {
+  return (
+    <>
+      <div className="catalogue__entete">
+        <p className="catalogue__total">
+          <Icone nom="immeuble" />
+          {donnees.total} SCPI disponibles
+        </p>
+        <p className="catalogue__maj">Données mises à jour le {formaterDate(donnees.misAJourLe)}</p>
+      </div>
+      {donnees.total === 0 ? (
+        <p className="compte__texte">Aucune SCPI n’est disponible pour le moment.</p>
+      ) : (
+        <ul className="catalogue__liste">
+          {donnees.scpis.map((scpi) => (
+            <CarteScpi key={scpi.id} scpi={scpi} anneeTaux={donnees.anneeTaux} />
+          ))}
+        </ul>
+      )}
+      <Pagination page={donnees.page} nombrePages={donnees.nombrePages} allerPage={allerPage} />
+    </>
+  );
+}
+
 export default function Catalogue({
   lire = lireQuestionnaire,
+  lister = listerScpis,
   seDeconnecter = deconnecter,
   allerA = naviguer,
   chargerIdentite,
 }) {
-  const [etat, setEtat] = useState('chargement');
+  const [valide, setValide] = useState(false);
+  const [page, setPage] = useState(1);
+  const [donnees, setDonnees] = useState(null);
   const [alerte, setAlerte] = useState('');
 
   useEffect(() => {
@@ -28,46 +231,57 @@ export default function Catalogue({
       .then((avancement) => {
         if (!actif) return;
         if (avancement.valide) {
-          setEtat('valide');
+          setValide(true);
         } else {
           allerA('/formulaire-investisseur');
         }
       })
-      .catch((err) => {
-        if (!actif) return;
-        if (err.status === 401) {
-          allerA('/connexion');
-        } else {
-          setAlerte(err.message);
-        }
-      });
+      .catch((err) => actif && signalerErreur(err, allerA, setAlerte));
     return () => {
       actif = false;
     };
   }, [lire, allerA]);
+
+  useEffect(() => {
+    if (!valide) return undefined;
+    let actif = true;
+    lister(page)
+      .then((resultat) => {
+        if (!actif) return;
+        setAlerte('');
+        setDonnees(resultat);
+      })
+      .catch((err) => actif && signalerErreur(err, allerA, setAlerte));
+    return () => {
+      actif = false;
+    };
+  }, [valide, page, lister, allerA]);
 
   async function quitter() {
     await seDeconnecter();
     allerA('/');
   }
 
+  function allerPage(nouvelle) {
+    setPage(nouvelle);
+    window.scrollTo?.({ top: 0 });
+  }
+
   return (
     <PageApplication
-      titre="Catalogue des SCPI"
+      titre="Catalogue SCPI"
       actif="catalogue"
       seDeconnecter={quitter}
       chargerIdentite={chargerIdentite}
     >
+      <p className="catalogue__sous-titre">Découvrez notre sélection de SCPI partenaires</p>
       {alerte && (
         <p className="compte__alerte" role="alert">
           {alerte}
         </p>
       )}
-      {etat === 'valide' ? (
-        <>
-          <p className="compte__texte">Votre profil investisseur est validé.</p>
-          <p className="compte__texte">Le catalogue des SCPI sera bientôt disponible.</p>
-        </>
+      {donnees ? (
+        <ListeScpis donnees={donnees} allerPage={allerPage} />
       ) : (
         !alerte && <p className="compte__texte">Chargement…</p>
       )}
