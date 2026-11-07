@@ -1,9 +1,14 @@
 /* Écrans de l'application (US-06) : barre de navigation verticale + contenu, modèle
    « bleu éditorial » (couleurs et rayons de index.css) */
+/* --marge-page : marge autour du contenu. Sur grand écran, la barre de navigation est
+   collée aux bords haut, bas et gauche de l'écran (sans marge), le contenu garde la sienne. */
 .application {
+  --marge-page: 12px;
+
   flex-direction: row;
   align-items: flex-start;
   gap: 14px;
+  min-height: 100vh;
 }
 
 .application__zone {
@@ -11,13 +16,39 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 56px);
+}
+
+@media (min-width: 961px) {
+  /* Pas de marge autour de la page : c'est la zone de contenu qui la porte */
+  body:has(.application) {
+    padding: 0;
+  }
+
+  .application__zone {
+    min-height: 100vh;
+    padding: var(--marge-page) var(--marge-page) var(--marge-page) 0;
+  }
 }
 
 .application__contenu {
+  --marge-x: 48px;
+
   flex: 1;
-  padding: 40px 48px;
+  padding: 40px var(--marge-x);
   min-width: 0;
+}
+
+/* En-tête figé (titre + entete) : reste en haut de l'écran pendant le défilement, sur
+   toute la largeur du panneau, au-dessus du contenu qui passe dessous */
+.application__entete {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: -16px calc(-1 * var(--marge-x)) 20px;
+  padding: 16px var(--marge-x) 14px;
+  border-bottom: 1px solid var(--ligne);
+  border-radius: var(--r-l) var(--r-l) 0 0;
+  background: var(--papier);
 }
 
 .application__titre {
@@ -27,6 +58,10 @@
   font-weight: 600;
   line-height: 1.15;
   text-wrap: balance;
+}
+
+.application__entete .application__titre {
+  margin-bottom: 4px;
 }
 
 .sr-only {
@@ -47,15 +82,15 @@
   --largeur: 72px;
 
   position: sticky;
-  top: 12px;
+  top: 0;
   flex: none;
   width: var(--largeur);
-  height: calc(100dvh - 24px);
+  height: 100vh;
   display: flex;
   flex-direction: column;
   gap: 18px;
   padding: 14px 12px;
-  border-radius: var(--r-l);
+  border-radius: 0 var(--r-l) var(--r-l) 0; /* collée à gauche : arrondis à droite seulement */
   background: linear-gradient(180deg, var(--bleu) 0%, var(--nuit) 100%);
   box-shadow: 0 20px 50px -30px rgb(15 31 69 / 60%);
   transition: width 0.25s ease;
@@ -385,6 +420,8 @@
   }
 
   .application__contenu {
-    padding: 28px 20px;
+    --marge-x: 20px;
+
+    padding: 28px var(--marge-x);
   }
 }
