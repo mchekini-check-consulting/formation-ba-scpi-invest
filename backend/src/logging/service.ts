@@ -1,4 +1,5 @@
 import type { Logger } from 'pino';
+import { decrireErreur } from './erreur.js';
 import { HttpError } from './http-error.js';
 import { businessLog, elapsedMs, logger } from './logger.js';
 
@@ -27,7 +28,6 @@ function appeler(log: Logger, clazz: string, method: string, fn: () => unknown):
   };
   const echec = (err: unknown): never => {
     const regleMetier = err instanceof HttpError && err.status < 500;
-    const erreur = err instanceof Error ? err : new Error(String(err));
     businessLog(
       log,
       regleMetier ? 'warn' : 'error',
@@ -35,11 +35,8 @@ function appeler(log: Logger, clazz: string, method: string, fn: () => unknown):
       clazz,
       method,
       `${clazz}.${method} en échec`,
-      {
-        durationMs: elapsedMs(start),
-        error: erreur.name,
-        errorMessage: erreur.message,
-      },
+      // Sans la requête SQL ni ses valeurs (erreur.ts)
+      { durationMs: elapsedMs(start), ...decrireErreur(err) },
     );
     throw err;
   };

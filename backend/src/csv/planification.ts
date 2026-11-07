@@ -2,7 +2,8 @@ import { Cron } from 'croner';
 import type { Pool } from 'pg';
 import type { Logger } from 'pino';
 import type { Db } from '../db/index.js';
-import { logger } from '../logging/logger.js';
+import { decrireErreur } from '../logging/erreur.js';
+import { businessLog, logger, type Level } from '../logging/logger.js';
 import { creerImportService } from './service.js';
 import { s3Client, s3Config, sourceR2 } from './source.js';
 
@@ -55,18 +56,18 @@ export function planifierImport(
   log: Logger = logger,
   horaire = HORAIRE,
 ): Cron {
+  const tracer = (level: Level, msg: string, champs: Record<string, unknown>) =>
+    businessLog(log, level, 'service', 'PlanificationImport', 'declencher', msg, champs);
   return new Cron(
     horaire,
     { name: 'import-catalogue', timezone: FUSEAU, protect: true },
     async () => {
+      // Logs métier (layer service) : un import de nuit bloqué se voit dans Grafana
       try {
         const issue = await lancerSurUnSeulReplica(pool, executer);
-        log.info({ issue }, `import planifié du catalogue : ${issue}`);
+        tracer('info', `import planifié du catalogue : ${issue}`, { issue });
       } catch (err) {
-        log.error(
-          { error: err instanceof Error ? err.message : String(err) },
-          'import planifié du catalogue en échec',
-        );
+        tracer('error', 'import planifié du catalogue en échec', decrireErreur(err));
       }
     },
   );

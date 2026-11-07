@@ -2,8 +2,8 @@ import { eq } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Db } from '../db/index.js';
 import { TABLE_IMPORT_RAPPORT } from '../db/schema.js';
-import { businessLog, logger } from '../logging/logger.js';
-import { loggable } from '../logging/service.js';
+import { messageSansDonnees } from '../logging/erreur.js';
+import { businessLog, elapsedMs, logger } from '../logging/logger.js';
 import { alerteAdministrateur, type Alerter } from './alerte.js';
 import { texteAlerte } from './erreurs.js';
 import { FichierInvalide, importScpis, type BilanImport } from './import.js';
@@ -21,8 +21,8 @@ export type SourceCsv = {
 // exécution, ouverte "en_cours" puis terminée :
 //   - "aucun_fichier" : rien à importer, catalogue inchangé ;
 //   - "echec" (avec le motif ; en blocs dans erreur_detail si le fichier est refusé) :
-//     import annulé, alerte à l'administrateur (US-07b), erreur journalisée par loggable
-//     et relancée ;
+//     import annulé, alerte à l'administrateur (US-07b, ligne de log error), erreur
+//     relancée ;
 //   - "reussi" (avec le bilan et les lignes rejetées) : puis archivage du fichier ; un
 //     archivage impossible
 //     n'annule pas l'import (déjà enregistré), il est noté dans le rapport et les logs.
@@ -42,10 +42,22 @@ export function creerImportService(
       .update(TABLE_IMPORT_RAPPORT)
       .set({ fin: maintenant(), ...valeurs })
       .where(eq(TABLE_IMPORT_RAPPORT.id, id));
-  const resumer = (level: 'info' | 'warn', msg: string, champs: Record<string, unknown>) =>
-    businessLog(log, level, 'service', 'ImportService', 'executer', msg, { fichier, ...champs });
+  // Pas de loggable ici : il ajouterait une 2e ligne (« ok » / « en échec ») à chaque
+  // exécution, déjà résumée par cette ligne ou par l'alerte.
+  const resumer = (
+    level: 'info' | 'warn',
+    msg: string,
+    debut: bigint,
+    champs: Record<string, unknown>,
+  ) =>
+    businessLog(log, level, 'service', 'ImportService', 'executer', msg, {
+      fichier,
+      durationMs: elapsedMs(debut),
+      ...champs,
+    });
 
   async function executer(): Promise<BilanImport | null> {
+    const debut = process.hrtime.bigint();
     const [rapport] = await db
       .insert(TABLE_IMPORT_RAPPORT)
       .values({ fichier, debut: maintenant() })
@@ -56,7 +68,7 @@ export function creerImportService(
       const lignes = await source.lire();
       if (!lignes) {
         await terminer(rapport.id, { statut: 'aucun_fichier' });
-        resumer('warn', 'aucun fichier à importer', {});
+        resumer('warn', 'aucun fichier à importer', debut, {});
         return null;
       }
       bilan = await importer(db, lignes);
@@ -74,7 +86,8 @@ export function creerImportService(
       }).catch(() => undefined);
       const [sujet, motif] = refuse
         ? [`fichier du catalogue rejeté : ${fichier}`, texteAlerte(fichier, err.detail)]
-        : [`import du catalogue annulé (erreur technique) : ${fichier}`, message(err)];
+        : // motif journalisé : sans requête SQL ni valeurs (erreur.ts)
+          [`import du catalogue annulé (erreur technique) : ${fichier}`, messageSansDonnees(err)];
       // Une alerte impossible à envoyer ne doit pas masquer l'erreur d'origine
       await alerter(sujet, motif).catch(() => undefined);
       throw err;
@@ -91,7 +104,7 @@ export function creerImportService(
     await terminer(rapport.id, { statut: 'reussi', ...bilan, erreur });
     // Le détail des rejets reste dans le rapport : seuls les compteurs vont dans les logs
     const { rejets: _rejets, ...compteurs } = bilan;
-    resumer(erreur || bilan.rejetees > 0 ? 'warn' : 'info', 'import du catalogue terminé', {
+    resumer(erreur || bilan.rejetees > 0 ? 'warn' : 'info', 'import du catalogue terminé', debut, {
       archive,
       ...compteurs,
       ...(erreur && { erreur }),
@@ -99,7 +112,7 @@ export function creerImportService(
     return bilan;
   }
 
-  return loggable('ImportService', { executer }, log);
+  return { executer };
 }
 
 function message(err: unknown): string {
