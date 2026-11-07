@@ -3,14 +3,14 @@ import { exigerConnexion, type FournisseurIdentite } from '../auth/fournisseur.j
 import type { QuestionnaireService } from './service.js';
 
 // Couche contrôleur du formulaire investisseur, réservée aux utilisateurs connectés :
-//   GET  /questionnaire-investisseur            -> { etapeCourante, reponses, valide }
-//   PUT  /questionnaire-investisseur/etapes/:n  { ...réponses de l'étape n }    (US-05a)
+//   GET    /formulaire-investisseur             -> { etapeCourante, reponses, valide }
+//   PUT    /formulaire-investisseur/etapes/:n   { ...réponses de l'étape n }    (US-05a)
 //                                               -> { etapeCourante, reponses }, 400 si invalide
-//   DELETE /questionnaire-investisseur/etapes/:n   « Réinitialiser » : efface les réponses
+//   DELETE /formulaire-investisseur/etapes/:n   « Réinitialiser » : efface les réponses
 //                                               de l'étape n -> { etapeCourante, reponses }
-//   GET  /questionnaire-investisseur/profil     -> { profil, avertissements }    (US-05b)
+//   GET    /formulaire-investisseur/profil      -> { profil, avertissements }    (US-05b)
 //                                               409 si les 5 étapes ne sont pas complétées
-//   POST /questionnaire-investisseur/validation { certification: true }        (US-05b)
+//   POST   /formulaire-investisseur/validation  { certification: true }        (US-05b)
 //                                               -> { profil, avertissements }
 export function routesQuestionnaire(
   service: QuestionnaireService,
@@ -41,10 +41,10 @@ export function routesQuestionnaire(
     res.status(201).json(await service.valider(res.locals.utilisateur.id, req.body ?? {}));
   };
 
-  routeur.get('/questionnaire-investisseur', connecte, lireQuestionnaire);
-  routeur.put('/questionnaire-investisseur/etapes/:etape', connecte, enregistrerEtape);
-  routeur.delete('/questionnaire-investisseur/etapes/:etape', connecte, reinitialiserEtape);
-  routeur.get('/questionnaire-investisseur/profil', connecte, lireProfil);
-  routeur.post('/questionnaire-investisseur/validation', connecte, validerProfil);
+  routeur.get('/formulaire-investisseur', connecte, lireQuestionnaire);
+  routeur.put('/formulaire-investisseur/etapes/:etape', connecte, enregistrerEtape);
+  routeur.delete('/formulaire-investisseur/etapes/:etape', connecte, reinitialiserEtape);
+  routeur.get('/formulaire-investisseur/profil', connecte, lireProfil);
+  routeur.post('/formulaire-investisseur/validation', connecte, validerProfil);
   return routeur;
 }

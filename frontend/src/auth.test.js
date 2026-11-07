@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 describe('connecter (US-03a)', () => {
-  it('POST /connexions, mémorise le jeton de session', async () => {
+  it('POST /comptes/connexion, mémorise le jeton de session', async () => {
     const utilisateur = { id: 'u1', email: 'jean@exemple.fr' };
     fetchMock.mockResolvedValue(reponse(200, { utilisateur, jeton: 'jeton-2' }));
     const demande = { email: 'jean@exemple.fr', motDePasse: 'x' };
@@ -40,7 +40,7 @@ describe('connecter (US-03a)', () => {
     expect(await connecter(demande, '/api')).toEqual(utilisateur);
 
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toBe('/api/connexions');
+    expect(url).toBe('/api/comptes/connexion');
     expect(options.method).toBe('POST');
     expect(JSON.parse(options.body)).toEqual(demande);
     expect(jeton()).toBe('jeton-2');
@@ -97,11 +97,11 @@ describe('utilisateurConnecte', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('GET /moi avec le jeton en Authorization: Bearer', async () => {
+  it('GET /comptes/moi avec le jeton en Authorization: Bearer', async () => {
     sessionStorage.setItem('scpi-invest.session', 'jeton-1');
     fetchMock.mockResolvedValue(reponse(200, { id: 'u1', email: 'jean@exemple.fr' }));
     expect(await utilisateurConnecte('/api')).toEqual({ id: 'u1', email: 'jean@exemple.fr' });
-    expect(fetchMock).toHaveBeenCalledWith('/api/moi', {
+    expect(fetchMock).toHaveBeenCalledWith('/api/comptes/moi', {
       headers: { Authorization: 'Bearer jeton-1' },
     });
   });
@@ -155,7 +155,7 @@ describe('stockage indisponible', () => {
 describe('appelConnecte', () => {
   it('erreur serveur (5xx) : message générique', async () => {
     fetchMock.mockResolvedValue(reponse(500, { message: 'détail interne' }));
-    const err = await appelConnecte('/kyc', {}, '/api').catch((e) => e);
+    const err = await appelConnecte('/connaissance-client', {}, '/api').catch((e) => e);
     expect(err).toBeInstanceOf(ErreurApi);
     expect(err.message).toContain('momentanément indisponible');
   });
@@ -164,9 +164,9 @@ describe('appelConnecte', () => {
 describe('appelConnecte : réponse sans contenu (204)', () => {
   it('renvoie null sans lire de corps', async () => {
     fetchMock.mockResolvedValue(reponse(204));
-    await expect(appelConnecte('/kyc/pieces/rib', { methode: 'DELETE' }, '/api')).resolves.toBe(
-      null,
-    );
+    await expect(
+      appelConnecte('/connaissance-client/pieces/rib', { methode: 'DELETE' }, '/api'),
+    ).resolves.toBe(null);
   });
 });
 
@@ -204,9 +204,18 @@ describe('envoyerFichierConnecte (US-04c)', () => {
     sessionStorage.setItem('scpi-invest.session', 'jeton-1');
     const progression = vi.fn();
     const fichier = new File(['%PDF-'], 'rib.pdf', { type: 'application/pdf' });
-    const envoi = envoyerFichierConnecte('/kyc/pieces/rib', fichier, { progression }, '/api');
+    const envoi = envoyerFichierConnecte(
+      '/connaissance-client/pieces/rib',
+      fichier,
+      { progression },
+      '/api',
+    );
     const xhr = FauxXhr.derniere;
-    expect([xhr.methode, xhr.url, xhr.corps]).toEqual(['PUT', '/api/kyc/pieces/rib', fichier]);
+    expect([xhr.methode, xhr.url, xhr.corps]).toEqual([
+      'PUT',
+      '/api/connaissance-client/pieces/rib',
+      fichier,
+    ]);
     expect(xhr.entetes).toEqual({
       Authorization: 'Bearer jeton-1',
       'Content-Type': 'application/pdf',
@@ -219,7 +228,12 @@ describe('envoyerFichierConnecte (US-04c)', () => {
   });
 
   it('type inconnu : octet-stream ; refus -> message du backend', async () => {
-    const envoi = envoyerFichierConnecte('/kyc/pieces/rib', new File(['x'], 'scan'), {}, '/api');
+    const envoi = envoyerFichierConnecte(
+      '/connaissance-client/pieces/rib',
+      new File(['x'], 'scan'),
+      {},
+      '/api',
+    );
     expect(FauxXhr.derniere.entetes['Content-Type']).toBe('application/octet-stream');
     FauxXhr.derniere.repondre(400, { message: 'Format non accepté' });
     const err = await envoi.catch((e) => e);

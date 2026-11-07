@@ -1,9 +1,9 @@
 // Appels de l'outil de test de l'import du catalogue (dev uniquement) au backend :
 //   GET  /outils/import-catalogue/etat      -> serveur, stockage R2, fichier déposé, planification
 //   PUT  /outils/import-catalogue/fichier   corps = le CSV -> { bucket, cle, taille, deposeLe }
-//   POST /outils/import-catalogue/import    -> { issue, erreur, dureeMs, rapport } (409 : déjà en cours)
+//   POST /outils/import-catalogue/lancement -> { issue, erreur, dureeMs, rapport } (409 : déjà en cours)
 //   GET  /outils/import-catalogue/rapports  -> rapports d'exécution, du plus récent au plus ancien
-//   GET  /outils/import-catalogue/scpi      -> catalogue en base avec ses tables liées
+//   GET  /outils/import-catalogue/catalogue -> catalogue en base avec ses tables liées
 // Ouvert à tous : pas besoin d'être connecté (la session est envoyée si elle existe).
 import { appelConnecte, envoyerFichierConnecte } from '../auth.js';
 
@@ -20,7 +20,7 @@ export function deposerCsv(fichier, progression) {
 }
 
 export function lancerImport() {
-  return appelConnecte(`${BASE}/import`, { methode: 'POST' });
+  return appelConnecte(`${BASE}/lancement`, { methode: 'POST' });
 }
 
 export function lireRapports(limite = 50) {
@@ -28,5 +28,5 @@ export function lireRapports(limite = 50) {
 }
 
 export function lireCatalogue() {
-  return appelConnecte(`${BASE}/scpi`);
+  return appelConnecte(`${BASE}/catalogue`);
 }

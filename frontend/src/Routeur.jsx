@@ -53,7 +53,9 @@ export default function Routeur() {
       <Routes>
         <Route path="/inscription" element={<PageInscription />} />
         <Route path="/connexion" element={<PageConnexion />} />
-        <Route path="/kyc" element={<Kyc />} />
+        <Route path="/connaissance-client" element={<Kyc />} />
+        {/* Ancienne adresse du KYC (favoris, liens déjà envoyés) */}
+        <Route path="/kyc" element={<Navigate to="/connaissance-client" replace />} />
         {/* Écrans de l'application : session et KYC validé exigés (US-04b) */}
         <Route
           path="/formulaire-investisseur"

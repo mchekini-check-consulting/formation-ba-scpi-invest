@@ -7,9 +7,9 @@ import type { OutilsImportService } from './service.js';
 // dev et en local seulement (404 ailleurs) :
 //   GET  /outils/import-catalogue/etat      -> serveur, stockage R2, fichier déposé, planification
 //   PUT  /outils/import-catalogue/fichier   corps = le CSV brut (10 Mo maximum) -> { cle, taille, deposeLe }
-//   POST /outils/import-catalogue/import    -> { issue, erreur, dureeMs, rapport } ; 409 import déjà en cours
+//   POST /outils/import-catalogue/lancement -> { issue, erreur, dureeMs, rapport } ; 409 import déjà en cours
 //   GET  /outils/import-catalogue/rapports?limite=50 -> rapports d'exécution, du plus récent au plus ancien
-//   GET  /outils/import-catalogue/scpi      -> catalogue en base, avec ses tables liées
+//   GET  /outils/import-catalogue/catalogue -> catalogue en base, avec ses tables liées
 export const TAILLE_MAX_CSV = 10 * 1024 * 1024;
 export const MESSAGE_TROP_GROS = 'Fichier trop volumineux (10 Mo maximum).';
 
@@ -47,8 +47,8 @@ export function routesOutilsImport(service: OutilsImportService): Router {
   const base = '/outils/import-catalogue';
   routeur.get(`${base}/etat`, seulementEnDev, lireEtat);
   routeur.put(`${base}/fichier`, seulementEnDev, lireCsv, deposerFichier);
-  routeur.post(`${base}/import`, seulementEnDev, lancerImport);
+  routeur.post(`${base}/lancement`, seulementEnDev, lancerImport);
   routeur.get(`${base}/rapports`, seulementEnDev, listerRapports);
-  routeur.get(`${base}/scpi`, seulementEnDev, lireCatalogue);
+  routeur.get(`${base}/catalogue`, seulementEnDev, lireCatalogue);
   return routeur;
 }

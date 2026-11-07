@@ -69,17 +69,15 @@ describe('routes de l’outil d’import (dev)', () => {
     expect(deposer).not.toHaveBeenCalled();
   });
 
-  it('POST /import : résultat et rapport ; 409 si déjà en cours', async () => {
+  it('POST /lancement : résultat et rapport ; 409 si déjà en cours', async () => {
     const importer = vi
       .fn()
       .mockResolvedValueOnce({ issue: 'lance', rapport: { id: 1 } })
       .mockRejectedValueOnce(new HttpError(409, 'déjà en cours'));
     const { app } = application({ importer });
-    expect((await request(app).post(`${BASE}/import`).set('Host', DEV).expect(200)).body).toEqual({
-      issue: 'lance',
-      rapport: { id: 1 },
-    });
-    const refus = await request(app).post(`${BASE}/import`).set('Host', DEV).expect(409);
+    const lance = await request(app).post(`${BASE}/lancement`).set('Host', DEV).expect(200);
+    expect(lance.body).toEqual({ issue: 'lance', rapport: { id: 1 } });
+    const refus = await request(app).post(`${BASE}/lancement`).set('Host', DEV).expect(409);
     expect(refus.body.message).toBe('déjà en cours');
   });
 
@@ -90,20 +88,27 @@ describe('routes de l’outil d’import (dev)', () => {
     expect(rapports).toHaveBeenCalledWith('20');
   });
 
-  it('GET /scpi : catalogue en base', async () => {
+  it('GET /catalogue : catalogue en base', async () => {
     const catalogue = vi.fn().mockResolvedValue([{ nom: 'Horizon' }]);
     const { app } = application({ catalogue });
-    expect((await request(app).get(`${BASE}/scpi`).set('Host', DEV).expect(200)).body).toEqual([
-      { nom: 'Horizon' },
-    ]);
+    const res = await request(app).get(`${BASE}/catalogue`).set('Host', DEV).expect(200);
+    expect(res.body).toEqual([{ nom: 'Horizon' }]);
+  });
+
+  it('anciennes adresses (/import, /scpi) : 404', async () => {
+    const service = { importer: vi.fn(), catalogue: vi.fn() };
+    const { app } = application(service);
+    await request(app).post(`${BASE}/import`).set('Host', DEV).expect(404);
+    await request(app).get(`${BASE}/scpi`).set('Host', DEV).expect(404);
+    Object.values(service).forEach((fn) => expect(fn).not.toHaveBeenCalled());
   });
 
   it.each([
     ['get', 'etat'],
     ['put', 'fichier'],
-    ['post', 'import'],
+    ['post', 'lancement'],
     ['get', 'rapports'],
-    ['get', 'scpi'],
+    ['get', 'catalogue'],
   ] as const)('qualif : %s /%s répond 404, sans rien appeler', async (methode, route) => {
     const service = {
       etat: vi.fn(),

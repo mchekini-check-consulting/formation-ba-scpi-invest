@@ -28,7 +28,7 @@ describe('API du formulaire investisseur', () => {
   it('lireQuestionnaire : GET avec la session', async () => {
     expect(await lireQuestionnaire('/api')).toEqual({ etapeCourante: 2, reponses: {} });
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toBe('/api/questionnaire-investisseur');
+    expect(url).toBe('/api/formulaire-investisseur');
     expect(options.method).toBe('GET');
     expect(options.headers).toEqual({ Authorization: 'Bearer jeton-1' });
     expect(options.body).toBeUndefined();
@@ -37,7 +37,7 @@ describe('API du formulaire investisseur', () => {
   it('enregistrerEtape : PUT des réponses de l’étape', async () => {
     await enregistrerEtape(3, { objectifs: ['retraite'] }, '/api');
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toBe('/api/questionnaire-investisseur/etapes/3');
+    expect(url).toBe('/api/formulaire-investisseur/etapes/3');
     expect(options.method).toBe('PUT');
     expect(options.headers['Content-Type']).toBe('application/json');
     expect(JSON.parse(options.body)).toEqual({ objectifs: ['retraite'] });
@@ -46,7 +46,7 @@ describe('API du formulaire investisseur', () => {
   it('reinitialiserEtape : DELETE de l’étape', async () => {
     await reinitialiserEtape(2, '/api');
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toBe('/api/questionnaire-investisseur/etapes/2');
+    expect(url).toBe('/api/formulaire-investisseur/etapes/2');
     expect(options.method).toBe('DELETE');
     expect(options.body).toBeUndefined();
   });
@@ -54,14 +54,14 @@ describe('API du formulaire investisseur', () => {
   it('lireProfil : GET du profil calculé (US-05b)', async () => {
     await lireProfil('/api');
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toBe('/api/questionnaire-investisseur/profil');
+    expect(url).toBe('/api/formulaire-investisseur/profil');
     expect(options.method).toBe('GET');
   });
 
   it('validerProfil : POST avec la certification (US-05b)', async () => {
     await validerProfil('/api');
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toBe('/api/questionnaire-investisseur/validation');
+    expect(url).toBe('/api/formulaire-investisseur/validation');
     expect(options.method).toBe('POST');
     expect(JSON.parse(options.body)).toEqual({ certification: true });
   });

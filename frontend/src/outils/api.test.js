@@ -27,10 +27,10 @@ describe('appels de l’outil d’import du catalogue', () => {
     expect(options.headers.Authorization).toBeUndefined();
   });
 
-  it('lancerImport : POST /import ; 409 -> message du backend', async () => {
+  it('lancerImport : POST /lancement ; 409 -> message du backend', async () => {
     fetchMock.mockResolvedValue(reponse(409, { message: 'Un import est déjà en cours' }));
     const err = await lancerImport().catch((e) => e);
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/outils/import-catalogue/import');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/outils/import-catalogue/lancement');
     expect(fetchMock.mock.calls[0][1].method).toBe('POST');
     expect(err).toBeInstanceOf(ErreurApi);
     expect(err.message).toBe('Un import est déjà en cours');
@@ -45,9 +45,9 @@ describe('appels de l’outil d’import du catalogue', () => {
     ]);
   });
 
-  it('lireCatalogue : GET /scpi', async () => {
+  it('lireCatalogue : GET /catalogue', async () => {
     await lireCatalogue();
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/outils/import-catalogue/scpi');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/outils/import-catalogue/catalogue');
   });
 });
 
