@@ -83,6 +83,7 @@
 
   position: sticky;
   top: 0;
+  z-index: 10; /* au-dessus du contenu (dont l'en-tête figé) : bulles d'aide visibles */
   flex: none;
   width: var(--largeur);
   height: 100vh;
