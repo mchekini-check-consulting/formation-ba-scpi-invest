@@ -47,10 +47,10 @@
   --largeur: 72px;
 
   position: sticky;
-  top: 28px;
+  top: 12px;
   flex: none;
   width: var(--largeur);
-  height: calc(100vh - 56px);
+  height: calc(100dvh - 24px);
   display: flex;
   flex-direction: column;
   gap: 18px;
