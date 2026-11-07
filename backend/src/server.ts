@@ -3,6 +3,8 @@ import { toNodeHandler } from 'better-auth/node';
 import type { RequestHandler } from 'express';
 import { createApp } from './app.js';
 import { creerAuth, fournisseurBetterAuth } from './auth/better-auth.js';
+import { routesCatalogue } from './catalogue/routes.js';
+import { creerCatalogueService } from './catalogue/service.js';
 import { routesComptes } from './comptes/routes.js';
 import {
   decrirePlanification,
@@ -15,6 +17,7 @@ import type { S3Client } from '@aws-sdk/client-s3';
 import { creerCompteService } from './comptes/service.js';
 import {
   depotAcceptationsCgu,
+  depotCatalogue,
   depotKyc,
   depotOutilsImport,
   depotPieces,
@@ -47,6 +50,8 @@ const betterAuth: RequestHandler = toNodeHandler(auth);
 const comptes = creerCompteService(fournisseur, depotAcceptationsCgu(db));
 const questionnaires = creerQuestionnaireService(depotQuestionnaires(db), depotProfils(db));
 const kyc = creerKycService(depotKyc(db));
+// US-08 : liste des SCPI du Catalogue
+const catalogue = creerCatalogueService(depotCatalogue(db));
 // US-04c : fichiers des pièces dans R2 (dépôt indisponible, 503, sans les variables R2)
 const pieces = creerPiecesService(depotKyc(db), depotPieces(db), stockagePieces());
 
@@ -81,6 +86,7 @@ createApp(() => db.execute(sql`select 1`), logger, {
     routesKyc(kyc, fournisseur),
     routesPiecesKyc(pieces, fournisseur),
     routesQuestionnaire(questionnaires, fournisseur),
+    routesCatalogue(catalogue, fournisseur),
     routesOutilsImport(outilsImport),
   ],
 }).listen(port, () => logger.info({ port }, 'backend démarré'));

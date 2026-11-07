@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, max, sql } from 'drizzle-orm';
 import type { Db } from './index.js';
+import type { DepotCatalogue, ScpiCatalogue } from '../catalogue/service.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
 import type { DepotKyc, EtatKyc } from '../kyc/service.js';
@@ -187,6 +188,46 @@ export function depotPieces(db: Db): DepotPieces {
       await db
         .delete(kycPiece)
         .where(and(eq(kycPiece.utilisateurId, utilisateurId), eq(kycPiece.type, type)));
+    },
+  };
+}
+
+// US-08 : SCPI du Catalogue, une ligne par SCPI avec son taux N-1, son secteur et son pays
+// majoritaires (null si non renseignés : jamais 0). Taux absent -> fin de liste.
+export function depotCatalogue(db: Db): DepotCatalogue {
+  return {
+    async compter(): Promise<number> {
+      const resultat = await db.execute<{ total: number }>(
+        sql`select count(*)::int as total from scpi_catalog`,
+      );
+      return resultat.rows[0].total;
+    },
+
+    async lister(anneeTaux, limite, decalage): Promise<ScpiCatalogue[]> {
+      const resultat = await db.execute<ScpiCatalogue>(sql`
+        select c.id,
+               c.nom,
+               nullif(trim(c.gerant), '') as gerant,
+               t.taux::float8 as "tauxDistribution",
+               c.capitalisation,
+               (select s.secteur::text from scpi_secteurs s where s.scpi_id = c.id
+                 order by s.pourcentage desc, s.secteur limit 1) as categorie,
+               (select l.pays from scpi_localisation l where l.scpi_id = c.id
+                 order by l.pourcentage desc, l.pays limit 1) as "zoneGeographique"
+        from scpi_catalog c
+        left join scpi_taux_distribution t on t.scpi_id = c.id and t.annee = ${anneeTaux}
+        order by t.taux desc nulls last, c.nom, c.id
+        limit ${limite} offset ${decalage}`);
+      return resultat.rows;
+    },
+
+    // Date de mise à jour des données = fin du dernier import réussi (US-07a)
+    async dateDernierImport(): Promise<Date | null> {
+      const [ligne] = await db
+        .select({ fin: max(TABLE_IMPORT_RAPPORT.fin) })
+        .from(TABLE_IMPORT_RAPPORT)
+        .where(eq(TABLE_IMPORT_RAPPORT.statut, 'reussi'));
+      return ligne?.fin ?? null;
     },
   };
 }
