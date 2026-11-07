@@ -32,7 +32,7 @@ describe('formulaire investisseur (e2e)', () => {
   let bearer: string;
 
   const appel = (methode: 'get' | 'put' | 'post' | 'delete', chemin = '') =>
-    request(app)[methode](`/questionnaire-investisseur${chemin}`).set('Authorization', bearer);
+    request(app)[methode](`/formulaire-investisseur${chemin}`).set('Authorization', bearer);
 
   beforeAll(async () => {
     postgres = await new PostgreSqlContainer('postgres:16').start();
@@ -103,7 +103,7 @@ describe('formulaire investisseur (e2e)', () => {
   it('US-05a : refuse une étape non atteinte, des réponses incomplètes ou sans session', async () => {
     await appel('put', '/etapes/5').send(REPONSES_EXEMPLE[5]).expect(400);
     await appel('put', '/etapes/3').send({ objectifs: [] }).expect(400);
-    await request(app).get('/questionnaire-investisseur').expect(401);
+    await request(app).get('/formulaire-investisseur').expect(401);
   });
 
   it('US-05b : profil calculé, validation enregistrée en base, formulaire terminé', async () => {

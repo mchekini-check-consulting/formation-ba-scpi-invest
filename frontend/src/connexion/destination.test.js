@@ -29,12 +29,18 @@ describe('retour sur le dernier écran après reconnexion', () => {
   });
 
   it('profil validé -> Catalogue, quel que soit le dernier écran', () => {
-    expect(destinationApresConnexion({ valide: true }, '/kyc')).toBe('/catalogue');
+    expect(destinationApresConnexion({ valide: true }, '/connaissance-client')).toBe('/catalogue');
   });
 
   it('dernier écran = KYC, ou aucun -> KYC', () => {
-    expect(destinationApresConnexion({ valide: false }, '/kyc')).toBe('/kyc');
-    expect(destinationApresConnexion(null, null)).toBe('/kyc');
+    expect(destinationApresConnexion({ valide: false }, '/connaissance-client')).toBe(
+      '/connaissance-client',
+    );
+    expect(destinationApresConnexion(null, null)).toBe('/connaissance-client');
+  });
+
+  it('ancienne adresse /kyc mémorisée avant le renommage -> KYC (nouvelle adresse)', () => {
+    expect(destinationApresConnexion({ valide: false }, '/kyc')).toBe('/connaissance-client');
   });
 
   it('stockage indisponible : pas d’erreur, reprise sur le KYC', () => {
@@ -44,8 +50,8 @@ describe('retour sur le dernier écran après reconnexion', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('bloqué');
     });
-    expect(() => memoriserPage('/kyc')).not.toThrow();
+    expect(() => memoriserPage('/connaissance-client')).not.toThrow();
     expect(pageMemorisee()).toBeNull();
-    expect(destinationApresConnexion(null)).toBe('/kyc');
+    expect(destinationApresConnexion(null)).toBe('/connaissance-client');
   });
 });

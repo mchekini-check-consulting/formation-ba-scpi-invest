@@ -6,9 +6,11 @@
 //   Seul le Catalogue est cliquable ; les 3 autres sont grisées, sans lien ni curseur
 //   de clic, avec l'infobulle « Bientôt disponible » au survol (règle optionnelle de la
 //   story, à valider avec le PO) ;
-// - en bas : la pastille aux initiales de l'investisseur et le bouton « Se déconnecter ».
-import { useEffect, useState } from 'react';
+// - en bas : la pastille aux initiales de l'investisseur et le bouton « Se déconnecter »,
+//   qui demande confirmation (« Oui » / « Non ») avant de déconnecter.
+import { useEffect, useRef, useState } from 'react';
 import LogoIcone from '../LogoIcone.jsx';
+import ConfirmationDeconnexion from './ConfirmationDeconnexion.jsx';
 import { LienInterne } from '../MiseEnPage.jsx';
 import { PROFILS } from '../investisseur/profils.js';
 import { ENTREES } from './entrees.js';
@@ -96,6 +98,8 @@ function Profil({ identite }) {
 // chargerIdentite : lecture du nom et du profil (remplacée dans les tests)
 export default function Sidebar({ actif, seDeconnecter, chargerIdentite = lireIdentite }) {
   const [deplie, setDeplie] = useState(false);
+  const [confirmer, setConfirmer] = useState(false);
+  const boutonDeconnexion = useRef(null);
   const identite = useIdentite(chargerIdentite);
 
   return (
@@ -155,14 +159,26 @@ export default function Sidebar({ actif, seDeconnecter, chargerIdentite = lireId
         <Profil identite={identite} />
         {seDeconnecter && (
           <button
+            ref={boutonDeconnexion}
             type="button"
             className="sidebar__entree sidebar__deconnexion"
             data-infobulle="Se déconnecter"
-            onClick={seDeconnecter}
+            aria-haspopup="dialog"
+            onClick={() => setConfirmer(true)}
           >
             <Icone id="deconnexion" />
             <span className="sidebar__libelle">Se déconnecter</span>
           </button>
+        )}
+        {confirmer && (
+          <ConfirmationDeconnexion
+            retour={boutonDeconnexion}
+            onNon={() => setConfirmer(false)}
+            onOui={() => {
+              setConfirmer(false);
+              seDeconnecter();
+            }}
+          />
         )}
       </div>
     </nav>

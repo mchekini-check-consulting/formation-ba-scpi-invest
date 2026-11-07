@@ -52,19 +52,25 @@ describe('routes des comptes', () => {
     expect(res.body).toEqual({ message: 'Un compte existe déjà avec cet email' });
   });
 
+  it('anciennes adresses (/connexions, /moi) : 404', async () => {
+    const { app } = application(vi.fn(), vi.fn(), vi.fn());
+    await request(app).post('/connexions').expect(404);
+    await request(app).get('/moi').expect(404);
+  });
+
   it('POST /comptes sans corps JSON : demande vide transmise au service', async () => {
     const creer = vi.fn().mockRejectedValue(new HttpError(400, 'Format d’email invalide'));
     await request(application(creer).app).post('/comptes').expect(400);
     expect(creer).toHaveBeenCalledWith({});
   });
 
-  it('POST /connexions : 200 avec l’utilisateur et le jeton de session', async () => {
+  it('POST /comptes/connexion : 200 avec l’utilisateur et le jeton de session', async () => {
     const compte = { utilisateur: { id: 'u1', email: 'jean@exemple.fr' }, jeton: 'jeton' };
     const connecter = vi.fn().mockResolvedValue(compte);
     const { app, lignes } = application(vi.fn(), vi.fn(), connecter);
     const demande = { email: 'jean@exemple.fr', motDePasse: 'x' };
 
-    const res = await request(app).post('/connexions').send(demande).expect(200);
+    const res = await request(app).post('/comptes/connexion').send(demande).expect(200);
 
     expect(res.body).toEqual(compte);
     expect(connecter).toHaveBeenCalledWith(demande);
@@ -72,26 +78,29 @@ describe('routes des comptes', () => {
     expect(JSON.stringify(lignes)).not.toContain('jean@exemple.fr');
   });
 
-  it('POST /connexions : identifiants incorrects -> 401 et message unique', async () => {
+  it('POST /comptes/connexion : identifiants incorrects -> 401 et message unique', async () => {
     const connecter = vi
       .fn()
       .mockRejectedValue(new HttpError(401, 'Email ou mot de passe incorrect'));
     const { app } = application(vi.fn(), vi.fn(), connecter);
-    const res = await request(app).post('/connexions').expect(401);
+    const res = await request(app).post('/comptes/connexion').expect(401);
     expect(res.body).toEqual({ message: 'Email ou mot de passe incorrect' });
     expect(connecter).toHaveBeenCalledWith({});
   });
 
-  it('GET /moi : utilisateur connecté', async () => {
+  it('GET /comptes/moi : utilisateur connecté', async () => {
     const utilisateur = { id: 'u1', email: 'jean@exemple.fr' };
     const { app } = application(vi.fn(), vi.fn().mockResolvedValue(utilisateur));
-    const res = await request(app).get('/moi').set('Authorization', 'Bearer jeton').expect(200);
+    const res = await request(app)
+      .get('/comptes/moi')
+      .set('Authorization', 'Bearer jeton')
+      .expect(200);
     expect(res.body).toEqual(utilisateur);
   });
 
-  it('GET /moi : 401 sans session', async () => {
+  it('GET /comptes/moi : 401 sans session', async () => {
     const { app } = application(vi.fn(), vi.fn().mockResolvedValue(null));
-    const res = await request(app).get('/moi').expect(401);
+    const res = await request(app).get('/comptes/moi').expect(401);
     expect(res.body).toEqual({ message: 'connexion requise' });
   });
 });

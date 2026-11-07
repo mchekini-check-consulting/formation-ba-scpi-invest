@@ -88,6 +88,15 @@ describe('App', () => {
     expect(pied).not.toContain('[STATUT');
   });
 
+  // Outil de test de l'import du catalogue : dev et poste (localhost dans les tests)
+  it('pied de page : lien vers l’import du catalogue, hors des liens légaux', () => {
+    render(<App />);
+    const lien = screen.getByRole('link', { name: /Import du catalogue/ });
+    expect(lien.getAttribute('href')).toBe('/outils/import-catalogue');
+    expect(lien.closest('footer')).toBeTruthy();
+    expect(lien.closest('nav')).toBeNull();
+  });
+
   it('ne mentionne aucune offre', () => {
     render(<App />);
     expect(document.body.textContent).not.toMatch(/offre|gratuit|premium|essentiel/i);

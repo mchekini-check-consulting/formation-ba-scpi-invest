@@ -1,3 +1,4 @@
+import { DrizzleQueryError } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import type { Db } from '../db/index.js';
 import { captureLogs } from '../logging/capture.js';
@@ -116,9 +117,11 @@ describe('ImportService.executer', () => {
       archive: ARCHIVE,
       ...COMPTEURS,
     });
+    expect(lignes[0].durationMs).toEqual(expect.any(Number));
     expect(lignes[0]).not.toHaveProperty('erreur');
     expect(lignes[0]).not.toHaveProperty('rejets');
-    expect(lignes[1]).toMatchObject({ level: 'INFO', msg: 'ImportService.executer ok' });
+    // Une seule ligne par exécution (pas de doublon « ImportService.executer ok »)
+    expect(lignes).toHaveLength(1);
   });
 
   it('aucun fichier déposé : rapport "aucun_fichier", ni import ni archivage', async () => {
@@ -164,7 +167,7 @@ describe('ImportService.executer', () => {
 
   it('import en échec : rapport "echec" avec le motif, pas d’archivage, erreur relancée', async () => {
     const { source, appels } = fausseSource();
-    const { executer, base, lignes } = service(
+    const { executer, base, lignes, alertes } = service(
       () => Promise.reject(new Error('capitalisation : nombre attendu, reçu "abc"')),
       { source },
     );
@@ -174,10 +177,32 @@ describe('ImportService.executer', () => {
     expect(appels).toEqual(['lire']);
     expect(base.ecritures[1]).toEqual({
       op: 'cloture',
-      valeurs: { fin: FIN, statut: 'echec', erreur: 'capitalisation : nombre attendu, reçu "abc"' },
+      valeurs: {
+        fin: FIN,
+        statut: 'echec',
+        erreur: 'capitalisation : nombre attendu, reçu "abc"',
+        erreur_detail: null, // erreur technique : pas de motif en blocs
+      },
     });
-    expect(lignes).toHaveLength(1);
-    expect(lignes[0]).toMatchObject({ level: 'ERROR', msg: 'ImportService.executer en échec' });
+    // L'alerte (ligne error, alerte.ts) est la seule trace : pas de 2e ligne en échec
+    expect(alertes).toHaveLength(1);
+    expect(lignes).toEqual([]);
+  });
+
+  it('erreur SQL : l’alerte journalisée ne contient ni la requête ni ses valeurs', async () => {
+    const { executer, alertes } = service(() =>
+      Promise.reject(
+        new DrizzleQueryError(
+          'insert into scpi values ($1)',
+          ['valeur'],
+          undefined as unknown as Error,
+        ),
+      ),
+    );
+    await expect(executer()).rejects.toBeInstanceOf(DrizzleQueryError);
+    expect(alertes).toEqual([
+      [`import du catalogue annulé (erreur technique) : ${FICHIER}`, 'requête SQL en échec'],
+    ]);
   });
 
   it('lecture du fichier en échec : rapport "echec"', async () => {
@@ -221,23 +246,55 @@ describe('ImportService.executer', () => {
   });
 
   // US-07b, scénario 2
-  it('fichier rejeté : alerte avec le motif ; rejets dans le rapport s’il y en a', async () => {
+  it('fichier rejeté : motif en blocs au rapport et dans l’alerte ; rejets s’il y en a', async () => {
+    const detail = {
+      ligne: null,
+      constat: 'Aucune ligne valide',
+      cause: null,
+      action: 'Corriger les lignes rejetées',
+      technique: null,
+    };
     const { executer, base, alertes } = service(() =>
-      Promise.reject(new FichierInvalide('aucune ligne valide : catalogue non modifié', [REJET])),
+      Promise.reject(new FichierInvalide(detail, [REJET])),
     );
 
-    await expect(executer()).rejects.toThrow('aucune ligne valide');
+    await expect(executer()).rejects.toThrow('Aucune ligne valide');
 
     expect(base.ecritures[1].valeurs).toEqual({
       fin: FIN,
       statut: 'echec',
-      erreur: 'aucune ligne valide : catalogue non modifié',
+      erreur: 'Aucune ligne valide',
+      erreur_detail: detail,
       rejetees: 1,
       rejets: [REJET],
     });
     expect(alertes).toEqual([
-      [`fichier du catalogue rejeté : ${FICHIER}`, 'aucune ligne valide : catalogue non modifié'],
+      [
+        `fichier du catalogue rejeté : ${FICHIER}`,
+        `Où : ${FICHIER}, fichier entier\nConstat : Aucune ligne valide\nÀ faire : Corriger les lignes rejetées`,
+      ],
     ]);
+  });
+
+  it('fichier rejeté sans ligne rejetée : motif en blocs, compteurs de rejets inchangés', async () => {
+    const detail = {
+      ligne: 3,
+      constat: '21 valeurs au lieu de 20',
+      cause: 'virgule sans guillemets',
+      action: 'Corriger cette ligne',
+      technique: 'Invalid Record Length',
+    };
+    const { executer, base } = service(() => Promise.reject(new FichierInvalide(detail)));
+
+    await expect(executer()).rejects.toThrow(
+      'Ligne 3 : 21 valeurs au lieu de 20. Cause probable : virgule sans guillemets',
+    );
+    expect(base.ecritures[1].valeurs).toEqual({
+      fin: FIN,
+      statut: 'echec',
+      erreur: 'Ligne 3 : 21 valeurs au lieu de 20. Cause probable : virgule sans guillemets',
+      erreur_detail: detail,
+    });
   });
 
   // US-07b, scénario 5

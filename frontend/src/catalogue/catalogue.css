@@ -1,0 +1,362 @@
+/* Catalogue des SCPI (US-08) : couleurs de compte.css (variables de .compte) */
+
+/* Titre remonté sur l'écran Catalogue seulement (moins d'espace au-dessus) */
+.application__contenu:has(.catalogue__sous-titre) {
+  padding-top: 20px;
+}
+
+/* En-tête figé, sans fond coloré (même fond que la page, fin trait en bas) : titre,
+   sous-titre, puis nombre de SCPI et date */
+.application__entete:has(.catalogue__sous-titre) {
+  margin-top: -20px;
+  padding-top: 22px;
+  padding-bottom: 16px;
+}
+
+.application__entete:has(.catalogue__sous-titre) .application__titre {
+  margin: 0 0 4px;
+  color: var(--bleu);
+}
+
+/* Bleu moyen : lisible sur le fond beige (contraste 5,4 : 1) */
+.catalogue__sous-titre {
+  margin: 0;
+  font-size: 17px;
+  color: #2d5bbf;
+}
+
+/* Sous le sous-titre : pastille du nombre de SCPI, date à côté */
+.catalogue__entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 12px 0 0;
+}
+
+/* Nombre de SCPI en pastille blanche bordée */
+.catalogue__total {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 14px;
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+  background: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+  color: var(--bleu);
+}
+
+/* Date seule, poussée tout à droite du bandeau */
+.catalogue__maj {
+  margin: 0 0 0 auto;
+  text-align: right;
+  font-size: 13px;
+  color: var(--texte-secondaire);
+}
+
+/* 4 SCPI par ligne sur ordinateur ; 3, 2 puis 1 quand l'écran rétrécit */
+.catalogue__liste {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Carte SCPI : variante « jauge segmentée » (maquette D) */
+@media (max-width: 1199px) {
+  .catalogue__liste {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .catalogue__liste {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .catalogue__liste {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scpi {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+  background: #fff;
+}
+
+/* Photo en haut de la carte, bord à bord */
+.scpi__photo {
+  position: relative;
+  margin: -18px -20px 2px;
+  height: 150px;
+  border-radius: var(--r-m) var(--r-m) 0 0;
+  overflow: hidden;
+  background: var(--sable);
+}
+
+.scpi__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scpi__nom {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--texte);
+}
+
+.scpi__gerant {
+  margin: -8px 0 0;
+  font-size: 14px;
+  color: var(--texte-secondaire);
+}
+
+/* Encadré du taux : fond bleu clair, titre avec icône, taux en grand, jauge */
+.scpi__taux {
+  padding: 10px 16px 8px;
+  border-radius: var(--r-m);
+  background: var(--bleu-ciel);
+}
+
+.scpi__taux-titre {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bleu-vif);
+}
+
+.scpi__taux-valeur {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  color: var(--bleu);
+  white-space: nowrap;
+}
+
+.scpi__taux-valeur.scpi__nc {
+  font-size: 20px;
+}
+
+.scpi__nc {
+  color: var(--discret);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.scpi__icone {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.catalogue__total .scpi__icone {
+  width: 18px;
+  height: 18px;
+}
+
+.scpi__segments {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.scpi__segment {
+  height: 10px;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.scpi__segment--plein {
+  background: var(--bleu-vif);
+}
+
+/* À partir de 7 % : vert */
+.scpi__segment--plein:nth-child(n + 7) {
+  background: var(--vert);
+}
+
+.scpi__echelle {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--discret);
+}
+
+/* Lignes d'informations : icône + libellé à gauche, valeur en gras à droite */
+.scpi__infos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: auto 0 0;
+  padding: 0;
+  font-size: 14px;
+}
+
+.scpi__info {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scpi__info dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--texte-secondaire);
+}
+
+.scpi__emoji {
+  width: 18px;
+  font-size: 16px;
+  line-height: 1;
+  text-align: center;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+
+.scpi__info dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+  color: var(--texte);
+}
+
+.scpi__info dd.scpi__nc {
+  color: var(--discret);
+  font-weight: 500;
+}
+
+/* Boutons de la carte : visibles, pas encore cliquables */
+.scpi__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* deux boutons de même largeur */
+  gap: 8px;
+  padding-top: 4px;
+}
+
+/* Carte trop étroite pour deux boutons côte à côte (moins de 296 px de large) : boutons
+   l'un sous l'autre. Largeurs d'écran déduites de la grille : 4 cartes de 1200 à 1425 px,
+   3 cartes de 961 à 1113 px (barre de navigation à gauche), 2 cartes de 601 à 667 px,
+   1 carte sous 356 px. Au-delà, les boutons restent côte à côte. */
+@media (min-width: 1200px) and (max-width: 1425px),
+  (min-width: 961px) and (max-width: 1113px),
+  (min-width: 601px) and (max-width: 667px),
+  (max-width: 355px) {
+  .scpi__actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scpi__bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 6px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+  background: #fff;
+  color: var(--texte);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 6%);
+}
+
+.scpi__bouton--principal {
+  border-color: transparent;
+  background: var(--bleu-vif);
+  color: #fff;
+}
+
+.scpi__bouton[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/* Bulle « Bientôt disponible » au-dessus du bouton, au survol ou au focus clavier */
+.scpi__bouton-zone {
+  position: relative;
+  display: grid;
+}
+
+.scpi__bulle {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--nuit);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+}
+
+/* Petite pointe sous la bulle */
+.scpi__bulle::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: 5px solid transparent;
+  border-top-color: var(--nuit);
+  transform: translateX(-50%);
+}
+
+.scpi__bouton-zone:hover .scpi__bulle,
+.scpi__bouton-zone:focus-within .scpi__bulle {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.pagination .compte__bouton {
+  width: auto;
+  margin: 0;
+  padding-inline: 18px;
+}
+
+.pagination__position {
+  font-weight: 600;
+  color: var(--texte);
+}

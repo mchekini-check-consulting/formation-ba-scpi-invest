@@ -33,7 +33,7 @@ export default function ExigerKycComplete({
 
   useEffect(() => {
     if (utilisateur === null) allerA('/connexion');
-    else if (kyc && kyc.statut !== 'complete') allerA('/kyc');
+    else if (kyc && kyc.statut !== 'complete') allerA('/connaissance-client');
   }, [utilisateur, kyc, allerA]);
 
   if (erreurSession || erreurKyc) {

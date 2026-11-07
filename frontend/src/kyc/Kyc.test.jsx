@@ -23,7 +23,7 @@ function afficher(props) {
   );
 }
 
-describe('Écran /kyc (après la création de compte ou la connexion)', () => {
+describe('Écran /connaissance-client (après la création de compte ou la connexion)', () => {
   it('US-04a scénario 1 : formulaire KYC à l’étape 1, sans sidebar, email du compte', async () => {
     afficher();
     expect(await screen.findByRole('heading', { level: 2, name: 'Identité' })).toBeDefined();
@@ -118,6 +118,8 @@ describe('Écran /kyc (après la création de compte ou la connexion)', () => {
     afficher({ seDeconnecter, allerA });
     const bouton = await screen.findByRole('button', { name: 'Se déconnecter' });
     await act(async () => fireEvent.click(bouton));
+    expect(seDeconnecter).not.toHaveBeenCalled(); // confirmation demandée d'abord
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Oui' })));
     expect(seDeconnecter).toHaveBeenCalledOnce();
     expect(allerA).toHaveBeenCalledWith('/');
   });

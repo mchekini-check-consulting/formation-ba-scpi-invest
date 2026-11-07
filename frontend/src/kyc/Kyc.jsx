@@ -1,4 +1,4 @@
-// Écran /kyc : destination après la création de compte (US-02a) et la connexion (US-03a).
+// Écran /connaissance-client (KYC) : destination après la création de compte (US-02a) et la connexion (US-03a).
 // Formulaire KYC sans sidebar (US-04a), repris à l'étape atteinte avec les réponses déjà
 // saisies (US-04b). KYC déjà validé : direction le formulaire investisseur.
 // Sans session valide (expirée, fermée) : retour à l'accueil.

@@ -289,23 +289,24 @@ describe('importScpis', () => {
 
     expect(erreur).toBeInstanceOf(FichierInvalide);
     expect(erreur).toMatchObject({
-      message: 'aucune ligne valide : catalogue non modifié',
+      message: 'Aucune ligne valide : la seule ligne est rejetée, catalogue non modifié',
+      detail: { ligne: null, constat: expect.stringMatching(/^Aucune ligne valide/) },
       rejets: [{ ligne: 2, nom: 'A', motif: 'bic : champ obligatoire vide' }],
     });
     expect(base.ecritures).toEqual([]);
   });
 
-  // US-07b, scénario 2
+  // US-07b, scénario 2 (motifs détaillés : erreurs.test.ts)
   it.each([
     [
       'colonnes absentes',
       { Nom: 'A', prix_part: '200' },
-      'colonnes absentes (séparateur attendu : virgule) : taux_distribution, minimum_souscription',
+      'Ligne 1 : colonnes absentes de l’en-tête : taux_distribution, minimum_souscription',
     ],
     [
       'mauvais séparateur',
       { 'Nom;taux_distribution': 'A;5' },
-      'colonnes absentes (séparateur attendu : virgule) : Nom, taux_distribution',
+      'Ligne 1 : séparateur incorrect : point-virgule détecté dans l’en-tête, virgule attendue',
     ],
   ])('fichier invalide (%s) : refusé entier, rien n’est écrit', async (_cas, ligne, motif) => {
     const base = fausseBase([{ id: 7, nom: 'A', empreinte: null }]);
@@ -319,11 +320,18 @@ describe('importScpis', () => {
     const base = fausseBase();
     async function* illisible() {
       yield ligneCsv({ Nom: 'A' });
-      throw new Error('Invalid Record Length: expect 20, got 3 on line 3');
+      throw Object.assign(new Error('Invalid Record Length: expect 20, got 3 on line 3'), {
+        code: 'CSV_RECORD_INCONSISTENT_FIELDS_LENGTH',
+        lines: 3,
+        record: ['A', 'B', 'C'],
+      });
     }
-    await expect(importScpis(base.db, illisible())).rejects.toThrow(
-      'fichier illisible : Invalid Record Length: expect 20, got 3 on line 3',
-    );
+    const erreur = await importScpis(base.db, illisible()).catch((e: unknown) => e);
+    expect(erreur).toBeInstanceOf(FichierInvalide);
+    expect(erreur).toMatchObject({
+      message: expect.stringMatching(/^Ligne 3 : 3 valeurs au lieu de 20\. Cause probable : /),
+      detail: { technique: 'Invalid Record Length: expect 20, got 3 on line 3' },
+    });
     expect(base.ecritures).toEqual([]);
   });
 
@@ -401,7 +409,7 @@ describe('importScpis', () => {
     const base = fausseBase([{ id: 7, nom: 'A', empreinte: null }]);
     const erreur = importScpis(base.db, lignes());
     await expect(erreur).rejects.toBeInstanceOf(FichierInvalide);
-    await expect(erreur).rejects.toThrow('fichier sans aucune SCPI : catalogue non modifié');
+    await expect(erreur).rejects.toThrow('Fichier vide : aucune SCPI, catalogue non modifié');
     expect(base.ecritures).toEqual([]);
   });
 });

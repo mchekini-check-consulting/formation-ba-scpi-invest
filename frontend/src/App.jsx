@@ -4,6 +4,7 @@
 import './App.css';
 import { jeton } from './auth.js';
 import { ESPACE, EnTete, Fleche, LienCompte, LienInterne, Logo } from './MiseEnPage.jsx';
+import LienOutilsPied from './outils/LienOutilsPied.jsx';
 
 // « Comment ça marche » décrit le parcours ; « Pourquoi choisir » ne garde que ce qui
 // distingue la plateforme, sans répéter les étapes
@@ -385,6 +386,8 @@ function App() {
               ))}
             </ul>
           </nav>
+          {/* Outil de test de l'import du catalogue : dev et poste uniquement */}
+          <LienOutilsPied />
         </div>
         <p className="pied__mention">
           Les SCPI sont des placements immobiliers à long terme, présentant un risque de perte en

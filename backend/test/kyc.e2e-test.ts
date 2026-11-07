@@ -77,20 +77,29 @@ describe('KYC (e2e)', () => {
     const bearer = await nouveauCompte('claire.martin@exemple.fr');
 
     // Nouveau compte : étape 1, aucune réponse
-    const debut = await request(app).get('/kyc').set('Authorization', bearer).expect(200);
+    const debut = await request(app)
+      .get('/connaissance-client')
+      .set('Authorization', bearer)
+      .expect(200);
     expect(debut.body).toEqual({ statut: 'en_cours', etape: 1, reponses: {}, valideLe: null });
 
     // Validation refusée tant que le formulaire est incomplet
-    await request(app).post('/kyc/validation').set('Authorization', bearer).expect(400);
+    await request(app)
+      .post('/connaissance-client/validation')
+      .set('Authorization', bearer)
+      .expect(400);
 
     // Étapes 1 et 2 enregistrées, l'utilisateur quitte à l'étape 3 : reprise à l'étape 3
     const { nom, prenom, civilite } = KYC_COMPLET;
     await request(app)
-      .put('/kyc')
+      .put('/connaissance-client')
       .set('Authorization', bearer)
       .send({ etape: 3, reponses: { nom, prenom, civilite } })
       .expect(200);
-    const reprise = await request(app).get('/kyc').set('Authorization', bearer).expect(200);
+    const reprise = await request(app)
+      .get('/connaissance-client')
+      .set('Authorization', bearer)
+      .expect(200);
     expect(reprise.body).toMatchObject({
       statut: 'en_cours',
       etape: 3,
@@ -99,13 +108,13 @@ describe('KYC (e2e)', () => {
 
     // Étape des pièces : toutes les réponses enregistrées, une pièce manque encore
     await request(app)
-      .put('/kyc')
+      .put('/connaissance-client')
       .set('Authorization', bearer)
       .send({ etape: 5, reponses: KYC_COMPLET })
       .expect(200);
     const deposer = (type: string, contenu: Buffer, nom: string) =>
       request(app)
-        .put(`/kyc/pieces/${type}`)
+        .put(`/connaissance-client/pieces/${type}`)
         .query({ nom })
         .set('Authorization', bearer)
         .set('Content-Type', 'application/octet-stream')
@@ -114,7 +123,7 @@ describe('KYC (e2e)', () => {
     await deposer('domicile', PNG, 'facture.png').expect(200);
     await deposer('rib', Buffer.from('pas un pdf'), 'rib.pdf').expect(400);
     const sansRib = await request(app)
-      .post('/kyc/validation')
+      .post('/connaissance-client/validation')
       .set('Authorization', bearer)
       .expect(400);
     expect(sansRib.body.message).toContain('pièces justificatives');
@@ -123,12 +132,15 @@ describe('KYC (e2e)', () => {
     await deposer('domicile', PDF, 'quittance.pdf').expect(200);
     await deposer('identite_verso', PNG, 'verso.png').expect(200);
     await request(app)
-      .delete('/kyc/pieces/identite_verso')
+      .delete('/connaissance-client/pieces/identite_verso')
       .set('Authorization', bearer)
       .expect(204);
     const rib = await deposer('rib', PDF, 'rib.pdf').expect(200);
     expect(rib.body).toMatchObject({ type: 'rib', nomFichier: 'rib.pdf', statut: 'deposee' });
-    const liste = await request(app).get('/kyc/pieces').set('Authorization', bearer).expect(200);
+    const liste = await request(app)
+      .get('/connaissance-client/pieces')
+      .set('Authorization', bearer)
+      .expect(200);
     expect(liste.body.map((p: { nomFichier: string }) => p.nomFichier)).toEqual([
       'cni.pdf',
       'quittance.pdf',
@@ -143,12 +155,12 @@ describe('KYC (e2e)', () => {
 
     // Récapitulatif atteint, puis validation
     await request(app)
-      .put('/kyc')
+      .put('/connaissance-client')
       .set('Authorization', bearer)
       .send({ etape: 6, reponses: KYC_COMPLET })
       .expect(200);
     const validation = await request(app)
-      .post('/kyc/validation')
+      .post('/connaissance-client/validation')
       .set('Authorization', bearer)
       .expect(200);
     expect(validation.body.statut).toBe('complete');
@@ -165,22 +177,33 @@ describe('KYC (e2e)', () => {
     expect(rows[0].valide_le).not.toBeNull();
     expect(rows[0].reponses.nom).toBe('Martin');
     await request(app)
-      .put('/kyc')
+      .put('/connaissance-client')
       .set('Authorization', bearer)
       .send({ etape: 2, reponses: { nom: 'Autre' } })
       .expect(409);
-    await request(app).post('/kyc/validation').set('Authorization', bearer).expect(409);
+    await request(app)
+      .post('/connaissance-client/validation')
+      .set('Authorization', bearer)
+      .expect(409);
 
     // Pièces « en cours de vérification », plus modifiables
-    const verifiees = await request(app).get('/kyc/pieces').set('Authorization', bearer);
+    const verifiees = await request(app)
+      .get('/connaissance-client/pieces')
+      .set('Authorization', bearer);
     expect(verifiees.body.map((p: { statut: string }) => p.statut)).toEqual([
       'en_verification',
       'en_verification',
       'en_verification',
     ]);
     await deposer('rib', PDF, 'autre.pdf').expect(409);
-    await request(app).delete('/kyc/pieces/rib').set('Authorization', bearer).expect(409);
-    const fige = await request(app).get('/kyc').set('Authorization', bearer).expect(200);
+    await request(app)
+      .delete('/connaissance-client/pieces/rib')
+      .set('Authorization', bearer)
+      .expect(409);
+    const fige = await request(app)
+      .get('/connaissance-client')
+      .set('Authorization', bearer)
+      .expect(200);
     expect(fige.body).toMatchObject({ statut: 'complete', reponses: { nom: 'Martin' } });
   });
 
@@ -188,15 +211,18 @@ describe('KYC (e2e)', () => {
     const alice = await nouveauCompte('alice@exemple.fr');
     const bob = await nouveauCompte('bob@exemple.fr');
     await request(app)
-      .put('/kyc')
+      .put('/connaissance-client')
       .set('Authorization', alice)
       .send({ etape: 2, reponses: { nom: 'Alice' } })
       .expect(200);
-    const deBob = await request(app).get('/kyc').set('Authorization', bob).expect(200);
+    const deBob = await request(app)
+      .get('/connaissance-client')
+      .set('Authorization', bob)
+      .expect(200);
     expect(deBob.body).toEqual({ statut: 'en_cours', etape: 1, reponses: {}, valideLe: null });
   });
 
   it('sans connexion : 401', async () => {
-    await request(app).get('/kyc').expect(401);
+    await request(app).get('/connaissance-client').expect(401);
   });
 });
