@@ -93,7 +93,6 @@
 }
 
 .scpi {
-  container-type: inline-size; /* la carte adapte ses boutons à sa propre largeur */
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -107,7 +106,7 @@
 .scpi__photo {
   position: relative;
   margin: -18px -20px 2px;
-  aspect-ratio: 16 / 8;
+  height: 150px;
   border-radius: var(--r-m) var(--r-m) 0 0;
   overflow: hidden;
   background: var(--sable);
@@ -259,8 +258,12 @@
   padding-top: 4px;
 }
 
-/* Carte étroite (4 par ligne sur un portable) : boutons l'un sous l'autre, même largeur */
-@container (max-width: 290px) {
+/* Carte étroite (moins de 330 px de large) : boutons l'un sous l'autre, même largeur.
+   Largeurs d'écran déduites de la grille : 4 cartes jusqu'à 1561 px et 3 cartes (barre de
+   navigation à gauche), 2 cartes de 601 à 735 px, 1 carte sous 390 px. */
+@media (min-width: 961px) and (max-width: 1561px),
+  (min-width: 601px) and (max-width: 735px),
+  (max-width: 389px) {
   .scpi__actions {
     grid-template-columns: 1fr;
     gap: 8px;
