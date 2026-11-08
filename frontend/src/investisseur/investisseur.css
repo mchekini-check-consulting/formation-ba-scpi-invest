@@ -1,28 +1,125 @@
 /* Formulaire investisseur (US-05a) : couleurs de compte.css (variables de .compte) */
 
+/* Progression : pastilles numérotées reliées par un trait */
 .progression {
-  margin: 4px 0 24px;
+  margin: 4px 0 32px;
 }
 
-.progression__texte {
-  margin: 0 0 8px;
-  font-weight: 600;
-  color: var(--bleu);
+/* « Étape n/5 — titre » : affiché sur mobile seulement (libellés masqués) */
+.compte__carte .progression__texte {
+  display: none;
+  margin: 12px 0 0;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--texte);
 }
 
-.progression__barre {
-  height: 8px;
-  border-radius: 999px;
+.progression__etapes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.progression__etape {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--discret);
+}
+
+/* Trait vers l'étape précédente, bleu jusqu'à l'étape courante */
+.progression__etape:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
   background: var(--bordure);
-  overflow: hidden;
+  transition: background 0.3s ease;
 }
 
-.progression__barre span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
+.progression__etape--faite:not(:first-child)::before,
+.progression__etape--courante:not(:first-child)::before {
   background: var(--bleu-vif);
-  transition: width 0.3s ease;
+}
+
+.progression__pastille {
+  position: relative;
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 14px;
+  background: #fff;
+  border: 2px solid var(--bordure);
+  color: var(--discret);
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.progression__etape--faite {
+  color: var(--texte-secondaire);
+}
+
+.progression__etape--faite .progression__pastille {
+  background: var(--bleu-vif);
+  border-color: var(--bleu-vif);
+  color: #fff;
+}
+
+.progression__etape--courante {
+  font-weight: 700;
+  color: var(--texte);
+}
+
+.progression__etape--courante .progression__pastille {
+  border-color: var(--bleu-vif);
+  color: var(--bleu-vif);
+  box-shadow: 0 0 0 4px var(--bleu-ciel);
+}
+
+.progression__cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .progression__libelle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .compte__carte .progression__texte {
+    display: block;
+    order: 1;
+  }
+
+  .progression {
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 .question {

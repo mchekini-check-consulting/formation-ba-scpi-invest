@@ -40,6 +40,39 @@ function pourSaisie(reponses) {
   return resultat;
 }
 
+// Progression en pastilles numérotées reliées : ✓ pour les étapes faites, étape courante
+// entourée. Sur mobile, les libellés laissent place au texte « Étape n/5 — titre ».
+function Progression({ etape }) {
+  return (
+    <nav className="progression" aria-label="Progression du formulaire">
+      <p className="progression__texte">
+        Étape {etape}/{NOMBRE_ETAPES} — {ETAPES[etape - 1].titre}
+      </p>
+      <ol className="progression__etapes">
+        {ETAPES.map(({ titre }, i) => {
+          const numero = i + 1;
+          const etat = numero < etape ? 'faite' : numero === etape ? 'courante' : 'a-venir';
+          return (
+            <li
+              key={titre}
+              className={`progression__etape progression__etape--${etat}`}
+              aria-current={etat === 'courante' ? 'step' : undefined}
+            >
+              <span className="progression__pastille" aria-hidden="true">
+                {etat === 'faite' ? '✓' : numero}
+              </span>
+              <span className="progression__libelle">
+                {titre}
+                {etat === 'faite' && <span className="progression__cache"> (terminée)</span>}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
 function Question({ question, valeur, erreur, changer }) {
   const idErreur = `${question.cle}-erreur`;
   const messageErreur = (
@@ -229,21 +262,7 @@ export default function FormulaireInvestisseur({
   const { titre } = ETAPES[etape - 1];
   return (
     <PageCompte titre="Formulaire investisseur" seDeconnecter={quitter} large>
-      <div className="progression">
-        <p className="progression__texte">
-          Étape {etape}/{NOMBRE_ETAPES} — {titre}
-        </p>
-        <div
-          className="progression__barre"
-          role="progressbar"
-          aria-label="Progression du formulaire"
-          aria-valuemin={1}
-          aria-valuemax={NOMBRE_ETAPES}
-          aria-valuenow={etape}
-        >
-          <span style={{ width: `${(etape / NOMBRE_ETAPES) * 100}%` }} />
-        </div>
-      </div>
+      <Progression etape={etape} />
 
       <form className="compte__form" aria-label={titre} onSubmit={suivant} noValidate>
         {questionsVisibles(etape, reponsesEtape).map((question) => (
