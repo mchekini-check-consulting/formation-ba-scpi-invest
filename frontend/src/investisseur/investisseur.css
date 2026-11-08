@@ -1,12 +1,12 @@
 /* Formulaire investisseur (US-05a) : couleurs de compte.css (variables de .compte) */
 
 /* Progression : pastilles numérotées reliées par un trait */
-.progression {
+.investisseur-progression {
   margin: 4px 0 32px;
 }
 
 /* « Étape n/5 — titre » : affiché sur mobile seulement (libellés masqués) */
-.compte__carte .progression__texte {
+.compte__carte .investisseur-progression__texte {
   display: none;
   margin: 12px 0 0;
   text-align: center;
@@ -15,7 +15,7 @@
   color: var(--texte);
 }
 
-.progression__etapes {
+.investisseur-progression__etapes {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -23,7 +23,7 @@
   grid-template-columns: repeat(5, 1fr);
 }
 
-.progression__etape {
+.investisseur-progression__etape {
   position: relative;
   display: grid;
   justify-items: center;
@@ -36,7 +36,7 @@
 }
 
 /* Trait vers l'étape précédente, bleu jusqu'à l'étape courante */
-.progression__etape:not(:first-child)::before {
+.investisseur-progression__etape:not(:first-child)::before {
   content: '';
   position: absolute;
   top: 15px;
@@ -47,12 +47,12 @@
   transition: background 0.3s ease;
 }
 
-.progression__etape--faite:not(:first-child)::before,
-.progression__etape--courante:not(:first-child)::before {
+.investisseur-progression__etape--faite:not(:first-child)::before,
+.investisseur-progression__etape--courante:not(:first-child)::before {
   background: var(--bleu-vif);
 }
 
-.progression__pastille {
+.investisseur-progression__pastille {
   position: relative;
   z-index: 1;
   width: 32px;
@@ -71,28 +71,28 @@
     box-shadow 0.3s ease;
 }
 
-.progression__etape--faite {
+.investisseur-progression__etape--faite {
   color: var(--texte-secondaire);
 }
 
-.progression__etape--faite .progression__pastille {
+.investisseur-progression__etape--faite .investisseur-progression__pastille {
   background: var(--bleu-vif);
   border-color: var(--bleu-vif);
   color: #fff;
 }
 
-.progression__etape--courante {
+.investisseur-progression__etape--courante {
   font-weight: 700;
   color: var(--texte);
 }
 
-.progression__etape--courante .progression__pastille {
+.investisseur-progression__etape--courante .investisseur-progression__pastille {
   border-color: var(--bleu-vif);
   color: var(--bleu-vif);
   box-shadow: 0 0 0 4px var(--bleu-ciel);
 }
 
-.progression__cache {
+.investisseur-progression__cache {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -102,7 +102,7 @@
 }
 
 @media (max-width: 640px) {
-  .progression__libelle {
+  .investisseur-progression__libelle {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -111,12 +111,12 @@
     white-space: nowrap;
   }
 
-  .compte__carte .progression__texte {
+  .compte__carte .investisseur-progression__texte {
     display: block;
     order: 1;
   }
 
-  .progression {
+  .investisseur-progression {
     display: flex;
     flex-direction: column;
   }
