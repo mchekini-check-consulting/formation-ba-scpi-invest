@@ -35,7 +35,13 @@ async function afficher({
 }
 
 const texte = () => document.body.textContent;
-const progression = () => screen.getByRole('progressbar').getAttribute('aria-valuenow');
+// Numéro de l'étape courante dans la progression (pastille aria-current="step")
+const etapesProgression = () =>
+  within(screen.getByRole('navigation', { name: 'Progression du formulaire' })).getAllByRole(
+    'listitem',
+  );
+const progression = () =>
+  String(etapesProgression().findIndex((li) => li.getAttribute('aria-current') === 'step') + 1);
 const choisir = (nom) => fireEvent.click(screen.getByRole('radio', { name: nom }));
 const cocher = (nom) => fireEvent.click(screen.getByRole('checkbox', { name: nom }));
 
@@ -62,6 +68,27 @@ describe('FormulaireInvestisseur (US-05a)', () => {
     expect(texte()).toContain('Étape 1/5 — Situation financière');
     expect(progression()).toBe('1');
     expect(screen.queryByRole('button', { name: 'Précédent' })).toBeNull();
+  });
+
+  it('progression : une pastille par étape, ✓ pour les faites, étape courante signalée', async () => {
+    await afficher({ avancement: { etapeCourante: 3, reponses: {} } });
+    const etapes = etapesProgression();
+
+    expect(etapes.map((li) => li.textContent)).toEqual([
+      '✓Situation financière (terminée)',
+      '✓Connaissances et expérience (terminée)',
+      '3Objectifs',
+      '4Horizon et risque',
+      '5Préférences de durabilité',
+    ]);
+    expect(etapes.map((li) => li.className.split('--')[1])).toEqual([
+      'faite',
+      'faite',
+      'courante',
+      'a-venir',
+      'a-venir',
+    ]);
+    expect(etapes.filter((li) => li.getAttribute('aria-current') === 'step')).toHaveLength(1);
   });
 
   it('scénario 2 : « Suivant » enregistre, avance ; « Précédent » garde les réponses', async () => {
