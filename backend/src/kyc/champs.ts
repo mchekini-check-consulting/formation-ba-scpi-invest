@@ -83,28 +83,38 @@ export function age(dateIso: string, le: Date): number {
   return ans;
 }
 
+// Champ à contrôler : obligatoire, et demandé selon les réponses (pays de résidence
+// fiscale seulement si « Autre pays »)
+function aControler(champ: Champ, reponses: ReponsesKyc): boolean {
+  if (champ.facultatif) return false;
+  return !champ.siAutrePays || reponses.residenceFiscale === 'Autre pays';
+}
+
+// Champ rempli, et pour un pays : code ISO à 2 lettres
+function champComplet(champ: Champ, valeur: string | string[] | undefined): boolean {
+  if (!rempli(valeur)) return false;
+  return !champ.pays || /^[A-Z]{2}$/.test(String(valeur));
+}
+
+// Texte saisi (champ rempli) qui ne respecte pas la règle donnée
+function texteInvalide(
+  valeur: string | string[] | undefined,
+  valide: (texte: string) => boolean,
+): boolean {
+  return typeof valeur === 'string' && rempli(valeur) && !valide(valeur);
+}
+
+const telephoneValide = (telephone: string) => /^\+?[\d\s.()-]{4,20}$/.test(telephone);
+
+const naissanceValide = (le: Date) => (naissance: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(naissance) && age(naissance, le) >= 18;
+
 // Champs obligatoires vides ou invalides : rien ne doit manquer pour valider le KYC
 export function champsIncomplets(reponses: ReponsesKyc, le: Date): string[] {
-  const manquants: string[] = [];
-  for (const champ of CHAMPS_KYC) {
-    if (champ.facultatif) continue;
-    if (champ.siAutrePays && reponses.residenceFiscale !== 'Autre pays') continue;
-    const valeur = reponses[champ.nom];
-    if (!rempli(valeur)) manquants.push(champ.nom);
-    else if (champ.pays && !/^[A-Z]{2}$/.test(String(valeur))) manquants.push(champ.nom);
-  }
-  const telephone = reponses.telephone;
-  if (
-    typeof telephone === 'string' &&
-    rempli(telephone) &&
-    !/^\+?[\d\s.()-]{4,20}$/.test(telephone)
-  ) {
-    manquants.push('telephone');
-  }
-  const naissance = reponses.dateNaissance;
-  if (typeof naissance === 'string' && rempli(naissance)) {
-    const valide = /^\d{4}-\d{2}-\d{2}$/.test(naissance) && age(naissance, le) >= 18;
-    if (!valide) manquants.push('dateNaissance');
-  }
+  const manquants = CHAMPS_KYC.filter(
+    (champ) => aControler(champ, reponses) && !champComplet(champ, reponses[champ.nom]),
+  ).map((champ) => champ.nom);
+  if (texteInvalide(reponses.telephone, telephoneValide)) manquants.push('telephone');
+  if (texteInvalide(reponses.dateNaissance, naissanceValide(le))) manquants.push('dateNaissance');
   return manquants;
 }

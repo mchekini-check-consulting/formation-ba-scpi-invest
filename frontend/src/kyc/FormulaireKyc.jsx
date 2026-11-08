@@ -132,12 +132,81 @@ const normaliser = (texte) =>
     .replace(/[\s'’-]+/g, ' ')
     .trim();
 
+// Liste des communes du code postal, à la place de la saisie libre de la ville
+function ListeCommunes({ champ, commun, communes }) {
+  return (
+    <select {...commun} autoComplete={champ.autoComplete}>
+      {communes.length > 1 && <option value="">Choisir une commune…</option>}
+      {communes.map((nom) => (
+        <option key={nom}>{nom}</option>
+      ))}
+    </select>
+  );
+}
+
+// Zone de saisie selon le type du champ (liste de pays, téléphone, date, liste, texte...)
+function Saisie({ champ, commun, reponses, erreur, changer, aujourdhui, communes }) {
+  const valeur = reponses[champ.nom];
+  const changerValeur = (v) => changer(champ.nom, v);
+  if (communes.length > 0) {
+    return <ListeCommunes champ={champ} commun={commun} communes={communes} />;
+  }
+  switch (champ.type) {
+    case 'pays':
+      return (
+        <ChoixPays
+          id={commun.id}
+          valeur={valeur}
+          changer={changerValeur}
+          invalide={Boolean(erreur)}
+          decritPar={commun['aria-describedby']}
+        />
+      );
+    case 'tel':
+      return (
+        <ChampTelephone
+          champ={champ}
+          commun={commun}
+          indicatif={indicatifChoisi(champ, reponses)}
+          changerIndicatif={(code) => changer(champ.indicatif, code)}
+        />
+      );
+    case 'date':
+      return (
+        <ChampDate {...commun} valeur={valeur} changer={changerValeur} aujourdhui={aujourdhui} />
+      );
+    case 'liste':
+      return (
+        <select {...commun}>
+          <option value="">Choisir…</option>
+          {champ.options.map((option) => (
+            <option key={option}>{option}</option>
+          ))}
+        </select>
+      );
+    default:
+      return (
+        <input
+          {...commun}
+          type={champ.type === 'texte' ? 'text' : champ.type}
+          autoComplete={champ.autoComplete}
+          readOnly={champ.lectureSeule}
+        />
+      );
+  }
+}
+
+// Texte d'aide : communes du code postal quand elles sont proposées, sinon aide du champ
+function texteAide(champ, reponses, communes) {
+  if (communes.length === 0) return aideDe(champ, reponses);
+  const libelle = communes.length === 1 ? 'Commune' : 'Communes';
+  return `${libelle} du code postal ${reponses.codePostal.trim()}.`;
+}
+
 function Champ({ champ, reponses, erreur, changer, aujourdhui, communes = [] }) {
   const valeur = reponses[champ.nom];
-  const proposees = champ.nom === 'ville' && communes.length > 0;
-  const aide = proposees
-    ? `${communes.length === 1 ? 'Commune' : 'Communes'} du code postal ${reponses.codePostal.trim()}.`
-    : aideDe(champ, reponses);
+  const proposees = champ.nom === 'ville' ? communes : [];
+  const aide = texteAide(champ, reponses, proposees);
   if (champ.type === 'choix' || champ.type === 'cases') {
     return (
       <Groupe
@@ -162,50 +231,15 @@ function Champ({ champ, reponses, erreur, changer, aujourdhui, communes = [] }) 
         <Libelle champ={champ} />
       </label>
       <Aide champ={champ} texte={aide} />
-      {proposees ? (
-        <select {...commun} autoComplete={champ.autoComplete}>
-          {communes.length > 1 && <option value="">Choisir une commune…</option>}
-          {communes.map((nom) => (
-            <option key={nom}>{nom}</option>
-          ))}
-        </select>
-      ) : champ.type === 'pays' ? (
-        <ChoixPays
-          id={commun.id}
-          valeur={valeur}
-          changer={(v) => changer(champ.nom, v)}
-          invalide={Boolean(erreur)}
-          decritPar={commun['aria-describedby']}
-        />
-      ) : champ.type === 'tel' ? (
-        <ChampTelephone
-          champ={champ}
-          commun={commun}
-          indicatif={indicatifChoisi(champ, reponses)}
-          changerIndicatif={(code) => changer(champ.indicatif, code)}
-        />
-      ) : champ.type === 'date' ? (
-        <ChampDate
-          {...commun}
-          valeur={valeur}
-          changer={(v) => changer(champ.nom, v)}
-          aujourdhui={aujourdhui}
-        />
-      ) : champ.type === 'liste' ? (
-        <select {...commun}>
-          <option value="">Choisir…</option>
-          {champ.options.map((option) => (
-            <option key={option}>{option}</option>
-          ))}
-        </select>
-      ) : (
-        <input
-          {...commun}
-          type={champ.type === 'texte' ? 'text' : champ.type}
-          autoComplete={champ.autoComplete}
-          readOnly={champ.lectureSeule}
-        />
-      )}
+      <Saisie
+        champ={champ}
+        commun={commun}
+        reponses={reponses}
+        erreur={erreur}
+        changer={changer}
+        aujourdhui={aujourdhui}
+        communes={proposees}
+      />
       <Erreur nom={champ.nom} message={erreur} />
     </div>
   );
