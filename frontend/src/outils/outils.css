@@ -156,41 +156,78 @@
   opacity: 0.75;
 }
 
-/* Message de fin d'une action (envoi, import) */
-.confirmation {
+/* Fenêtre de fin d'une action (envoi, import) : voile sur tout l'écran, fenêtre centrée
+   fermée par « OK ». Nom « resultat » : la classe « confirmation » est déjà prise par la
+   fenêtre de déconnexion (navigation/confirmation.css), les feuilles CSS étant communes. */
+.resultat {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   display: grid;
-  gap: 10px;
-  border-radius: 14px;
-  padding: 14px;
+  place-items: center;
+  padding: 16px;
+  background: rgb(15 31 69 / 55%);
+}
+
+.resultat__fenetre {
+  width: min(440px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  background: #fff;
+  color: var(--encre);
   font-size: 13.5px;
+  box-shadow: 0 30px 60px -20px rgb(15 31 69 / 60%);
 }
 
-.confirmation--ok {
-  background: rgb(47 158 107 / 16%);
-  border: 1px solid rgb(143 224 181 / 35%);
+.resultat__fenetre--ok {
+  border-top: 4px solid #2f9e6b;
 }
 
-.confirmation--ko {
-  background: rgb(214 87 69 / 16%);
-  border: 1px solid rgb(255 180 168 / 35%);
+.resultat__fenetre--ko {
+  border-top: 4px solid var(--rouge);
 }
 
-.confirmation__titre {
-  font-size: 15px;
+.resultat__titre {
+  font-size: 17px;
   font-weight: 700;
-  color: #fff;
+  color: var(--encre);
 }
 
-.confirmation--ok .confirmation__titre span {
-  color: #8fe0b5;
+.resultat__fenetre--ok .resultat__titre span {
+  color: #2f9e6b;
 }
 
-.confirmation--ko .confirmation__titre span {
-  color: #ffb4a8;
+.resultat__fenetre--ko .resultat__titre span {
+  color: var(--rouge);
 }
 
-.confirmation__suite {
-  color: var(--texte-sur-nuit);
+.resultat__ok {
+  justify-content: center;
+  justify-self: end;
+  min-width: 110px;
+}
+
+.resultat__suite,
+.resultat__fenetre .outils__infos dt,
+.resultat__fenetre .motif__titre,
+.resultat__fenetre .motif__technique summary {
+  color: var(--discret);
+}
+
+/* Fond blanc : textes et filets du motif de refus en couleurs foncées */
+.resultat__fenetre .motif p {
+  color: var(--encre);
+}
+
+.resultat__fenetre .motif__bloc {
+  border-left-color: var(--ligne);
+}
+
+.resultat__fenetre .motif__bloc--action {
+  border-left-color: var(--orange);
 }
 
 .outils__erreur {

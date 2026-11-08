@@ -10,11 +10,11 @@ déploiement, vérification du déploiement.
 
 ## Architecture
 
-| Composant                  | Dossier                      | Stack                                                  | Port dans l'image | En local                                                                                        |
-| -------------------------- | ---------------------------- | ------------------------------------------------------ | ----------------- | ----------------------------------------------------------------------------------------------- |
-| backend(s) `type: backend` | `<name>/` (ex. `backend/`)   | Java 21 / Spring Boot / JPA / Flyway (Maven, `./mvnw`) | 8080              | `SERVER_PORT=<port> ./mvnw spring-boot:run`, port 8080 pour `backend/`, suivant pour les autres |
-| gateway `type: gateway`    | — (fourni par la plateforme) | Traefik, routes dans `gateway.yaml`                    | 80                | pas de gateway : relais du serveur de dev du frontend                                           |
-| frontend `type: frontend`  | `frontend/`                  | React / Vite / React Router                            | 8080              | http://localhost:5173 (`npm run dev`)                                                           |
+| Composant                  | Dossier                      | Stack                                              | Port dans l'image | En local                                                                      |
+| -------------------------- | ---------------------------- | -------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------- |
+| backend(s) `type: backend` | `<name>/` (ex. `backend/`)   | Node / Express / TypeScript / Drizzle (npm, `tsx`) | 8080              | `PORT=<port> npm run dev`, port 8080 pour `backend/`, suivant pour les autres |
+| gateway `type: gateway`    | — (fourni par la plateforme) | Traefik, routes dans `gateway.yaml`                | 80                | pas de gateway : relais du serveur de dev du frontend                         |
+| frontend `type: frontend`  | `frontend/`                  | React / Vite / React Router                        | 8080              | http://localhost:5173 (`npm run dev`)                                         |
 
 URLs, identiques dans les 4 environnements (`dev`, `qualif`, `preprod`, `prod`) :
 
@@ -35,15 +35,16 @@ l'intégrer dans la branche avant d'envoyer (skill `deploy`).
 - Couches : contrôleur (HTTP) → service (règles métier) → accès aux données.
 - Logs : une ligne JSON par log sur stdout, niveau `LOG_LEVEL`, champ `layer`
   = `controller` / `service` / `db` sur les logs métier (seuls collectés dans
-  le dashboard Grafana « Logs métier »). Plomberie : `backend/src/main/java/.../logging/` et `backend/src/main/resources/logback-spring.xml`.
-  Couche service : annotation de classe `@Loggable` (paquet `logging` du backend, aspect Spring AOP), sur chaque nouvelle classe de service. Jamais de données
+  le dashboard Grafana « Logs métier »). Plomberie (pino) : `backend/src/logging/`.
+  Couche service : envelopper chaque nouveau service avec `loggable('<Nom>Service', { ... })`
+  (`backend/src/logging/service.ts`). Jamais de données
   personnelles, d'arguments, de corps de requête ni de paramètres SQL dans
   les logs.
-- Base PostgreSQL : variables injectées par la plateforme (`DATABASE_URL`,
-  `SPRING_DATASOURCE_*`, `PG*`) ; valeurs locales par défaut = `compose.yaml`
-  du composant.
-- Schéma : uniquement par migrations — `backend/src/main/resources/db/migration/V<n>__<nom>.sql` (n = dernier + 1) ; `ddl-auto: validate` : l'entité doit correspondre exactement. Ne jamais modifier une
-  migration déjà sur `main`.
+- Base PostgreSQL : `DATABASE_URL` injectée par la plateforme ; valeur locale
+  par défaut (`backend/src/db/index.ts`) = base de `compose.yaml` du composant.
+- Schéma : décrit dans `backend/src/db/schema.ts`, puis migration générée par
+  `npm run db:generate` dans `backend/drizzle/` (appliquée au démarrage du
+  backend). Ne jamais modifier une migration déjà sur `main`.
 
 **Frontend**
 
@@ -74,8 +75,8 @@ l'intégrer dans la branche avant d'envoyer (skill `deploy`).
 **Qualité** (mêmes contrôles qu'en CI, `pr.yaml`)
 
 - Chaque composant : `make lint`, `make test-unit`, `make test-integration`.
-- Couverture ≥ 80 % (quality gate SonarQube) ; rapport local : `target/site/jacoco/jacoco.xml` (JaCoCo)
-  pour le backend, `lcov.info` sous `frontend/coverage/` pour le frontend.
+- Couverture ≥ 80 % (quality gate SonarQube) ; rapport local : `coverage/lcov.info` dans
+  le dossier de chaque composant (`backend/`, `frontend/`).
 - Tout nouveau code arrive avec ses tests unitaires.
 
 **Git**
