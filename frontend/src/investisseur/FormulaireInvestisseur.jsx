@@ -44,26 +44,28 @@ function pourSaisie(reponses) {
 // entourée. Sur mobile, les libellés laissent place au texte « Étape n/5 — titre ».
 function Progression({ etape }) {
   return (
-    <nav className="progression" aria-label="Progression du formulaire">
-      <p className="progression__texte">
+    <nav className="investisseur-progression" aria-label="Progression du formulaire">
+      <p className="investisseur-progression__texte">
         Étape {etape}/{NOMBRE_ETAPES} — {ETAPES[etape - 1].titre}
       </p>
-      <ol className="progression__etapes">
+      <ol className="investisseur-progression__etapes">
         {ETAPES.map(({ titre }, i) => {
           const numero = i + 1;
           const etat = numero < etape ? 'faite' : numero === etape ? 'courante' : 'a-venir';
           return (
             <li
               key={titre}
-              className={`progression__etape progression__etape--${etat}`}
+              className={`investisseur-progression__etape investisseur-progression__etape--${etat}`}
               aria-current={etat === 'courante' ? 'step' : undefined}
             >
-              <span className="progression__pastille" aria-hidden="true">
+              <span className="investisseur-progression__pastille" aria-hidden="true">
                 {etat === 'faite' ? '✓' : numero}
               </span>
-              <span className="progression__libelle">
+              <span className="investisseur-progression__libelle">
                 {titre}
-                {etat === 'faite' && <span className="progression__cache"> (terminée)</span>}
+                {etat === 'faite' && (
+                  <span className="investisseur-progression__cache"> (terminée)</span>
+                )}
               </span>
             </li>
           );
