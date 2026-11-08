@@ -5,7 +5,8 @@
 // rejetées) et catalogue en base avec ses tables liées.
 // Ouvert sans connexion. Ailleurs qu'en dev : message, aucun appel au backend.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { apiBase } from '../api.js';
 import { EnTete, LienInterne } from '../MiseEnPage.jsx';
 import * as API from './api.js';
@@ -235,7 +236,11 @@ function Depot({ api, apresEnvoi }) {
       </button>
       {envoi.isPending && <Progression part={part} />}
       {envoi.isSuccess && (
-        <Confirmation titre="Fichier envoyé sur R2" suite="Vous pouvez maintenant lancer l’import.">
+        <Confirmation
+          titre="Fichier envoyé sur R2"
+          suite="Vous pouvez maintenant lancer l’import."
+          onOk={() => envoi.reset()}
+        >
           <Infos
             lignes={[
               ['Emplacement', `${envoi.data.bucket}/${envoi.data.cle}`],
@@ -285,6 +290,7 @@ function ResultatImport({ mutation }) {
       ton={ton}
       titre={titre}
       suite={rapport?.rejetees > 0 ? 'Détail dans l’onglet « Lignes rejetées ».' : undefined}
+      onOk={() => mutation.reset()}
     >
       {detail && <MotifEnBlocs detail={detail} fichier={rapport.fichier} />}
       <Infos lignes={lignes} />
@@ -327,16 +333,38 @@ function MotifEnBlocs({ detail, fichier }) {
   );
 }
 
-// Message de fin d'une action : titre avec ✓ (ok) ou ✗ (ko), détail, prochaine étape
-function Confirmation({ ton = 'ok', titre, suite, children }) {
-  return (
-    <div className={`confirmation confirmation--${ton}`} role="status">
-      <p className="confirmation__titre">
-        <span aria-hidden="true">{ton === 'ok' ? '✓' : '✗'}</span> {titre}
-      </p>
-      {children}
-      {suite && <p className="confirmation__suite">{suite}</p>}
-    </div>
+// Fenêtre de fin d'une action : titre avec ✓ (ok) ou ✗ (ko), détail, prochaine étape,
+// fermée par « OK » (ou Échap). Le focus va sur « OK » à l'ouverture.
+function Confirmation({ ton = 'ok', titre, suite, onOk, children }) {
+  const idTitre = useId();
+  const boutonOk = useRef(null);
+  useEffect(() => {
+    boutonOk.current?.focus();
+  }, []);
+
+  return createPortal(
+    <div
+      className="resultat"
+      role="presentation"
+      onKeyDown={(evenement) => evenement.key === 'Escape' && onOk()}
+    >
+      <div
+        className={`resultat__fenetre resultat__fenetre--${ton}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={idTitre}
+      >
+        <h2 id={idTitre} className="resultat__titre">
+          <span aria-hidden="true">{ton === 'ok' ? '✓' : '✗'}</span> {titre}
+        </h2>
+        {children}
+        {suite && <p className="resultat__suite">{suite}</p>}
+        <button ref={boutonOk} type="button" className="btn btn--bleu resultat__ok" onClick={onOk}>
+          OK
+        </button>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

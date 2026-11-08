@@ -299,17 +299,21 @@ describe('outil d’import du catalogue (dev)', () => {
     fireEvent.change(screen.getByLabelText('Fichier CSV'), { target: { files: [fichier] } });
     expect(screen.getByText('catalogue.csv')).toBeTruthy();
     fireEvent.click(envoyer);
-    const envoye = await screen.findByRole('status');
+    const envoye = await screen.findByRole('dialog');
     expect(envoye.textContent).toContain('✓ Fichier envoyé sur R2');
     expect(valeur(envoye, 'Emplacement')).toBe('scpi/scpi.csv');
     expect(valeur(envoye, 'Taille')).toBe('12 o');
     expect(valeur(envoye, 'Envoyé le')).toBe('06/11/2026 14:41:00');
     expect(envoye.textContent).toContain('Vous pouvez maintenant lancer l’import.');
     expect(api.deposerCsv.mock.calls[0][0]).toBe(fichier);
+    // Fenêtre fermée par « OK » (focus dessus à l'ouverture)
+    const ok = within(envoye).getByRole('button', { name: 'OK' });
+    expect(document.activeElement).toBe(ok);
+    fireEvent.click(ok);
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 
     fireEvent.click(screen.getByRole('button', { name: 'Lancer l’import maintenant' }));
-    await waitFor(() => expect(screen.getAllByRole('status')).toHaveLength(2));
-    const resultat = screen.getAllByRole('status')[1];
+    const resultat = await screen.findByRole('dialog', { name: 'Catalogue importé' });
     expect(resultat.textContent).toContain('✓ Catalogue importé');
     expect(
       ['Lignes lues', 'Ajoutées', 'Mises à jour', 'Inchangées', 'Supprimées', 'Rejetées'].map(
@@ -321,6 +325,11 @@ describe('outil d’import du catalogue (dev)', () => {
     expect(resultat.textContent).toContain('Détail dans l’onglet « Lignes rejetées ».');
     await waitFor(() => expect(api.lireRapports.mock.calls.length).toBeGreaterThanOrEqual(3));
     expect(api.lireEtat.mock.calls.length).toBeGreaterThanOrEqual(3);
+    // Échap ferme aussi la fenêtre ; une autre touche ne fait rien
+    fireEvent.keyDown(resultat, { key: 'Enter' });
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    fireEvent.keyDown(resultat, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
   it('fichier déposé par glisser-déposer ; envoi refusé : message du backend', async () => {
@@ -354,7 +363,7 @@ describe('outil d’import du catalogue (dev)', () => {
       }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Lancer l’import maintenant' }));
-    const resultat = await screen.findByRole('status');
+    const resultat = await screen.findByRole('dialog');
     expect(resultat.textContent).toContain('✗ Import refusé : catalogue inchangé');
     expect(valeur(resultat, 'Motif')).toBe('encodage invalide (UTF-8 attendu)');
     expect(valeur(resultat, 'Durée')).toBe('40 ms');
@@ -374,7 +383,7 @@ describe('outil d’import du catalogue (dev)', () => {
       }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Lancer l’import maintenant' }));
-    const resultat = await screen.findByRole('status');
+    const resultat = await screen.findByRole('dialog');
     expect(resultat.textContent).toContain('✗ Import refusé : catalogue inchangé');
     const blocs = [...resultat.querySelectorAll('.motif__bloc')].map((b) => [
       b.querySelector('.motif__titre').textContent,
@@ -413,7 +422,7 @@ describe('outil d’import du catalogue (dev)', () => {
       }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Lancer l’import maintenant' }));
-    const resultat = await screen.findByRole('status');
+    const resultat = await screen.findByRole('dialog');
     expect([...resultat.querySelectorAll('.motif__bloc p')].map((p) => p.textContent)).toEqual([
       'fichier entier',
       'Fichier vide',
@@ -442,7 +451,7 @@ describe('outil d’import du catalogue (dev)', () => {
       }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Lancer l’import maintenant' }));
-    const resultat = await screen.findByRole('status');
+    const resultat = await screen.findByRole('dialog');
     expect(resultat.textContent).toContain('✗ Import refusé : catalogue inchangé');
     expect(valeur(resultat, 'Motif')).toBe('base injoignable');
     expect(resultat.textContent).not.toContain('Rapport');
@@ -469,7 +478,7 @@ describe('outil d’import du catalogue (dev)', () => {
       }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Lancer l’import maintenant' }));
-    const resultat = await screen.findByRole('status');
+    const resultat = await screen.findByRole('dialog');
     expect(resultat.textContent).toContain('✓ Catalogue importé');
     expect(valeur(resultat, 'Durée')).toBe('5 ms');
     expect(resultat.textContent).not.toContain('Détail dans');
@@ -491,7 +500,7 @@ describe('outil d’import du catalogue (dev)', () => {
       }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Lancer l’import maintenant' }));
-    expect((await screen.findByRole('status')).textContent).toContain(titre);
+    expect((await screen.findByRole('dialog')).textContent).toContain(titre);
   });
 
   it('R2 non configuré : la raison ; import automatique désactivé', async () => {
@@ -573,7 +582,7 @@ describe('outil d’import du catalogue (dev)', () => {
     const barre = await screen.findByRole('progressbar');
     expect(barre.getAttribute('aria-valuenow')).toBe('40');
     terminer({ bucket: 'scpi', cle: 'scpi.csv', taille: 1, deposeLe: null });
-    await screen.findByRole('status');
+    await screen.findByRole('dialog');
   });
 
   it('aucun fichier choisi dans la fenêtre : rien ne change', () => {
