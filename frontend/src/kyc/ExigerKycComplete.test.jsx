@@ -7,7 +7,7 @@ afterEach(cleanup);
 
 const JEAN = { id: 'u1', email: 'jean@exemple.fr' };
 
-function afficher({ utilisateur = JEAN, kyc, lire } = {}) {
+function afficher({ utilisateur = JEAN, kyc, lire, passer = false } = {}) {
   const allerA = vi.fn();
   const lireKyc = lire ?? vi.fn().mockResolvedValue(kyc);
   const lireUtilisateur =
@@ -16,7 +16,12 @@ function afficher({ utilisateur = JEAN, kyc, lire } = {}) {
       : vi.fn().mockResolvedValue(utilisateur);
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <ExigerKycComplete lireUtilisateur={lireUtilisateur} lire={lireKyc} allerA={allerA}>
+      <ExigerKycComplete
+        lireUtilisateur={lireUtilisateur}
+        lire={lireKyc}
+        allerA={allerA}
+        passer={passer}
+      >
         <p>Écran protégé</p>
       </ExigerKycComplete>
     </QueryClientProvider>,
@@ -52,5 +57,20 @@ describe('Accès bloqué tant que le KYC n’est pas validé (US-04b, scénario 
   it('session illisible : message', async () => {
     afficher({ utilisateur: new Error('panne') });
     expect(await screen.findByRole('alert')).toBeDefined();
+  });
+});
+
+describe('Raccourci de test du poste : formulaires passés', () => {
+  it('KYC non exigé : l’écran s’affiche sans lire le KYC', async () => {
+    const { allerA, lireKyc } = afficher({ passer: true });
+    expect(await screen.findByText('Écran protégé')).toBeDefined();
+    expect(lireKyc).not.toHaveBeenCalled();
+    expect(allerA).not.toHaveBeenCalled();
+  });
+
+  it('connexion toujours exigée', async () => {
+    const { allerA } = afficher({ passer: true, utilisateur: null });
+    await vi.waitFor(() => expect(allerA).toHaveBeenCalledWith('/connexion'));
+    expect(screen.queryByText('Écran protégé')).toBeNull();
   });
 });

@@ -55,3 +55,12 @@ describe('retour sur le dernier écran après reconnexion', () => {
     expect(destinationApresConnexion(null)).toBe('/connaissance-client');
   });
 });
+
+describe('Raccourci de test du poste : formulaires passés', () => {
+  it('Catalogue directement, même sans KYC ni profil', () => {
+    expect(destinationApresConnexion(null, null, true)).toBe('/catalogue');
+    expect(destinationApresConnexion({ valide: false }, '/formulaire-investisseur', true)).toBe(
+      '/catalogue',
+    );
+  });
+});

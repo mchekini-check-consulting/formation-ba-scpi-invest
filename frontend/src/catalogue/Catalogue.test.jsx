@@ -45,6 +45,7 @@ async function afficher({
   lister = vi.fn((page) => Promise.resolve(page === 2 ? PAGE_2 : PAGE_1)),
   seDeconnecter = vi.fn().mockResolvedValue(undefined),
   allerA = vi.fn(),
+  passer = false,
 } = {}) {
   const chargerIdentite = vi.fn().mockResolvedValue({ nomComplet: '', email: '', profil: null });
   await act(async () => {
@@ -55,6 +56,7 @@ async function afficher({
         seDeconnecter={seDeconnecter}
         allerA={allerA}
         chargerIdentite={chargerIdentite}
+        passer={passer}
       />,
     );
   });
@@ -286,5 +288,15 @@ describe('Catalogue (accès après validation du profil, US-05b)', () => {
     });
     expect(seDeconnecter).toHaveBeenCalled();
     expect(allerA).toHaveBeenCalledWith('/');
+  });
+});
+
+describe('Raccourci de test du poste : formulaires passés', () => {
+  it('profil investisseur non exigé : liste affichée sans lire le formulaire', async () => {
+    const lire = vi.fn().mockResolvedValue({ valide: false });
+    const { lister, allerA } = await afficher({ lire, passer: true });
+    expect(lire).not.toHaveBeenCalled();
+    expect(lister).toHaveBeenCalled();
+    expect(allerA).not.toHaveBeenCalledWith('/formulaire-investisseur');
   });
 });

@@ -7,6 +7,8 @@
 // - à défaut -> /connaissance-client (le KYC, qui renvoie au formulaire investisseur une fois le KYC validé ;
 //   les écrans suivants exigent un KYC validé : ExigerKycComplete, US-04b).
 // avancement = réponse de lireQuestionnaire, null si indisponible.
+import { formulairesPassables } from '../outils/passerFormulaires.js';
+
 const CLE_PAGE = 'scpi-invest.derniere-page';
 export const PAGES_DU_PARCOURS = ['/connaissance-client', '/formulaire-investisseur', '/catalogue'];
 
@@ -29,8 +31,13 @@ export function pageMemorisee() {
   }
 }
 
-export function destinationApresConnexion(avancement, derniere = pageMemorisee()) {
-  if (avancement?.valide) return '/catalogue';
+// passer : raccourci de test du poste (outils/passerFormulaires.js) -> Catalogue directement
+export function destinationApresConnexion(
+  avancement,
+  derniere = pageMemorisee(),
+  passer = formulairesPassables(),
+) {
+  if (passer || avancement?.valide) return '/catalogue';
   if (derniere === '/formulaire-investisseur' || derniere === '/catalogue') {
     return '/formulaire-investisseur';
   }

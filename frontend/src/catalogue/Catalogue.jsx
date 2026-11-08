@@ -8,6 +8,7 @@
 import { useEffect, useId, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import { lireQuestionnaire } from '../investisseur/api.js';
+import { formulairesPassables } from '../outils/passerFormulaires.js';
 import PageApplication from '../navigation/PageApplication.jsx';
 import { listerScpis } from './api.js';
 import { photosPage } from './photos.js';
@@ -244,13 +245,16 @@ export default function Catalogue({
   seDeconnecter = deconnecter,
   allerA = naviguer,
   chargerIdentite,
+  passer = formulairesPassables(),
 }) {
-  const [valide, setValide] = useState(false);
+  // Raccourci de test du poste : profil investisseur non exigé
+  const [valide, setValide] = useState(passer);
   const [page, setPage] = useState(1);
   const [donnees, setDonnees] = useState(null);
   const [alerte, setAlerte] = useState('');
 
   useEffect(() => {
+    if (passer) return undefined;
     let actif = true;
     lire()
       .then((avancement) => {
@@ -265,7 +269,7 @@ export default function Catalogue({
     return () => {
       actif = false;
     };
-  }, [lire, allerA]);
+  }, [lire, allerA, passer]);
 
   useEffect(() => {
     if (!valide) return undefined;

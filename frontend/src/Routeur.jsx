@@ -18,6 +18,7 @@ import Contact from './legal/Contact.jsx';
 import MentionsLegales from './legal/MentionsLegales.jsx';
 import { CHEMINS_INACTIFS } from './navigation/entrees.js';
 import { CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
+import { formulairesPassables } from './outils/passerFormulaires.js';
 import ImportCatalogue from './outils/ImportCatalogue.jsx';
 
 // Email pré-rempli transmis par l'adresse (?email=...)
@@ -40,7 +41,9 @@ function PageConnexion() {
   return <Connexion emailInitial={useEmailDeLAdresse()} origine={useOrigine()} />;
 }
 
-export default function Routeur() {
+// passer : raccourci de test du poste (outils/passerFormulaires.js) : KYC et formulaire
+// investisseur sautés, leurs adresses mènent au Catalogue (connexion toujours exigée)
+export default function Routeur({ passer = formulairesPassables() }) {
   // Changement d'écran animé (<ViewTransition>, réglages dans index.css) : l'écran
   // quitté s'efface, le nouveau apparaît ; un écran par adresse (key)
   const { pathname } = useLocation();
@@ -53,16 +56,23 @@ export default function Routeur() {
       <Routes>
         <Route path="/inscription" element={<PageInscription />} />
         <Route path="/connexion" element={<PageConnexion />} />
-        <Route path="/connaissance-client" element={<Kyc />} />
+        <Route
+          path="/connaissance-client"
+          element={passer ? <Navigate to="/catalogue" replace /> : <Kyc />}
+        />
         {/* Ancienne adresse du KYC (favoris, liens déjà envoyés) */}
         <Route path="/kyc" element={<Navigate to="/connaissance-client" replace />} />
         {/* Écrans de l'application : session et KYC validé exigés (US-04b) */}
         <Route
           path="/formulaire-investisseur"
           element={
-            <ExigerKycComplete>
-              <FormulaireInvestisseur />
-            </ExigerKycComplete>
+            passer ? (
+              <Navigate to="/catalogue" replace />
+            ) : (
+              <ExigerKycComplete>
+                <FormulaireInvestisseur />
+              </ExigerKycComplete>
+            )
           }
         />
         {/* Catalogue : profil investisseur validé exigé en plus (Catalogue.jsx, US-05b) */}

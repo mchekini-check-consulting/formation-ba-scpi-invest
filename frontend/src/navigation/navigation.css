@@ -91,7 +91,7 @@
   flex-direction: column;
   gap: 18px;
   padding: 14px 12px;
-  border-radius: 0 var(--r-l) var(--r-l) 0; /* collée à gauche : arrondis à droite seulement */
+  border-radius: 0 16px 16px 0; /* collée à gauche : arrondis à droite seulement */
   background: linear-gradient(180deg, var(--bleu) 0%, var(--nuit) 100%);
   box-shadow: 0 20px 50px -30px rgb(15 31 69 / 60%);
   transition: width 0.25s ease;

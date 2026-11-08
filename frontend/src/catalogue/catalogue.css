@@ -5,33 +5,56 @@
   padding-top: 20px;
 }
 
-/* En-tête figé, sans fond coloré (même fond que la page, fin trait en bas) : titre,
-   sous-titre, puis nombre de SCPI et date */
+/* En-tête figé, sans fond coloré (même fond que la page, fin trait en bas) : titre et
+   sous-titre à gauche ; à droite, pastille du nombre de SCPI au-dessus de la date,
+   alignées en bas (maquette B) */
 .application__entete:has(.catalogue__sous-titre) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 24px;
   margin-top: -20px;
   padding-top: 22px;
-  padding-bottom: 16px;
+  padding-bottom: 18px;
 }
 
 .application__entete:has(.catalogue__sous-titre) .application__titre {
+  grid-column: 1;
   margin: 0 0 4px;
-  color: var(--bleu);
+  color: #111;
 }
 
-/* Bleu moyen : lisible sur le fond beige (contraste 5,4 : 1) */
+/* Gris anthracite : lisible sur le fond beige */
 .catalogue__sous-titre {
+  grid-column: 1;
   margin: 0;
   font-size: 17px;
-  color: #2d5bbf;
+  color: #333;
 }
 
-/* Sous le sous-titre : pastille du nombre de SCPI, date à côté */
+/* À droite du titre et du sous-titre : pastille du nombre de SCPI, date dessous */
 .catalogue__entete {
+  grid-column: 2;
+  grid-row: 1 / span 2;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
-  margin: 12px 0 0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 0;
+}
+
+/* Petit écran : bloc d'infos repassé sous le sous-titre, aligné à gauche */
+@media (max-width: 700px) {
+  .application__entete:has(.catalogue__sous-titre) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .catalogue__entete {
+    grid-column: 1;
+    grid-row: auto;
+    align-items: flex-start;
+    margin-top: 12px;
+  }
 }
 
 /* Nombre de SCPI en pastille blanche bordée */
@@ -47,15 +70,16 @@
   font-weight: 700;
   font-size: 15px;
   white-space: nowrap;
-  color: var(--bleu);
+  color: #111;
 }
 
-/* Date seule, poussée tout à droite du bandeau */
+/* Date sous la pastille */
 .catalogue__maj {
-  margin: 0 0 0 auto;
+  margin: 0;
   text-align: right;
   font-size: 13px;
-  color: var(--texte-secondaire);
+  white-space: nowrap;
+  color: #555;
 }
 
 /* 4 SCPI par ligne sur ordinateur ; 3, 2 puis 1 quand l'écran rétrécit */

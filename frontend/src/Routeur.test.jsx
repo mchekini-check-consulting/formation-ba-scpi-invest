@@ -1,16 +1,21 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useLocation } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
 import Routeur from './Routeur.jsx';
 
 afterEach(cleanup);
 
-function afficher(chemin, recherche = '') {
+function Adresse() {
+  return <output data-testid="adresse">{useLocation().pathname}</output>;
+}
+
+function afficher(chemin, recherche = '', passer = false) {
   return render(
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter initialEntries={[chemin + recherche]}>
-        <Routeur />
+        <Routeur passer={passer} />
+        <Adresse />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -94,5 +99,20 @@ describe('Routeur', () => {
   it('adresse inconnue : landing page', () => {
     afficher('/nimporte-quoi');
     expect(titre()).toContain('Choisissez vos SCPI en confiance');
+  });
+});
+
+describe('Raccourci de test du poste : formulaires passés', () => {
+  it.each(['/connaissance-client', '/kyc', '/formulaire-investisseur'])(
+    '%s -> Catalogue',
+    async (chemin) => {
+      afficher(chemin, '', true);
+      expect((await screen.findByTestId('adresse')).textContent).toBe('/catalogue');
+    },
+  );
+
+  it('sans le raccourci : le KYC reste affiché', () => {
+    afficher('/connaissance-client');
+    expect(screen.getByTestId('adresse').textContent).toBe('/connaissance-client');
   });
 });

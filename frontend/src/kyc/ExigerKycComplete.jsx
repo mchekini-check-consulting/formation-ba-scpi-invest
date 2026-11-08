@@ -2,11 +2,13 @@
 //   pas de session  -> page de connexion
 //   KYC non validé  -> formulaire KYC (/kyc)
 //   KYC validé      -> l'écran demandé
+//   raccourci de test du poste (outils/passerFormulaires.js) : KYC non exigé
 // Tout nouvel écran réservé aux utilisateurs (formulaire investisseur, Catalogue...) est
 // déclaré dans Routeur.jsx à l'intérieur de <ExigerKycComplete>.
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { utilisateurConnecte } from '../auth.js';
+import { formulairesPassables } from '../outils/passerFormulaires.js';
 import { lireKyc } from './api.js';
 
 function naviguer(url) {
@@ -18,6 +20,7 @@ export default function ExigerKycComplete({
   lireUtilisateur = utilisateurConnecte,
   lire = lireKyc,
   allerA = naviguer,
+  passer = formulairesPassables(),
 }) {
   const { data: utilisateur, isError: erreurSession } = useQuery({
     queryKey: ['utilisateur-connecte'],
@@ -27,7 +30,7 @@ export default function ExigerKycComplete({
   const { data: kyc, isError: erreurKyc } = useQuery({
     queryKey: ['kyc'],
     queryFn: () => lire(),
-    enabled: Boolean(utilisateur),
+    enabled: Boolean(utilisateur) && !passer,
     retry: false,
   });
 
@@ -43,5 +46,6 @@ export default function ExigerKycComplete({
       </p>
     );
   }
+  if (passer) return utilisateur ? children : null;
   return kyc?.statut === 'complete' ? children : null;
 }
