@@ -1,5 +1,5 @@
 // Garde des écrans de l'application (US-04b, scénario 2) : le KYC est bloquant.
-//   pas de session  -> page de connexion
+//   pas de session  -> page de connexion (session expirée : le routeur s'en charge)
 //   KYC non validé  -> formulaire KYC (/kyc)
 //   KYC validé      -> l'écran demandé
 //   raccourci de test du poste (outils/passerFormulaires.js) : KYC non exigé
@@ -7,7 +7,7 @@
 // déclaré dans Routeur.jsx à l'intérieur de <ExigerKycComplete>.
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { utilisateurConnecte } from '../auth.js';
+import { sessionExpiree as sessionExpireeParDefaut, utilisateurConnecte } from '../auth.js';
 import { formulairesPassables } from '../outils/passerFormulaires.js';
 import { lireKyc } from './api.js';
 
@@ -21,6 +21,7 @@ export default function ExigerKycComplete({
   lire = lireKyc,
   allerA = naviguer,
   passer = formulairesPassables(),
+  sessionExpiree = sessionExpireeParDefaut,
 }) {
   const { data: utilisateur, isError: erreurSession } = useQuery({
     queryKey: ['utilisateur-connecte'],
@@ -35,9 +36,12 @@ export default function ExigerKycComplete({
   });
 
   useEffect(() => {
-    if (utilisateur === null) allerA('/connexion');
-    else if (kyc && kyc.statut !== 'complete') allerA('/connaissance-client');
-  }, [utilisateur, kyc, allerA]);
+    // Session expirée : le routeur ouvre déjà l'écran de connexion ; un rechargement de
+    // la page ici effacerait le message « session expirée »
+    if (utilisateur === null) {
+      if (!sessionExpiree()) allerA('/connexion');
+    } else if (kyc && kyc.statut !== 'complete') allerA('/connaissance-client');
+  }, [utilisateur, kyc, allerA, sessionExpiree]);
 
   if (erreurSession || erreurKyc) {
     return (

@@ -4,7 +4,7 @@ import type { CompteService } from './service.js';
 
 // Couche contrôleur des comptes :
 //   POST /comptes  { email, motDePasse, confirmation, cguAcceptees }
-//                  -> 201 { utilisateur: { id, email }, jeton }  (jeton = session, 7 jours)
+//                  -> 201 { utilisateur: { id, email }, jeton }  (jeton = session, 45 min prolongées par l’activité)
 //   POST /comptes/connexion  { email, motDePasse }
 //                  -> 200 { utilisateur: { id, email }, jeton }
 //                  -> 401 { message: 'Email ou mot de passe incorrect' }

@@ -1,7 +1,8 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ErreurApi } from '../auth.js';
+import { ErreurApi, sessionExpiree } from '../auth.js';
 import Connexion from './Connexion.jsx';
+import { MESSAGE_SESSION_EXPIREE, messageErreur } from './messages.js';
 import { destinationApresConnexion } from './destination.js';
 
 afterEach(() => {
@@ -59,6 +60,57 @@ describe('Connexion', () => {
 
     expect(connecter).toHaveBeenCalledWith({ email: 'jean@exemple.fr', motDePasse: MDP });
     expect(allerA).toHaveBeenCalledWith('/connaissance-client');
+  });
+
+  it('US-03b scénario 1 : compte bloqué, heure de déblocage à l’heure du poste', async () => {
+    const debloqueA = new Date(2026, 10, 9, 14, 32).toISOString(); // 14 h 32 heure locale
+    const connecter = vi
+      .fn()
+      .mockRejectedValue(
+        new ErreurApi(429, 'Trop de tentatives : votre compte est bloqué.', debloqueA),
+      );
+    render(<Connexion connecter={connecter} allerA={vi.fn()} />);
+    saisir('Adresse e-mail', 'jean@exemple.fr');
+    saisir('Mot de passe', 'mauvais');
+
+    await envoyer();
+
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Trop de tentatives : votre compte est bloqué. Réessayez à 14 h 32.',
+    );
+  });
+
+  it('messageErreur : heure de déblocage arrondie à la minute supérieure', () => {
+    // espaces insécables de l'heure remplacés par des espaces, pour la lisibilité du test
+    const bloque = (h, m, s, ms = 0) =>
+      messageErreur(
+        new ErreurApi(429, 'Bloqué.', new Date(2026, 10, 9, h, m, s, ms).toISOString()),
+      ).replaceAll(' ', ' ');
+    expect(bloque(14, 31, 40)).toBe('Bloqué. Réessayez à 14 h 32.');
+    expect(bloque(14, 31, 0, 1)).toBe('Bloqué. Réessayez à 14 h 32.');
+    expect(bloque(14, 32, 0)).toBe('Bloqué. Réessayez à 14 h 32.'); // minute pile : inchangée
+    expect(bloque(23, 59, 30)).toBe('Bloqué. Réessayez à 00 h 00.');
+  });
+
+  it('messageErreur : heure absente ou illisible -> message seul', () => {
+    expect(messageErreur(new ErreurApi(429, 'Bloqué.'))).toBe('Bloqué.');
+    expect(messageErreur(new ErreurApi(429, 'Bloqué.', 'pas une date'))).toBe('Bloqué.');
+    expect(messageErreur(new ErreurApi(401, 'Refusé', '2026-11-09T13:32:00Z'))).toBe('Refusé');
+  });
+
+  it('US-03b scénario 2 : arrivée après une session expirée, message puis oublié', () => {
+    sessionStorage.setItem('scpi-invest.session-expiree', '1');
+    render(<Connexion />);
+    expect(screen.getByRole('status').textContent).toBe(MESSAGE_SESSION_EXPIREE);
+    expect(MESSAGE_SESSION_EXPIREE).toBe(
+      'Votre session a expiré. Reconnectez-vous pour continuer.',
+    );
+    expect(sessionExpiree()).toBe(false); // pas de message à la visite suivante
+  });
+
+  it('arrivée normale : pas de message de session expirée', () => {
+    render(<Connexion sessionExpiree={() => false} />);
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('scénario 4 : identifiants incorrects, message sans préciser le champ faux', async () => {

@@ -2,8 +2,9 @@
 // index.html pour toute adresse : nginx.conf). Le routeur (BrowserRouter) est posé
 // dans main.jsx ; les tests utilisent MemoryRouter.
 import { useEffect, ViewTransition } from 'react';
-import { Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router';
+import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router';
 import App from './App.jsx';
+import { EVENEMENT_SESSION_EXPIREE } from './auth.js';
 import Catalogue from './catalogue/Catalogue.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import { memoriserPage } from './connexion/destination.js';
@@ -51,6 +52,14 @@ export default function Routeur({ passer = formulairesPassables() }) {
   useEffect(() => {
     memoriserPage(pathname.replace(/\/+$/, '') || '/');
   }, [pathname]);
+  // US-03b : session expirée pendant un appel au backend (auth.js) -> écran de connexion,
+  // qui affiche « Votre session a expiré »
+  const naviguer = useNavigate();
+  useEffect(() => {
+    const versConnexion = () => naviguer('/connexion', { replace: true });
+    window.addEventListener(EVENEMENT_SESSION_EXPIREE, versConnexion);
+    return () => window.removeEventListener(EVENEMENT_SESSION_EXPIREE, versConnexion);
+  }, [naviguer]);
   return (
     <ViewTransition key={pathname} enter="ecran-entre" exit="ecran-sort" default="none">
       <Routes>

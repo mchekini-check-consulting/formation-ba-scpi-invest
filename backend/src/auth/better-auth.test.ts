@@ -19,8 +19,8 @@ describe('creerAuth', () => {
     captureLogs().log,
   );
 
-  it('sessions de 7 jours, prolongées chaque jour d’activité', () => {
-    expect(auth.options.session).toEqual({ expiresIn: 604_800, updateAge: 86_400 });
+  it('US-03b : sessions de 45 minutes, prolongées au plus une fois par minute', () => {
+    expect(auth.options.session).toEqual({ expiresIn: 2_700, updateAge: 60 });
   });
 
   it('mot de passe de 12 caractères minimum, connexion automatique après inscription', () => {
@@ -142,6 +142,22 @@ describe('fournisseurBetterAuth', () => {
     });
     expect(getSession.mock.calls[0][0].headers.get('authorization')).toBe('Bearer jeton');
     expect(await fournisseur.utilisateurConnecte({})).toBeNull();
+  });
+
+  it('identifiantDe : identifiant du compte de cet email, null sans compte', async () => {
+    const findUserByEmail = vi
+      .fn()
+      .mockResolvedValueOnce({ user: { id: 'u1' }, accounts: [] })
+      .mockResolvedValueOnce(null);
+    const auth = {
+      api: {},
+      $context: Promise.resolve({ internalAdapter: { findUserByEmail } }),
+    } as unknown as Auth;
+    const fournisseur = fournisseurBetterAuth(auth);
+
+    expect(await fournisseur.identifiantDe('jean@exemple.fr')).toBe('u1');
+    expect(findUserByEmail).toHaveBeenCalledWith('jean@exemple.fr');
+    expect(await fournisseur.identifiantDe('inconnu@exemple.fr')).toBeNull();
   });
 });
 

@@ -1,10 +1,15 @@
 // Écran /connaissance-client (KYC) : destination après la création de compte (US-02a) et la connexion (US-03a).
 // Formulaire KYC sans sidebar (US-04a), repris à l'étape atteinte avec les réponses déjà
 // saisies (US-04b). KYC déjà validé : direction le formulaire investisseur.
-// Sans session valide (expirée, fermée) : retour à l'accueil.
+// Sans session : retour à l'accueil. Session expirée : le routeur mène à l'écran de
+// connexion (message « session expirée »), l'écran ne redirige pas lui-même.
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { deconnecter, utilisateurConnecte } from '../auth.js';
+import {
+  deconnecter,
+  sessionExpiree as sessionExpireeParDefaut,
+  utilisateurConnecte,
+} from '../auth.js';
 import PageCompte from '../PageCompte.jsx';
 import {
   ECRAN_APRES_KYC,
@@ -31,6 +36,7 @@ export default function Kyc({
   supprimer = supprimerPiece,
   seDeconnecter = deconnecter,
   allerA = naviguer,
+  sessionExpiree = sessionExpireeParDefaut,
   aujourdhui,
 }) {
   const utilisateurQuery = useQuery({
@@ -55,8 +61,8 @@ export default function Kyc({
   });
 
   useEffect(() => {
-    if (utilisateur === null) allerA('/');
-  }, [utilisateur, allerA]);
+    if (utilisateur === null && !sessionExpiree()) allerA('/');
+  }, [utilisateur, allerA, sessionExpiree]);
 
   useEffect(() => {
     if (kyc?.statut === 'complete') allerA(ECRAN_APRES_KYC);

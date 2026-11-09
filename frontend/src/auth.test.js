@@ -1,12 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ErreurApi,
+  DELAI_DECONNEXION_MS,
+  EVENEMENT_SESSION_EXPIREE,
+  appelAuthentifie,
   appelConnecte,
   connecter,
   creerCompte,
   deconnecter,
   envoyerFichierConnecte,
   jeton,
+  oublierSessionExpiree,
+  sessionExpiree,
   utilisateurConnecte,
 } from './auth.js';
 
@@ -137,11 +142,30 @@ describe('deconnecter', () => {
     expect(sessionStorage.getItem('scpi-invest.catalogue.filtres')).toBeNull();
   });
 
-  it('serveur injoignable : jeton oublié quand même', async () => {
+  it('serveur injoignable : jeton oublié quand même, sans erreur (l’écran peut quitter)', async () => {
     sessionStorage.setItem('scpi-invest.session', 'jeton-1');
     fetchMock.mockRejectedValue(new TypeError('réseau'));
-    await expect(deconnecter('/api')).rejects.toThrow('réseau');
+    await expect(deconnecter('/api')).resolves.toBeUndefined();
     expect(jeton()).toBeNull();
+  });
+
+  it('serveur qui ne répond pas : abandon après 5 secondes, jeton oublié', async () => {
+    vi.useFakeTimers();
+    try {
+      sessionStorage.setItem('scpi-invest.session', 'jeton-1');
+      fetchMock.mockReturnValue(new Promise(() => {}));
+      let fini = false;
+      const enCours = deconnecter('/api').then(() => {
+        fini = true;
+      });
+      await vi.advanceTimersByTimeAsync(4_999);
+      expect(fini).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await enCours;
+      expect([fini, jeton(), DELAI_DECONNEXION_MS]).toEqual([true, null, 5_000]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -259,5 +283,102 @@ describe('envoyerFichierConnecte (US-04c)', () => {
     FauxXhr.derniere.onerror();
     const err = await reseau.catch((e) => e);
     expect([err.status, err.message]).toEqual([0, expect.stringContaining('indisponible')]);
+  });
+
+  it('US-03b : 401 pendant l’envoi avec une session : session expirée', async () => {
+    sessionStorage.setItem('scpi-invest.session', 'jeton-1');
+    const envoi = envoyerFichierConnecte('/p', new File(['x'], 'a.pdf'), {}, '/api');
+    FauxXhr.derniere.repondre(401, { message: 'connexion requise' });
+    expect((await envoi.catch((e) => e)).status).toBe(401);
+    expect([jeton(), sessionExpiree()]).toEqual([null, true]);
+  });
+});
+
+describe('US-03b : compte bloqué à la connexion', () => {
+  it('429 : message du backend et heure de déblocage', async () => {
+    fetchMock.mockResolvedValue(
+      reponse(429, { message: 'Trop de tentatives', debloqueA: '2026-11-09T13:32:00.000Z' }),
+    );
+    const err = await connecter({ email: 'a@b.fr', motDePasse: 'x' }, '/api').catch((e) => e);
+    expect([err.status, err.message, err.debloqueA]).toEqual([
+      429,
+      'Trop de tentatives',
+      '2026-11-09T13:32:00.000Z',
+    ]);
+  });
+
+  it('identifiants refusés (401) à la connexion : pas une session expirée', async () => {
+    sessionStorage.setItem('scpi-invest.session', 'ancien');
+    fetchMock.mockResolvedValue(reponse(401, { message: 'Email ou mot de passe incorrect' }));
+    await connecter({ email: 'a@b.fr', motDePasse: 'x' }, '/api').catch(() => {});
+    expect(sessionExpiree()).toBe(false);
+  });
+});
+
+describe('US-03b : session expirée', () => {
+  let prevenu;
+  beforeEach(() => {
+    prevenu = vi.fn();
+    window.addEventListener(EVENEMENT_SESSION_EXPIREE, prevenu);
+  });
+  afterEach(() => window.removeEventListener(EVENEMENT_SESSION_EXPIREE, prevenu));
+
+  it('401 avec une session : session oubliée, retenue comme expirée, routeur prévenu', async () => {
+    sessionStorage.setItem('scpi-invest.session', 'jeton-1');
+    fetchMock.mockResolvedValue(reponse(401, { message: 'connexion requise' }));
+    const err = await appelAuthentifie('/api/scpis').catch((e) => e);
+    expect(err.status).toBe(401);
+    expect([jeton(), sessionExpiree()]).toEqual([null, true]);
+    expect(prevenu).toHaveBeenCalledOnce();
+  });
+
+  it('401 sans session : ni message ni redirection (écran public ou jamais connecté)', async () => {
+    fetchMock.mockResolvedValue(reponse(401, { message: 'connexion requise' }));
+    await appelConnecte('/connaissance-client', {}, '/api').catch(() => {});
+    expect(sessionExpiree()).toBe(false);
+    expect(prevenu).not.toHaveBeenCalled();
+  });
+
+  it('utilisateurConnecte : 401 -> null et session expirée', async () => {
+    sessionStorage.setItem('scpi-invest.session', 'jeton-1');
+    fetchMock.mockResolvedValue(reponse(401, {}));
+    expect(await utilisateurConnecte('/api')).toBeNull();
+    expect(sessionExpiree()).toBe(true);
+    expect(prevenu).toHaveBeenCalledOnce();
+  });
+
+  it('autre erreur (403, 500) : session gardée', async () => {
+    sessionStorage.setItem('scpi-invest.session', 'jeton-1');
+    fetchMock.mockResolvedValue(reponse(500, {}));
+    await appelAuthentifie('/api/scpis').catch(() => {});
+    expect([jeton(), sessionExpiree()]).toEqual(['jeton-1', false]);
+  });
+
+  it('nouvelle connexion ou oubli explicite : plus de « session expirée »', async () => {
+    sessionStorage.setItem('scpi-invest.session-expiree', '1');
+    fetchMock.mockResolvedValue(reponse(200, { utilisateur: { id: 'u1' }, jeton: 'j' }));
+    await connecter({ email: 'a@b.fr', motDePasse: 'x' }, '/api');
+    expect(sessionExpiree()).toBe(false);
+    sessionStorage.setItem('scpi-invest.session-expiree', '1');
+    oublierSessionExpiree();
+    expect(sessionExpiree()).toBe(false);
+  });
+
+  it('stockage indisponible : pas d’erreur', async () => {
+    sessionStorage.setItem('scpi-invest.session', 'jeton-1');
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('bloqué');
+    });
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('bloqué');
+    });
+    fetchMock.mockResolvedValue(reponse(401, {}));
+    await appelAuthentifie('/api/scpis').catch(() => {});
+    expect(prevenu).toHaveBeenCalledOnce();
+    expect(() => oublierSessionExpiree()).not.toThrow();
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('bloqué');
+    });
+    expect(sessionExpiree()).toBe(false);
   });
 });

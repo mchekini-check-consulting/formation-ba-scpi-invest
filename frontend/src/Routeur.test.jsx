@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
+import { EVENEMENT_SESSION_EXPIREE } from './auth.js';
 import Routeur from './Routeur.jsx';
 
 afterEach(cleanup);
@@ -114,5 +115,14 @@ describe('Raccourci de test du poste : formulaires passés', () => {
   it('sans le raccourci : le KYC reste affiché', () => {
     afficher('/connaissance-client');
     expect(screen.getByTestId('adresse').textContent).toBe('/connaissance-client');
+  });
+
+  it('US-03b : session expirée signalée par auth.js -> écran de connexion', () => {
+    afficher('/mentions-legales');
+    act(() => {
+      window.dispatchEvent(new Event(EVENEMENT_SESSION_EXPIREE));
+    });
+    expect(screen.getByTestId('adresse').textContent).toBe('/connexion');
+    expect(titre()).toBe('Se connecter');
   });
 });

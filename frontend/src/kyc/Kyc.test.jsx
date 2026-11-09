@@ -112,6 +112,15 @@ describe('Écran /connaissance-client (après la création de compte ou la conne
     expect(lire).not.toHaveBeenCalled();
   });
 
+  it('US-03b : session expirée, l’écran laisse le routeur ouvrir « Se connecter »', async () => {
+    const allerA = vi.fn();
+    const lireUtilisateur = vi.fn().mockResolvedValue(null);
+    afficher({ lireUtilisateur, allerA, sessionExpiree: () => true });
+    await vi.waitFor(() => expect(lireUtilisateur).toHaveBeenCalled());
+    await act(async () => {});
+    expect(allerA).not.toHaveBeenCalled();
+  });
+
   it('se déconnecter : session fermée, retour à l’accueil', async () => {
     const seDeconnecter = vi.fn().mockResolvedValue(undefined);
     const allerA = vi.fn();

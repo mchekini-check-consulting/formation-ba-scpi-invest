@@ -17,6 +17,7 @@ import type { S3Client } from '@aws-sdk/client-s3';
 import { creerCompteService } from './comptes/service.js';
 import {
   depotAcceptationsCgu,
+  depotTentativesConnexion,
   depotCatalogue,
   depotKyc,
   depotOutilsImport,
@@ -47,7 +48,10 @@ const db = createDb(pool);
 const auth = creerAuth(db, await secretDesSessions(db));
 const fournisseur = fournisseurBetterAuth(auth);
 const betterAuth: RequestHandler = toNodeHandler(auth);
-const comptes = creerCompteService(fournisseur, depotAcceptationsCgu(db));
+const comptes = creerCompteService(fournisseur, {
+  cgu: depotAcceptationsCgu(db),
+  tentatives: depotTentativesConnexion(db),
+});
 const questionnaires = creerQuestionnaireService(depotQuestionnaires(db), depotProfils(db));
 const kyc = creerKycService(depotKyc(db));
 // US-08 : liste des SCPI du Catalogue

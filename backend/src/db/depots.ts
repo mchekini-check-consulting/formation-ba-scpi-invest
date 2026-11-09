@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { type SQL, and, asc, desc, eq, max, sql } from 'drizzle-orm';
+import { type SQL, and, asc, desc, eq, gte, isNull, max, or, sql } from 'drizzle-orm';
 import type { Db } from './index.js';
 import {
   type FiltresCatalogue,
@@ -7,6 +7,7 @@ import {
   TRANCHES_CAPITALISATION,
 } from '../catalogue/filtres.js';
 import type { DepotCatalogue, ScpiCatalogue, ValeursFiltres } from '../catalogue/service.js';
+import type { DepotTentativesConnexion } from '../comptes/service.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
 import type { DepotKyc, EtatKyc } from '../kyc/service.js';
@@ -19,6 +20,7 @@ import {
   parametre,
   profilInvestisseur,
   questionnaireInvestisseur,
+  tentativeConnexion,
   TABLE_IMPORT_RAPPORT,
   TABLE_SCPI_CATALOG,
 } from './schema.js';
@@ -97,6 +99,69 @@ export function depotAcceptationsCgu(db: Db) {
   return {
     async enregistrer(utilisateurId: string, versionCgu: string, accepteeLe: Date): Promise<void> {
       await db.insert(acceptationCgu).values({ utilisateurId, versionCgu, accepteeLe });
+    },
+  };
+}
+
+// US-03b : échecs de connexion par empreinte d'email
+export function depotTentativesConnexion(db: Db): DepotTentativesConnexion {
+  const t = tentativeConnexion;
+  return {
+    // Un seul calcul en base par essai : deux essais simultanés (même sur deux réplicas)
+    // ne peuvent pas lire le même compteur.
+    async reserverEssai(cle, maintenant, { echecsAvantBlocage, dureeMs }) {
+      const oubli = new Date(maintenant.getTime() - dureeMs).toISOString();
+      const fin = new Date(maintenant.getTime() + dureeMs).toISOString();
+      const instant = maintenant.toISOString();
+      // Lignes périmées (essais oubliés, blocage terminé) : effacées au passage
+      await db
+        .delete(t)
+        .where(
+          and(
+            sql`${t.dernierEchec} < ${oubli}::timestamptz`,
+            or(isNull(t.bloqueJusqua), sql`${t.bloqueJusqua} <= ${instant}::timestamptz`),
+          ),
+        );
+      const bloque = sql`${t.bloqueJusqua} > ${instant}::timestamptz`;
+      // Compteur précédent oublié, ou blocage terminé : l'essai repart à 1 (coalesce : sans
+      // blocage, bloque_jusqua est null et la comparaison doit valoir faux, pas null)
+      const perime = sql`(${t.dernierEchec} < ${oubli}::timestamptz
+        or coalesce(${t.bloqueJusqua} <= ${instant}::timestamptz, false))`;
+      const [ligne] = await db
+        .insert(t)
+        .values({ cle, echecs: 1, dernierEchec: maintenant, bloqueJusqua: null })
+        .onConflictDoUpdate({
+          target: t.cle,
+          set: {
+            echecs: sql`case when ${bloque} then ${t.echecs} when ${perime} then 1
+              else ${t.echecs} + 1 end`,
+            dernierEchec: sql`case when ${bloque} then ${t.dernierEchec}
+              else ${instant}::timestamptz end`,
+            // Plus d'essais en cours ou échoués que permis : essais simultanés -> bloqué
+            bloqueJusqua: sql`case when ${bloque} then ${t.bloqueJusqua}
+              when not ${perime} and ${t.echecs} + 1 > ${echecsAvantBlocage}::int
+              then ${fin}::timestamptz else null end`,
+          },
+        })
+        .returning({ fin: t.bloqueJusqua });
+      return ligne.fin;
+    },
+
+    async enregistrerEchec(cle, maintenant, { echecsAvantBlocage, dureeMs }) {
+      const fin = new Date(maintenant.getTime() + dureeMs).toISOString();
+      const [ligne] = await db
+        .update(t)
+        .set({
+          bloqueJusqua: sql`case when ${t.bloqueJusqua} > ${maintenant.toISOString()}::timestamptz
+            then ${t.bloqueJusqua} else ${fin}::timestamptz end`,
+        })
+        .where(and(eq(t.cle, cle), gte(t.echecs, echecsAvantBlocage)))
+        .returning({ fin: t.bloqueJusqua });
+      return ligne?.fin ?? null;
+    },
+
+    async effacer(cle) {
+      await db.delete(t).where(eq(t.cle, cle));
     },
   };
 }
