@@ -5,12 +5,16 @@
 // Affiché avec la sidebar de navigation, entrée Catalogue sélectionnée (US-06).
 // Liste : 12 SCPI par page, triées par taux de distribution N-1 décroissant (tri fait
 // par le backend), nombre total de SCPI et date de mise à jour des données.
-import { useEffect, useId, useState } from 'react';
+// Filtres (US-10a, US-10b, US-10c) : panneau, pastilles des filtres actifs, appliqués par
+// le backend sur tout le catalogue ; changer un filtre ramène à la première page.
+import { useEffect, useId, useRef, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import { lireQuestionnaire } from '../investisseur/api.js';
 import { formulairesPassables } from '../outils/passerFormulaires.js';
 import PageApplication from '../navigation/PageApplication.jsx';
-import { listerScpis } from './api.js';
+import { lireFiltresCatalogue, listerScpis } from './api.js';
+import { FILTRES_VIDES, memoriserFiltres, pastilles, relireFiltres } from './filtres.js';
+import { BarreFiltres, PanneauFiltres } from './PanneauFiltres.jsx';
 import { photosPage } from './photos.js';
 import './catalogue.css';
 import {
@@ -197,7 +201,7 @@ function Pagination({ page, nombrePages, allerPage }) {
 
 // En-tête figé en haut de l'écran : sous-titre, puis nombre de SCPI et date de mise à
 // jour une fois la liste chargée
-function EnteteCatalogue({ donnees }) {
+function EnteteCatalogue({ donnees, filtre }) {
   return (
     <>
       <p className="catalogue__sous-titre">Découvrez notre sélection de SCPI partenaires</p>
@@ -205,7 +209,9 @@ function EnteteCatalogue({ donnees }) {
         <div className="catalogue__entete">
           <p className="catalogue__total">
             <Icone nom="immeuble" />
-            {donnees.total} SCPI disponibles
+            {filtre
+              ? `${donnees.total} SCPI correspondant à vos critères`
+              : `${donnees.total} SCPI disponibles`}
           </p>
           <p className="catalogue__maj">
             Données mises à jour le {formaterDate(donnees.misAJourLe)}
@@ -216,12 +222,26 @@ function EnteteCatalogue({ donnees }) {
   );
 }
 
-function ListeScpis({ donnees, allerPage }) {
+function AucunResultat({ filtre, reinitialiser }) {
+  if (!filtre) {
+    return <p className="compte__texte">Aucune SCPI n’est disponible pour le moment.</p>;
+  }
+  return (
+    <div className="catalogue__aucun">
+      <p className="compte__texte">Aucune SCPI ne correspond à vos critères.</p>
+      <button type="button" className="compte__bouton" onClick={reinitialiser}>
+        Réinitialiser les filtres
+      </button>
+    </div>
+  );
+}
+
+function ListeScpis({ donnees, allerPage, filtre, reinitialiser }) {
   const photos = photosPage(donnees.scpis);
   return (
     <>
       {donnees.total === 0 ? (
-        <p className="compte__texte">Aucune SCPI n’est disponible pour le moment.</p>
+        <AucunResultat filtre={filtre} reinitialiser={reinitialiser} />
       ) : (
         <ul className="catalogue__liste">
           {donnees.scpis.map((scpi) => (
@@ -242,6 +262,7 @@ function ListeScpis({ donnees, allerPage }) {
 export default function Catalogue({
   lire = lireQuestionnaire,
   lister = listerScpis,
+  lireFiltres = lireFiltresCatalogue,
   seDeconnecter = deconnecter,
   allerA = naviguer,
   chargerIdentite,
@@ -252,6 +273,11 @@ export default function Catalogue({
   const [page, setPage] = useState(1);
   const [donnees, setDonnees] = useState(null);
   const [alerte, setAlerte] = useState('');
+  const [filtres, setFiltres] = useState(relireFiltres);
+  const [options, setOptions] = useState(null);
+  const [panneauOuvert, setPanneauOuvert] = useState(false);
+  const boutonFiltres = useRef(null);
+  const filtre = pastilles(filtres, options).length > 0;
 
   useEffect(() => {
     if (passer) return undefined;
@@ -274,7 +300,7 @@ export default function Catalogue({
   useEffect(() => {
     if (!valide) return undefined;
     let actif = true;
-    lister(page)
+    lister(page, filtres)
       .then((resultat) => {
         if (!actif) return;
         setAlerte('');
@@ -284,7 +310,25 @@ export default function Catalogue({
     return () => {
       actif = false;
     };
-  }, [valide, page, lister, allerA]);
+  }, [valide, page, filtres, lister, allerA]);
+
+  // Valeurs du panneau ; indisponibles : le panneau le dit, la liste reste affichée
+  useEffect(() => {
+    if (!valide) return undefined;
+    let actif = true;
+    lireFiltres()
+      .then((resultat) => actif && setOptions(resultat))
+      .catch(() => actif && setOptions(null));
+    return () => {
+      actif = false;
+    };
+  }, [valide, lireFiltres]);
+
+  function changerFiltres(nouveaux) {
+    setFiltres(nouveaux);
+    memoriserFiltres(nouveaux);
+    setPage(1);
+  }
 
   async function quitter() {
     await seDeconnecter();
@@ -302,15 +346,40 @@ export default function Catalogue({
       actif="catalogue"
       seDeconnecter={quitter}
       chargerIdentite={chargerIdentite}
-      entete={<EnteteCatalogue donnees={donnees} />}
+      entete={<EnteteCatalogue donnees={donnees} filtre={filtre} />}
     >
+      {valide && (
+        <BarreFiltres
+          filtres={filtres}
+          options={options}
+          onChange={changerFiltres}
+          onOuvrir={() => setPanneauOuvert(true)}
+          refBouton={boutonFiltres}
+          ouvert={panneauOuvert}
+        />
+      )}
+      {panneauOuvert && (
+        <PanneauFiltres
+          filtres={filtres}
+          options={options}
+          total={donnees?.total}
+          onChange={changerFiltres}
+          onFermer={() => setPanneauOuvert(false)}
+          retour={boutonFiltres}
+        />
+      )}
       {alerte && (
         <p className="compte__alerte" role="alert">
           {alerte}
         </p>
       )}
       {donnees ? (
-        <ListeScpis donnees={donnees} allerPage={allerPage} />
+        <ListeScpis
+          donnees={donnees}
+          allerPage={allerPage}
+          filtre={filtre}
+          reinitialiser={() => changerFiltres(FILTRES_VIDES)}
+        />
       ) : (
         !alerte && <p className="compte__texte">Chargement…</p>
       )}

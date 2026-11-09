@@ -1,7 +1,12 @@
 import { randomBytes } from 'node:crypto';
-import { and, asc, desc, eq, max, sql } from 'drizzle-orm';
+import { type SQL, and, asc, desc, eq, max, sql } from 'drizzle-orm';
 import type { Db } from './index.js';
-import type { DepotCatalogue, ScpiCatalogue } from '../catalogue/service.js';
+import {
+  type FiltresCatalogue,
+  type Plage,
+  TRANCHES_CAPITALISATION,
+} from '../catalogue/filtres.js';
+import type { DepotCatalogue, ScpiCatalogue, ValeursFiltres } from '../catalogue/service.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
 import type { DepotKyc, EtatKyc } from '../kyc/service.js';
@@ -194,16 +199,71 @@ export function depotPieces(db: Db): DepotPieces {
 
 // US-08 : SCPI du Catalogue, une ligne par SCPI avec son taux N-1, son secteur et son pays
 // majoritaires (null si non renseignés : jamais 0). Taux absent -> fin de liste.
+// Conditions SQL des filtres du Catalogue (US-10a, US-10b), sur scpi_catalog c et le taux
+// N-1 t. Une comparaison avec une valeur absente (null) est fausse : une SCPI sans valeur
+// ne satisfait jamais un filtre actif sur cette donnée.
+const PRIX_RECENT = sql`(select p.prix from scpi_prix_part p where p.scpi_id = c.id
+  order by p.annee desc limit 1)`;
+
+function liste(valeurs: string[]): SQL {
+  return sql.join(
+    valeurs.map((v) => sql`${v}`),
+    sql`, `,
+  );
+}
+
+function bornes(colonne: SQL, { min, max }: Plage): SQL[] {
+  const conditions: SQL[] = [];
+  if (min !== null) conditions.push(sql`${colonne} >= ${min}`);
+  if (max !== null) conditions.push(sql`${colonne} <= ${max}`);
+  return conditions;
+}
+
+function conditionsFiltres(filtres: FiltresCatalogue): SQL {
+  const conditions: SQL[] = [];
+  if (filtres.categories.length) {
+    conditions.push(sql`exists (select 1 from scpi_secteurs s where s.scpi_id = c.id
+      and s.secteur::text in (${liste(filtres.categories)}))`);
+  }
+  if (filtres.pays.length) {
+    conditions.push(sql`exists (select 1 from scpi_localisation l where l.scpi_id = c.id
+      and l.pays in (${liste(filtres.pays)}))`);
+  }
+  if (filtres.gerants.length) {
+    conditions.push(sql`trim(c.gerant) in (${liste(filtres.gerants)})`);
+  }
+  if (filtres.capitalisations.length) {
+    const tranches = TRANCHES_CAPITALISATION.filter((t) =>
+      filtres.capitalisations.includes(t.code),
+    ).map((t) => {
+      const parties = [sql`c.capitalisation is not null`];
+      if (t.min !== null) parties.push(sql`c.capitalisation >= ${t.min}`);
+      if (t.max !== null) parties.push(sql`c.capitalisation < ${t.max}`);
+      return sql`(${sql.join(parties, sql` and `)})`;
+    });
+    conditions.push(sql`(${sql.join(tranches, sql` or `)})`);
+  }
+  conditions.push(
+    ...bornes(sql`t.taux`, filtres.taux),
+    ...bornes(PRIX_RECENT, filtres.prix),
+    ...bornes(sql`c.frais_souscription`, filtres.frais),
+    ...bornes(sql`c.minimum_souscription`, filtres.minimum),
+  );
+  return conditions.length ? sql.join(conditions, sql` and `) : sql`true`;
+}
+
 export function depotCatalogue(db: Db): DepotCatalogue {
   return {
-    async compter(): Promise<number> {
-      const resultat = await db.execute<{ total: number }>(
-        sql`select count(*)::int as total from scpi_catalog`,
-      );
+    async compter(anneeTaux, filtres): Promise<number> {
+      const resultat = await db.execute<{ total: number }>(sql`
+        select count(*)::int as total
+        from scpi_catalog c
+        left join scpi_taux_distribution t on t.scpi_id = c.id and t.annee = ${anneeTaux}
+        where ${conditionsFiltres(filtres)}`);
       return resultat.rows[0].total;
     },
 
-    async lister(anneeTaux, limite, decalage): Promise<ScpiCatalogue[]> {
+    async lister(anneeTaux, limite, decalage, filtres): Promise<ScpiCatalogue[]> {
       const resultat = await db.execute<ScpiCatalogue>(sql`
         select c.id,
                c.nom,
@@ -216,9 +276,45 @@ export function depotCatalogue(db: Db): DepotCatalogue {
                  order by l.pourcentage desc, l.pays limit 1) as "zoneGeographique"
         from scpi_catalog c
         left join scpi_taux_distribution t on t.scpi_id = c.id and t.annee = ${anneeTaux}
+        where ${conditionsFiltres(filtres)}
         order by t.taux desc nulls last, c.nom, c.id
         limit ${limite} offset ${decalage}`);
       return resultat.rows;
+    },
+
+    // Valeurs du panneau des filtres : secteurs, pays et sociétés de gestion présents,
+    // bornes des curseurs sur les valeurs renseignées
+    async valeursFiltres(anneeTaux): Promise<ValeursFiltres> {
+      const textes = async (requete: SQL) =>
+        (await db.execute<{ valeur: string }>(requete)).rows.map((r) => r.valeur);
+      const [categories, pays, gerants, nombres] = await Promise.all([
+        textes(sql`select distinct secteur::text as valeur from scpi_secteurs order by 1`),
+        textes(sql`select distinct pays as valeur from scpi_localisation order by 1`),
+        textes(sql`select distinct trim(gerant) as valeur from scpi_catalog
+          where trim(gerant) <> '' order by 1`),
+        db.execute<Record<string, number | null>>(sql`
+          select min(t.taux)::float8 as "tauxMin", max(t.taux)::float8 as "tauxMax",
+                 min(p.prix)::float8 as "prixMin", max(p.prix)::float8 as "prixMax",
+                 min(c.frais_souscription)::float8 as "fraisMin",
+                 max(c.frais_souscription)::float8 as "fraisMax",
+                 min(c.minimum_souscription)::float8 as "minimumMin",
+                 max(c.minimum_souscription)::float8 as "minimumMax"
+          from scpi_catalog c
+          left join scpi_taux_distribution t on t.scpi_id = c.id and t.annee = ${anneeTaux}
+          left join lateral (select p.prix from scpi_prix_part p where p.scpi_id = c.id
+            order by p.annee desc limit 1) p on true`),
+      ]);
+      const n = nombres.rows[0];
+      const plage = (nom: string): Plage => ({ min: n[`${nom}Min`], max: n[`${nom}Max`] });
+      return {
+        categories,
+        pays,
+        gerants,
+        taux: plage('taux'),
+        prix: plage('prix'),
+        frais: plage('frais'),
+        minimum: plage('minimum'),
+      };
     },
 
     // Date de mise à jour des données = fin du dernier import réussi (US-07a)

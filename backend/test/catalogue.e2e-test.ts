@@ -115,4 +115,71 @@ describe('Catalogue (e2e)', () => {
       zoneGeographique: null,
     });
   });
+
+  it('US-10 : filtres combinés, valeurs du panneau, donnée manquante jamais égale à 0', async () => {
+    const db = createDb(pool);
+    await pool.query('delete from scpi_catalog');
+    await importScpis(
+      db,
+      lignes(
+        scpi('Alpha', '5,4', {
+          secteurs: 'Bureaux,80,Sante,20',
+          localisation: 'France,100',
+          capitalisation: '50000000',
+          prix_part: '180,190',
+          Gerant: 'Gestion A',
+        }),
+        scpi('Beta', '6,5', {
+          secteurs: 'Commerces,100',
+          localisation: 'Espagne,100',
+          capitalisation: '4000000000',
+          frais_souscription: '0',
+          minimum_souscription: '5000',
+          Gerant: 'Gestion B',
+        }),
+        scpi('Gamma', '', {
+          secteurs: 'Sante,100',
+          localisation: 'France,50,Espagne,50',
+          capitalisation: '700000000',
+          Gerant: 'Gestion A',
+        }),
+      ),
+    );
+    const noms = async (requete: Record<string, unknown>) =>
+      (await service.lister('1', requete)).scpis.map((s) => s.nom);
+
+    // Secteur présent, même minoritaire (Alpha : 20 % Santé)
+    expect(await noms({ categorie: 'Santé' })).toEqual(['Alpha', 'Gamma']);
+    // Plusieurs valeurs d'un même filtre : OU
+    expect(await noms({ categorie: ['Santé', 'Commerces'] })).toEqual(['Beta', 'Alpha', 'Gamma']);
+    // Plusieurs filtres : ET ; pays présent, même à 50 %
+    expect(await noms({ categorie: 'Santé', pays: 'Espagne' })).toEqual(['Gamma']);
+    expect(await noms({ gerant: 'Gestion A' })).toEqual(['Alpha', 'Gamma']);
+    expect(await noms({ capitalisation: ['moins-100m', 'plus-3md'] })).toEqual(['Beta', 'Alpha']);
+    // Bornes incluses ; Gamma sans taux N-1 exclue d'un filtre sur le taux
+    expect(await noms({ tauxMin: '4', tauxMax: '6' })).toEqual(['Beta', 'Alpha']);
+    expect(await noms({ tauxMax: '5' })).toEqual(['Alpha']);
+    // Prix de la part le plus récent : première valeur du CSV (Alpha : 180 €)
+    expect(await noms({ prixMax: '179' })).toEqual([]);
+    expect(await noms({ prixMin: '180', prixMax: '180' })).toEqual(['Alpha']);
+    expect(await noms({ fraisMax: '0' })).toEqual(['Beta']);
+    expect(await noms({ minimumMin: '2000' })).toEqual(['Beta']);
+    expect(await service.lister('1', { categorie: 'Logistique' })).toMatchObject({
+      scpis: [],
+      total: 0,
+    });
+    expect((await service.lister('1', { categorie: 'Santé' })).total).toBe(2);
+
+    expect(await service.filtres()).toEqual({
+      categories: ['Bureaux', 'Commerces', 'Santé'],
+      pays: ['Espagne', 'France'],
+      gerants: ['Gestion A', 'Gestion B'],
+      taux: { min: 5, max: 6 },
+      prix: { min: 180, max: 200 },
+      frais: { min: 0, max: 10 },
+      minimum: { min: 1000, max: 5000 },
+      capitalisations: expect.any(Array),
+      anneeTaux: new Date().getFullYear() - 1,
+    });
+  });
 });

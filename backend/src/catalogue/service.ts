@@ -1,5 +1,11 @@
 import { HttpError } from '../logging/http-error.js';
 import { loggable } from '../logging/service.js';
+import {
+  type FiltresCatalogue,
+  type Plage,
+  TRANCHES_CAPITALISATION,
+  lireFiltres,
+} from './filtres.js';
 
 // US-08 : liste des SCPI du Catalogue. Une donnée non renseignée reste null (affichée
 // « N/C » par l'écran), jamais remplacée par 0.
@@ -28,10 +34,34 @@ export type PageCatalogue = {
   misAJourLe: Date | null;
 };
 
+// Valeurs proposées dans le panneau des filtres (US-10a, US-10b), issues du référentiel
+export type ValeursFiltres = {
+  categories: string[];
+  pays: string[];
+  gerants: string[];
+  // bornes des curseurs : plus petite et plus grande valeur renseignée (null si aucune)
+  taux: Plage;
+  prix: Plage;
+  frais: Plage;
+  minimum: Plage;
+};
+
+export type OptionsFiltres = ValeursFiltres & {
+  capitalisations: { code: string; libelle: string }[];
+  anneeTaux: number;
+};
+
 export type DepotCatalogue = {
-  compter(): Promise<number>;
+  // SCPI qui satisfont les filtres (toutes sans filtre)
+  compter(anneeTaux: number, filtres: FiltresCatalogue): Promise<number>;
   // Tri par défaut : taux N-1 décroissant, SCPI sans taux N-1 en fin de liste
-  lister(anneeTaux: number, limite: number, decalage: number): Promise<ScpiCatalogue[]>;
+  lister(
+    anneeTaux: number,
+    limite: number,
+    decalage: number,
+    filtres: FiltresCatalogue,
+  ): Promise<ScpiCatalogue[]>;
+  valeursFiltres(anneeTaux: number): Promise<ValeursFiltres>;
   dateDernierImport(): Promise<Date | null>;
 };
 
@@ -39,16 +69,22 @@ export const TAILLE_PAGE = 12;
 
 // Couche service du Catalogue (US-08)
 export function creerCatalogueService(depot: DepotCatalogue, maintenant = () => new Date()) {
-  async function lister(pageDemandee: unknown = 1): Promise<PageCatalogue> {
+  // Taux N-1 : l'import range le premier taux du CSV sous l'année précédente
+  const anneeN1 = () => maintenant().getFullYear() - 1;
+
+  async function lister(
+    pageDemandee: unknown = 1,
+    requete: Record<string, unknown> = {},
+  ): Promise<PageCatalogue> {
     const page = pageDemandee === undefined || pageDemandee === '' ? 1 : Number(pageDemandee);
     if (!Number.isInteger(page) || page < 1) {
       throw new HttpError(400, 'Numéro de page invalide');
     }
-    // Taux N-1 : l'import range le premier taux du CSV sous l'année précédente
-    const anneeTaux = maintenant().getFullYear() - 1;
+    const filtres = lireFiltres(requete);
+    const anneeTaux = anneeN1();
     const [total, scpis, misAJourLe] = await Promise.all([
-      depot.compter(),
-      depot.lister(anneeTaux, TAILLE_PAGE, (page - 1) * TAILLE_PAGE),
+      depot.compter(anneeTaux, filtres),
+      depot.lister(anneeTaux, TAILLE_PAGE, (page - 1) * TAILLE_PAGE, filtres),
       depot.dateDernierImport(),
     ]);
     return {
@@ -62,7 +98,16 @@ export function creerCatalogueService(depot: DepotCatalogue, maintenant = () => 
     };
   }
 
-  return loggable('CatalogueService', { lister });
+  async function filtres(): Promise<OptionsFiltres> {
+    const anneeTaux = anneeN1();
+    return {
+      ...(await depot.valeursFiltres(anneeTaux)),
+      capitalisations: TRANCHES_CAPITALISATION.map(({ code, libelle }) => ({ code, libelle })),
+      anneeTaux,
+    };
+  }
+
+  return loggable('CatalogueService', { lister, filtres });
 }
 
 export type CatalogueService = ReturnType<typeof creerCatalogueService>;
