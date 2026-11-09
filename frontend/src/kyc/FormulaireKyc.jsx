@@ -6,15 +6,27 @@
 // US-04c (SCPI-44) : étape 5 « Pièces justificatives » (EtapePieces.jsx), avant le récapitulatif.
 // Étapes numérotées 1 à 5, 6 = récapitulatif.
 import { useEffect, useRef, useState } from 'react';
+import ChampAdresse from './ChampAdresse.jsx';
 import ChampDate from './ChampDate.jsx';
 import ChoixPays from './ChoixPays.jsx';
+import { chiffresCodePostal, filtrerCodePostal, filtrerTelephone } from './coordonnees.js';
 import EtapePieces from './EtapePieces.jsx';
-import { ETAPES, champsVisibles, erreursEtape, reponsesAEnregistrer } from './etapes.js';
+import {
+  ETAPES,
+  champsVisibles,
+  erreursEtape,
+  indicatifChoisi,
+  reponsesAEnregistrer,
+} from './etapes.js';
+import { PAYS_INDICATIFS } from './indicatifs.js';
+import { paysParNom } from './pays.js';
 import { idPiece, piecesManquantes } from './pieces.js';
 import Recapitulatif from './Recapitulatif.jsx';
 import './kyc.css';
 
 const idChamp = (nom) => `kyc-${nom}`;
+const AUCUNE_ADRESSE = async () => [];
+const CHAMPS_LIES = { pays: ['codePostal', 'telephone'], indicatif: ['telephone'] };
 const idErreur = (nom) => `kyc-${nom}-erreur`;
 
 function descriptions(champ, erreur) {
@@ -92,14 +104,128 @@ function Groupe({ champ, valeur, erreur, changer }) {
   );
 }
 
-function Champ({ champ, valeur, erreur, changer, aujourdhui }) {
+// Téléphone : menu des indicatifs (« France (+33) »), puis le numéro en chiffres
+function ChampTelephone({ champ, commun, indicatif, changerIndicatif, changerNumero }) {
+  return (
+    <div className="kyc-telephone">
+      <select
+        aria-label="Indicatif du pays"
+        value={indicatif}
+        onChange={(e) => changerIndicatif(e.target.value)}
+        className="kyc-telephone__indicatif"
+      >
+        {PAYS_INDICATIFS.map((p) => (
+          <option key={p.nom} value={p.nom}>
+            {p.nom} (+{p.indicatif})
+          </option>
+        ))}
+      </select>
+      <input
+        {...commun}
+        type="tel"
+        inputMode="numeric"
+        autoComplete={champ.autoComplete}
+        onChange={(e) => changerNumero(e.target.value)}
+      />
+    </div>
+  );
+}
+
+// Zone de saisie selon le type du champ. Code postal et téléphone : caractères non
+// acceptés retirés dès la frappe (coordonnees.js). Adresse : suggestions si pays = France.
+function Saisie({ champ, commun, reponses, erreur, changer, aujourdhui, chercherAdresses }) {
+  const valeur = reponses[champ.nom];
+  const changerValeur = (v) => changer(champ.nom, v);
+  switch (champ.type) {
+    case 'pays':
+      return (
+        <ChoixPays
+          id={commun.id}
+          valeur={valeur}
+          changer={changerValeur}
+          invalide={Boolean(erreur)}
+          decritPar={commun['aria-describedby']}
+        />
+      );
+    case 'adresse':
+      return (
+        <ChampAdresse
+          id={commun.id}
+          valeur={valeur}
+          changer={changerValeur}
+          choisir={({ adresse, codePostal, ville }) => {
+            changer('adresse', adresse);
+            changer('codePostal', codePostal);
+            changer('ville', ville);
+          }}
+          actif={paysParNom(reponses.pays)?.code === 'fr'}
+          chercher={chercherAdresses}
+          invalide={Boolean(erreur)}
+          decritPar={commun['aria-describedby']}
+          autoComplete={champ.autoComplete}
+        />
+      );
+    case 'codePostal':
+      return (
+        <input
+          {...commun}
+          type="text"
+          inputMode={chiffresCodePostal(reponses.pays) ? 'numeric' : 'text'}
+          autoComplete={champ.autoComplete}
+          onChange={(e) => changerValeur(filtrerCodePostal(e.target.value, reponses.pays))}
+        />
+      );
+    case 'tel':
+      return (
+        <ChampTelephone
+          champ={champ}
+          commun={commun}
+          indicatif={indicatifChoisi(reponses)}
+          changerIndicatif={(nom) => changer(champ.indicatif, nom)}
+          changerNumero={(v) => changerValeur(filtrerTelephone(v))}
+        />
+      );
+    case 'date':
+      return (
+        <ChampDate {...commun} valeur={valeur} changer={changerValeur} aujourdhui={aujourdhui} />
+      );
+    case 'liste':
+      return (
+        <select {...commun}>
+          <option value="">Choisir…</option>
+          {champ.options.map((option) => (
+            <option key={option}>{option}</option>
+          ))}
+        </select>
+      );
+    default:
+      return (
+        <input
+          {...commun}
+          type={champ.type === 'texte' ? 'text' : champ.type}
+          autoComplete={champ.autoComplete}
+          readOnly={champ.lectureSeule}
+        />
+      );
+  }
+}
+
+function Champ({ champ, reponses, erreur, changer, aujourdhui, chercherAdresses }) {
+  const valeur = reponses[champ.nom];
   if (champ.type === 'choix' || champ.type === 'cases') {
-    return <Groupe champ={champ} valeur={valeur} erreur={erreur} changer={changer} />;
+    return (
+      <Groupe
+        champ={champ}
+        valeur={valeur}
+        erreur={erreur}
+        changer={(v) => changer(champ.nom, v)}
+      />
+    );
   }
   const commun = {
     id: idChamp(champ.nom),
     value: valeur ?? '',
-    onChange: (e) => changer(e.target.value),
+    onChange: (e) => changer(champ.nom, e.target.value),
     'aria-invalid': erreur ? true : undefined,
     'aria-describedby': descriptions(champ, erreur),
   };
@@ -108,31 +234,15 @@ function Champ({ champ, valeur, erreur, changer, aujourdhui }) {
       <label htmlFor={idChamp(champ.nom)}>
         <Libelle champ={champ} />
       </label>
-      {champ.type === 'pays' ? (
-        <ChoixPays
-          id={commun.id}
-          valeur={valeur}
-          changer={changer}
-          invalide={Boolean(erreur)}
-          decritPar={commun['aria-describedby']}
-        />
-      ) : champ.type === 'date' ? (
-        <ChampDate {...commun} valeur={valeur} changer={changer} aujourdhui={aujourdhui} />
-      ) : champ.type === 'liste' ? (
-        <select {...commun}>
-          <option value="">Choisir…</option>
-          {champ.options.map((option) => (
-            <option key={option}>{option}</option>
-          ))}
-        </select>
-      ) : (
-        <input
-          {...commun}
-          type={champ.type === 'texte' ? 'text' : champ.type}
-          autoComplete={champ.autoComplete}
-          readOnly={champ.lectureSeule}
-        />
-      )}
+      <Saisie
+        champ={champ}
+        commun={commun}
+        reponses={reponses}
+        erreur={erreur}
+        changer={changer}
+        aujourdhui={aujourdhui}
+        chercherAdresses={chercherAdresses}
+      />
       <Aide champ={champ} />
       <Erreur nom={champ.nom} message={erreur} />
     </div>
@@ -196,6 +306,7 @@ export default function FormulaireKyc({
   deposerPiece = async () => {},
   supprimerPiece = async () => {},
   apresValidation = () => {},
+  chercherAdresses = AUCUNE_ADRESSE,
 }) {
   const recap = ETAPES.length; // index du récapitulatif
   const [index, setIndex] = useState(Math.min(Math.max(etapeInitiale, 1), recap + 1) - 1);
@@ -220,13 +331,16 @@ export default function FormulaireKyc({
     setIndex(nouvelIndex);
   }
 
+  // Un changement efface l'erreur du champ, et celle des champs qui en dépendent
+  // (pays -> code postal et téléphone, indicatif -> téléphone)
   function changer(nom, valeur) {
     setReponses((r) => ({ ...r, [nom]: valeur }));
-    setErreurs((e) => {
-      if (!e[nom]) return e;
-      const { [nom]: _retire, ...reste } = e;
-      return reste;
-    });
+    const touches = [nom, ...(CHAMPS_LIES[nom] ?? [])];
+    setErreurs((e) =>
+      touches.some((n) => e[n])
+        ? Object.fromEntries(Object.entries(e).filter(([n]) => !touches.includes(n)))
+        : e,
+    );
   }
 
   async function suivant(event) {
@@ -345,10 +459,11 @@ export default function FormulaireKyc({
               <Champ
                 key={champ.nom}
                 champ={champ}
-                valeur={reponses[champ.nom]}
+                reponses={reponses}
                 erreur={erreurs[champ.nom]}
-                changer={(valeur) => changer(champ.nom, valeur)}
+                changer={changer}
                 aujourdhui={aujourdhui}
+                chercherAdresses={chercherAdresses}
               />
             ))}
           </div>

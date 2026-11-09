@@ -27,6 +27,11 @@ describe('nettoyer les réponses reçues', () => {
   });
 
   it('réponses absentes ou mal formées : objet vide', () => {
+    expect(nettoyer({ telephone: '06 12 34 56 78', indicatif: 'France' })).toEqual({
+      telephone: '06 12 34 56 78',
+      indicatif: 'France',
+    });
+    expect(champsIncomplets(KYC_COMPLET, LE)).not.toContain('indicatif'); // facultatif
     expect(nettoyer(undefined)).toEqual({});
     expect(nettoyer('texte')).toEqual({});
     expect(nettoyer(['a'])).toEqual({});

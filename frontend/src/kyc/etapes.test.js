@@ -9,9 +9,9 @@ import {
   age,
   champsVisibles,
   erreursEtape,
+  indicatifChoisi,
   reponseLisible,
   reponsesAEnregistrer,
-  telephoneValide,
 } from './etapes.js';
 
 const [identite, coordonnees, situation, declarations] = ETAPES;
@@ -80,14 +80,39 @@ describe('Règles de saisie', () => {
     expect(erreur('04/11/1980')).toBe(MESSAGE_DATE);
   });
 
-  it('téléphone : 10 à 15 chiffres, formats français et international', () => {
-    expect(telephoneValide('06 12 34 56 78')).toBe(true);
-    expect(telephoneValide('+33 6 12 34 56 78')).toBe(true);
-    expect(telephoneValide('01.46.00.12.34')).toBe(true);
-    expect(telephoneValide('06 12 34')).toBe(false);
-    expect(telephoneValide('06 12 AB 56 78')).toBe(false);
-    expect(telephoneValide('1234567890123456')).toBe(false);
-    expect(erreursEtape(coordonnees, { telephone: '0612' }).telephone).toBe(MESSAGE_TELEPHONE);
+  it('téléphone : contrôlé selon l’indicatif choisi, sinon le pays de l’adresse', () => {
+    const erreur = (reponses) => erreursEtape(coordonnees, reponses, AUJOURDHUI).telephone;
+    expect(indicatifChoisi({})).toBe('France');
+    expect(indicatifChoisi({ pays: 'Belgique' })).toBe('Belgique');
+    expect(indicatifChoisi({ pays: 'Belgique', indicatif: 'Maroc' })).toBe('Maroc');
+    expect(indicatifChoisi({ pays: 'Belgique', indicatif: 'Inconnu' })).toBe('Belgique');
+    expect(erreur({ telephone: '06 12 34 56 78' })).toBeUndefined();
+    expect(erreur({ telephone: '0612' })).toBe(MESSAGE_TELEPHONE);
+    expect(erreur({ telephone: '0470 12 34 56', pays: 'Belgique' })).toBeUndefined();
+    expect(erreur({ telephone: '0470 12 34 56', indicatif: 'États-Unis' })).toBe(MESSAGE_TELEPHONE);
+  });
+
+  it('téléphone : indicatif enregistré avec le numéro, affiché au récapitulatif', () => {
+    const tel = coordonnees.champs.find((c) => c.nom === 'telephone');
+    expect(reponsesAEnregistrer({ telephone: '06 12 34 56 78' }).indicatif).toBe('France');
+    expect(reponsesAEnregistrer({ nom: 'Martin' })).not.toHaveProperty('indicatif');
+    expect(reponseLisible(tel, '0470 12 34 56', { indicatif: 'Belgique' })).toBe(
+      '+32 0470 12 34 56',
+    );
+  });
+
+  it('coordonnées : pays de la liste, code postal selon le pays', () => {
+    const erreurs = (reponses) => erreursEtape(coordonnees, reponses, AUJOURDHUI);
+    expect(erreurs({ pays: 'Fance' }).pays).toBe(MESSAGE_PAYS);
+    expect(erreurs({ pays: 'France', codePostal: '6900' }).codePostal).toBe(
+      'Code postal invalide : 5 chiffres attendus pour ce pays.',
+    );
+    expect(erreurs({ pays: 'France', codePostal: '69003' }).codePostal).toBeUndefined();
+    expect(erreurs({ pays: 'Royaume-Uni', codePostal: 'SW1A 1AA' }).codePostal).toBeUndefined();
+    expect(
+      erreursEtape(declarations, { residenceFiscale: 'Autre pays', paysResidenceFiscale: 'Belgiq' })
+        .paysResidenceFiscale,
+    ).toBe(MESSAGE_PAYS);
   });
 
   it('nationalité : un pays de la liste (US-04c)', () => {

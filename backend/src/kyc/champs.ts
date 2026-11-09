@@ -19,6 +19,9 @@ export const CHAMPS_KYC: Champ[] = [
   { nom: 'ville' },
   { nom: 'pays' },
   { nom: 'telephone' },
+  // Pays de l'indicatif du téléphone (« France ») ; facultatif : absent des KYC commencés
+  // avant le menu des indicatifs (l'écran prend alors le pays de l'adresse)
+  { nom: 'indicatif', facultatif: true },
   // 3. Situation personnelle et professionnelle
   { nom: 'situationFamiliale' },
   { nom: 'profession' },

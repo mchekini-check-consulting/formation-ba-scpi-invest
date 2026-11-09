@@ -17,6 +17,7 @@ import {
   enregistrerKyc,
   lireKyc,
   listerPieces,
+  suggererAdresses,
   supprimerPiece,
   validerKyc,
 } from './api.js';
@@ -34,6 +35,7 @@ export default function Kyc({
   lirePieces = listerPieces,
   deposer = deposerPiece,
   supprimer = supprimerPiece,
+  adresses = suggererAdresses,
   seDeconnecter = deconnecter,
   allerA = naviguer,
   sessionExpiree = sessionExpireeParDefaut,
@@ -111,6 +113,7 @@ export default function Kyc({
               valider={valider}
               deposerPiece={deposer}
               supprimerPiece={supprimer}
+              chercherAdresses={adresses}
               apresValidation={() => allerA(ECRAN_APRES_KYC)}
             />
           )}
