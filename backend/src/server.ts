@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import { toNodeHandler } from 'better-auth/node';
 import type { RequestHandler } from 'express';
+import { routesAdresses } from './adresses/routes.js';
+import { creerAdressesService } from './adresses/service.js';
 import { createApp } from './app.js';
 import { creerAuth, fournisseurBetterAuth } from './auth/better-auth.js';
 import { routesCatalogue } from './catalogue/routes.js';
@@ -54,6 +56,8 @@ const comptes = creerCompteService(fournisseur, {
 });
 const questionnaires = creerQuestionnaireService(depotQuestionnaires(db), depotProfils(db));
 const kyc = creerKycService(depotKyc(db));
+// KYC, étape « Coordonnées » : suggestions d'adresses (service national des adresses)
+const adresses = creerAdressesService();
 // US-08 : liste des SCPI du Catalogue
 const catalogue = creerCatalogueService(depotCatalogue(db));
 // US-04c : fichiers des pièces dans R2 (dépôt indisponible, 503, sans les variables R2)
@@ -88,6 +92,7 @@ createApp(() => db.execute(sql`select 1`), logger, {
   routeurs: [
     routesComptes(comptes, fournisseur),
     routesKyc(kyc, fournisseur),
+    routesAdresses(adresses, fournisseur),
     routesPiecesKyc(pieces, fournisseur),
     routesQuestionnaire(questionnaires, fournisseur),
     routesCatalogue(catalogue, fournisseur),

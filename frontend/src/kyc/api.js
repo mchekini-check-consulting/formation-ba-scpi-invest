@@ -1,5 +1,7 @@
 // Appels du KYC au backend (US-04b), pour l'utilisateur connecté :
 //   GET /connaissance-client -> { statut: 'en_cours' | 'complete', etape (1 à 6), reponses, valideLe }
+// Suggestions d'adresses (étape « Coordonnées », France) :
+//   GET /adresses?recherche=… -> { adresses: [{ libelle, adresse, codePostal, ville }] }
 // Pièces justificatives (US-04c) :
 //   GET /connaissance-client/pieces -> [{ type, nomFichier, format, taille, statut, deposeLe }]
 import { appelConnecte, envoyerFichierConnecte } from '../auth.js';
@@ -17,6 +19,13 @@ export function enregistrerKyc(etape, reponses) {
 
 export function validerKyc() {
   return appelConnecte('/connaissance-client/validation', { methode: 'POST', corps: {} });
+}
+
+// Liste vide si le service des adresses ne répond pas : la saisie reste libre
+export async function suggererAdresses(recherche) {
+  const parametres = new URLSearchParams({ recherche });
+  const { adresses } = await appelConnecte(`/adresses?${parametres}`);
+  return adresses;
 }
 
 export function listerPieces() {

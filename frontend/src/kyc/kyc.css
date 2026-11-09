@@ -463,6 +463,19 @@
   color: var(--texte-secondaire);
 }
 
+/* Téléphone : menu des indicatifs + numéro */
+.kyc-telephone {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .kyc-telephone {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Date de naissance : saisie JJ/MM/AAAA + calendrier par années (ChampDate.jsx) */
 .champ-date {
   position: relative;

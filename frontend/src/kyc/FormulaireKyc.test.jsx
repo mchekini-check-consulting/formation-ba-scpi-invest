@@ -302,3 +302,85 @@ describe('Récapitulatif et validation (US-04b, scénario 3)', () => {
     expect(screen.getByRole('alert').textContent).toBe('Le formulaire KYC est incomplet');
   });
 });
+
+describe('Coordonnées : pays, adresse avec suggestions, code postal et téléphone', () => {
+  const choisirPays = (nom) => {
+    saisir('Pays', nom);
+    fireEvent.blur(screen.getByLabelText('Pays'));
+  };
+  const LILAS = {
+    libelle: '12 Rue des Lilas 69008 Lyon',
+    adresse: '12 Rue des Lilas',
+    codePostal: '69008',
+    ville: 'Lyon',
+  };
+
+  it('pays en premier, dans la liste avec recherche', () => {
+    afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE });
+    const champs = [...document.querySelectorAll('.kyc__champs label')].map((l) => l.textContent);
+    expect(champs[0]).toBe('Pays');
+    expect(screen.getByLabelText('Pays').getAttribute('role')).toBe('combobox');
+  });
+
+  it('France : une suggestion d’adresse remplit adresse, code postal et ville', async () => {
+    const chercherAdresses = vi.fn().mockResolvedValue([LILAS]);
+    afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE, chercherAdresses });
+    choisirPays('France');
+    saisir('Adresse postale', '12 rue des li');
+    await act(async () => {
+      await new Promise((fin) => setTimeout(fin, 300));
+    });
+    expect(chercherAdresses).toHaveBeenCalledWith('12 rue des li');
+    fireEvent.click(screen.getByRole('option', { name: LILAS.libelle }));
+    expect(screen.getByLabelText('Adresse postale').value).toBe('12 Rue des Lilas');
+    expect(screen.getByLabelText('Code postal').value).toBe('69008');
+    expect(screen.getByLabelText('Ville').value).toBe('Lyon');
+  });
+
+  it('code postal : chiffres seuls pour la France, lettres permises au Royaume-Uni', () => {
+    afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE });
+    choisirPays('France');
+    saisir('Code postal', '69a0035');
+    expect(screen.getByLabelText('Code postal').value).toBe('69003');
+    expect(screen.getByLabelText('Code postal').getAttribute('inputmode')).toBe('numeric');
+    choisirPays('Royaume-Uni');
+    saisir('Code postal', 'sw1a 1aa');
+    expect(screen.getByLabelText('Code postal').value).toBe('SW1A 1AA');
+    expect(screen.getByLabelText('Code postal').getAttribute('inputmode')).toBe('text');
+  });
+
+  it('téléphone : menu des indicatifs qui suit le pays, chiffres seuls à la frappe', async () => {
+    const { enregistrer } = afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE });
+    const indicatif = () => screen.getByLabelText('Indicatif du pays');
+    expect(indicatif().value).toBe('France');
+    expect(indicatif().options[0].textContent).toBe('France (+33)');
+    saisir('Téléphone', '06.12.34.ab56.78');
+    expect(screen.getByLabelText('Téléphone').value).toBe('0612345678');
+    // Belgique : l'indicatif suit le pays de l'adresse
+    choisirPays('Belgique');
+    expect(indicatif().value).toBe('Belgique');
+    saisir('Adresse postale', 'Rue Neuve 1');
+    saisir('Code postal', '1000');
+    saisir('Ville', 'Bruxelles');
+    // fixe belge à 8 chiffres : refusé avec l'indicatif français (9 chiffres)
+    saisir('Téléphone', '02 123 45 67');
+    fireEvent.change(indicatif(), { target: { value: 'France' } });
+    await cliquer('Suivant');
+    expect(document.getElementById('kyc-telephone-erreur').textContent).toContain(
+      'Numéro de téléphone invalide',
+    );
+    // retour à l'indicatif belge : l'erreur s'efface, le numéro est accepté
+    fireEvent.change(indicatif(), { target: { value: 'Belgique' } });
+    expect(document.getElementById('kyc-telephone-erreur')).toBeNull();
+    await cliquer('Suivant');
+    expect(enregistrer).toHaveBeenCalledWith(3, {
+      ...IDENTITE,
+      pays: 'Belgique',
+      adresse: 'Rue Neuve 1',
+      codePostal: '1000',
+      ville: 'Bruxelles',
+      telephone: '02 123 45 67',
+      indicatif: 'Belgique',
+    });
+  });
+});

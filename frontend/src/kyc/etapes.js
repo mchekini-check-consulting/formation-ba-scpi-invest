@@ -1,17 +1,30 @@
 // Contenu du formulaire KYC (US-04a, SCPI-21) : 4 étapes, leurs champs et les règles de
 // saisie, puis l'étape des pièces justificatives (US-04c, SCPI-44, règles dans pieces.js).
 // Tous les champs sont obligatoires, sauf `facultatif: true`. Un champ avec `visible` n'est
-// affiché (et contrôlé) que si la condition est vraie. Nationalité : liste de pays (pays.js).
+// affiché (et contrôlé) que si la condition est vraie. Type `pays` : liste de pays avec
+// recherche (ChoixPays.jsx, pays.js). Coordonnées : pays d'abord, adresse avec suggestions
+// en France (ChampAdresse.jsx), code postal et téléphone filtrés à la frappe (coordonnees.js).
 // L'enregistrement, la reprise et la validation relèvent de l'US-04b (SCPI-37).
 
+import { codePostalValide, messageCodePostal, telephoneValide } from './coordonnees.js';
+import { indicatifDe } from './indicatifs.js';
 import { paysParNom } from './pays.js';
+
+export { telephoneValide } from './coordonnees.js';
+
+// Pays de l'indicatif du téléphone : celui choisi dans le menu, sinon le pays de l'adresse,
+// sinon la France
+export function indicatifChoisi(reponses) {
+  if (indicatifDe(reponses.indicatif)) return reponses.indicatif;
+  return indicatifDe(reponses.pays) ? reponses.pays : 'France';
+}
 
 export const MESSAGE_OBLIGATOIRE = 'Ce champ est obligatoire.';
 export const MESSAGE_MAJEUR = 'Vous devez être majeur pour ouvrir un compte.';
 export const MESSAGE_DATE = 'Merci de saisir une date de naissance valide.';
 export const MESSAGE_PAYS = 'Merci de choisir un pays dans la liste.';
 export const MESSAGE_TELEPHONE =
-  'Merci de saisir un numéro de téléphone valide (10 chiffres minimum).';
+  'Numéro de téléphone invalide pour cet indicatif : vérifiez le nombre de chiffres.';
 
 const OUI_NON = ['Oui', 'Non'];
 
@@ -49,16 +62,29 @@ export const ETAPES = [
     id: 'coordonnees',
     titre: 'Coordonnées',
     champs: [
+      { nom: 'pays', libelle: 'Pays', type: 'pays', aide: 'Tapez le nom du pays pour le trouver.' },
       {
         nom: 'adresse',
         libelle: 'Adresse postale',
-        type: 'texte',
+        type: 'adresse',
         autoComplete: 'street-address',
+        aide: 'Numéro et nom de la voie. En France, choisissez votre adresse dans les suggestions : code postal et ville se remplissent seuls.',
       },
-      { nom: 'codePostal', libelle: 'Code postal', type: 'texte', autoComplete: 'postal-code' },
+      {
+        nom: 'codePostal',
+        libelle: 'Code postal',
+        type: 'codePostal',
+        autoComplete: 'postal-code',
+      },
       { nom: 'ville', libelle: 'Ville', type: 'texte', autoComplete: 'address-level2' },
-      { nom: 'pays', libelle: 'Pays', type: 'texte', autoComplete: 'country-name' },
-      { nom: 'telephone', libelle: 'Téléphone', type: 'tel', autoComplete: 'tel' },
+      {
+        nom: 'telephone',
+        libelle: 'Téléphone',
+        type: 'tel',
+        autoComplete: 'tel-national',
+        indicatif: 'indicatif',
+        aide: 'Choisissez l’indicatif du pays, puis tapez votre numéro (chiffres uniquement), par exemple : 06 12 34 56 78.',
+      },
       {
         nom: 'email',
         libelle: 'Adresse e-mail',
@@ -166,7 +192,7 @@ export const ETAPES = [
       {
         nom: 'paysResidenceFiscale',
         libelle: 'Pays de résidence fiscale',
-        type: 'texte',
+        type: 'pays',
         visible: (reponses) => reponses.residenceFiscale === 'Autre pays',
       },
       {
@@ -210,11 +236,6 @@ function erreurDateNaissance(valeur, aujourdhui) {
   return null;
 }
 
-export function telephoneValide(valeur) {
-  const chiffres = valeur.replace(/\D/g, '');
-  return /^\+?[\d\s.()-]+$/.test(valeur.trim()) && chiffres.length >= 10 && chiffres.length <= 15;
-}
-
 // Réponses à enregistrer (US-04b) : seulement les champs affichés (un pays de résidence
 // fiscale saisi puis masqué n'est pas gardé), sans l'email, qui est celui du compte
 export function reponsesAEnregistrer(reponses) {
@@ -224,21 +245,39 @@ export function reponsesAEnregistrer(reponses) {
       if (champ.nom !== 'email' && reponses[champ.nom] !== undefined) {
         aGarder[champ.nom] = reponses[champ.nom];
       }
+      if (champ.indicatif && reponses[champ.nom] !== undefined) {
+        aGarder[champ.indicatif] = indicatifChoisi(reponses);
+      }
     }
   }
   return aGarder;
 }
 
 // Libellé d'une réponse pour le récapitulatif : date en JJ/MM/AAAA, choix multiples
-// séparés par des virgules, « Non renseigné » si vide
-export function reponseLisible(champ, valeur) {
+// séparés par des virgules, téléphone précédé de son indicatif, « Non renseigné » si vide
+export function reponseLisible(champ, valeur, reponses = {}) {
   if (Array.isArray(valeur)) return valeur.length ? valeur.join(', ') : 'Non renseigné';
   if (!valeur || valeur.toString().trim() === '') return 'Non renseigné';
   if (champ.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(valeur)) {
     const [annee, mois, jour] = valeur.split('-');
     return `${jour}/${mois}/${annee}`;
   }
+  if (champ.type === 'tel') return `+${indicatifDe(indicatifChoisi(reponses))} ${valeur}`;
   return valeur;
+}
+
+// Contrôle de format d'un champ rempli, selon son type ; null si la valeur est correcte
+const FORMATS = {
+  date: (valeur, _reponses, aujourdhui) => erreurDateNaissance(valeur, aujourdhui),
+  tel: (valeur, reponses) =>
+    telephoneValide(valeur, indicatifChoisi(reponses)) ? null : MESSAGE_TELEPHONE,
+  pays: (valeur) => (paysParNom(valeur) ? null : MESSAGE_PAYS),
+  codePostal: (valeur, reponses) =>
+    codePostalValide(valeur, reponses.pays) ? null : messageCodePostal(reponses.pays),
+};
+
+function erreurFormat(champ, valeur, reponses, aujourdhui) {
+  return FORMATS[champ.type]?.(valeur, reponses, aujourdhui) ?? null;
 }
 
 // Erreurs de l'étape, par nom de champ ; objet vide si l'étape est complète
@@ -246,16 +285,10 @@ export function erreursEtape(etape, reponses, aujourdhui = new Date()) {
   const erreurs = {};
   for (const champ of champsVisibles(etape, reponses)) {
     const valeur = reponses[champ.nom];
-    if (vide(valeur)) {
-      if (!champ.facultatif) erreurs[champ.nom] = MESSAGE_OBLIGATOIRE;
-    } else if (champ.type === 'date') {
-      const message = erreurDateNaissance(valeur, aujourdhui);
-      if (message) erreurs[champ.nom] = message;
-    } else if (champ.type === 'tel' && !telephoneValide(valeur)) {
-      erreurs[champ.nom] = MESSAGE_TELEPHONE;
-    } else if (champ.type === 'pays' && !paysParNom(valeur)) {
-      erreurs[champ.nom] = MESSAGE_PAYS;
-    }
+    const message = vide(valeur)
+      ? !champ.facultatif && MESSAGE_OBLIGATOIRE
+      : erreurFormat(champ, valeur, reponses, aujourdhui);
+    if (message) erreurs[champ.nom] = message;
   }
   return erreurs;
 }

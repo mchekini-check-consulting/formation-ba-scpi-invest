@@ -5,6 +5,7 @@ import {
   enregistrerKyc,
   lireKyc,
   listerPieces,
+  suggererAdresses,
   supprimerPiece,
   validerKyc,
 } from './api.js';
@@ -27,6 +28,13 @@ afterEach(() => {
 });
 
 describe('appels du KYC (US-04b)', () => {
+  it('suggererAdresses : GET /adresses avec le texte tapé', async () => {
+    const lilas = { libelle: '12 Rue des Lilas 69008 Lyon' };
+    fetchMock.mockResolvedValue(reponse(200, { adresses: [lilas] }));
+    expect(await suggererAdresses('12 rue des lilas')).toEqual([lilas]);
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/adresses?recherche=12+rue+des+lilas');
+  });
+
   it('lireKyc : GET /connaissance-client avec la session', async () => {
     const etat = { statut: 'en_cours', etape: 2, reponses: {}, valideLe: null };
     fetchMock.mockResolvedValue(reponse(200, etat));
