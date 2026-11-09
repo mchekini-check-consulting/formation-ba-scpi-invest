@@ -11,6 +11,7 @@ import { routesComptes } from '../src/comptes/routes.js';
 import { creerCompteService } from '../src/comptes/service.js';
 import {
   depotAcceptationsCgu,
+  depotTentativesConnexion,
   depotProfils,
   depotQuestionnaires,
   secretDesSessions,
@@ -45,7 +46,13 @@ describe('formulaire investisseur (e2e)', () => {
     app = createApp(() => db.execute(sql`select 1`), log, {
       auth: toNodeHandler(auth),
       routeurs: [
-        routesComptes(creerCompteService(fournisseur, depotAcceptationsCgu(db)), fournisseur),
+        routesComptes(
+          creerCompteService(fournisseur, {
+            cgu: depotAcceptationsCgu(db),
+            tentatives: depotTentativesConnexion(db),
+          }),
+          fournisseur,
+        ),
         routesQuestionnaire(
           creerQuestionnaireService(depotQuestionnaires(db), depotProfils(db)),
           fournisseur,

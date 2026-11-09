@@ -219,6 +219,15 @@
   font-size: 14px;
 }
 
+/* Information sans erreur (US-03b : session expirée) */
+.compte__info {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #e8eef8;
+  color: #1f3a66;
+  font-size: 14px;
+}
+
 /* Boutons en pilule, comme ceux de l'accueil */
 .compte__bouton {
   min-height: 52px;

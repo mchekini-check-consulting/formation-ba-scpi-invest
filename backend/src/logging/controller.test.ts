@@ -119,6 +119,16 @@ describe('requestLogger (layer controller)', () => {
     expect(lignes[0]).toMatchObject({ level: 'WARN', status: 404 });
   });
 
+  it('HttpError 4xx avec détails : ajoutés au corps, sans écraser le message', async () => {
+    const { app } = appTest();
+    app.get('/bloque', () => {
+      throw new HttpError(429, 'trop de tentatives', { debloqueA: 'demain', message: 'ignoré' });
+    });
+    app.use(errorHandler(captureLogs().log));
+    const res = await request(app).get('/bloque').expect(429);
+    expect(res.body).toEqual({ debloqueA: 'demain', message: 'trop de tentatives' });
+  });
+
   it('erreur : 500 sans détail, trace hors Loki (sans layer), log ERROR', async () => {
     const { app, lignes } = appTest();
     const res = await request(app).get('/panne').expect(500);

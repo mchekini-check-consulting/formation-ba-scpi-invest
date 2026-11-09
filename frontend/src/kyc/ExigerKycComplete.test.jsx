@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ExigerKycComplete from './ExigerKycComplete.jsx';
 
@@ -7,7 +7,7 @@ afterEach(cleanup);
 
 const JEAN = { id: 'u1', email: 'jean@exemple.fr' };
 
-function afficher({ utilisateur = JEAN, kyc, lire, passer = false } = {}) {
+function afficher({ utilisateur = JEAN, kyc, lire, passer = false, sessionExpiree } = {}) {
   const allerA = vi.fn();
   const lireKyc = lire ?? vi.fn().mockResolvedValue(kyc);
   const lireUtilisateur =
@@ -21,6 +21,7 @@ function afficher({ utilisateur = JEAN, kyc, lire, passer = false } = {}) {
         lire={lireKyc}
         allerA={allerA}
         passer={passer}
+        sessionExpiree={sessionExpiree}
       >
         <p>Écran protégé</p>
       </ExigerKycComplete>
@@ -46,6 +47,13 @@ describe('Accès bloqué tant que le KYC n’est pas validé (US-04b, scénario 
     const { allerA, lireKyc } = afficher({ utilisateur: null });
     await vi.waitFor(() => expect(allerA).toHaveBeenCalledWith('/connexion'));
     expect(lireKyc).not.toHaveBeenCalled();
+  });
+
+  it('US-03b : session expirée, pas de rechargement (le routeur ouvre « Se connecter »)', async () => {
+    const { allerA } = afficher({ utilisateur: null, sessionExpiree: () => true });
+    await act(async () => {});
+    expect(allerA).not.toHaveBeenCalled();
+    expect(screen.queryByText('Écran protégé')).toBeNull();
   });
 
   it('service indisponible : message, écran non affiché', async () => {

@@ -14,6 +14,7 @@ function application(service: Partial<KycService>, connecte = true) {
   const fournisseur: FournisseurIdentite = {
     creerCompte: vi.fn(),
     connecter: vi.fn(),
+    identifiantDe: vi.fn(),
     utilisateurConnecte: vi.fn().mockResolvedValue(connecte ? JEAN : null),
   };
   const { log, lignes } = captureLogs();

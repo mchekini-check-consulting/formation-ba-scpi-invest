@@ -1,7 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EmailDejaUtilise, type FournisseurIdentite } from '../auth/fournisseur.js';
+import { captureLogs } from '../logging/capture.js';
 import { HttpError } from '../logging/http-error.js';
-import { IDENTIFIANTS_INCORRECTS, VERSION_CGU, creerCompteService } from './service.js';
+import {
+  DUREE_BLOCAGE_MS,
+  ECHECS_AVANT_BLOCAGE,
+  IDENTIFIANTS_INCORRECTS,
+  TROP_DE_TENTATIVES,
+  VERSION_CGU,
+  creerCompteService,
+  empreinte,
+} from './service.js';
 
 const DEMANDE = {
   email: ' Jean@Exemple.fr ',
@@ -11,14 +20,22 @@ const DEMANDE = {
 };
 const LE = new Date('2026-11-02T10:00:00Z');
 
-function preparer(creerCompte = vi.fn(), connecter = vi.fn()) {
+function preparer(creerCompte = vi.fn(), connecter = vi.fn(), identifiantDe = vi.fn()) {
   const fournisseur: FournisseurIdentite = {
     creerCompte,
     connecter,
     utilisateurConnecte: vi.fn(),
+    identifiantDe,
   };
   const cgu = { enregistrer: vi.fn().mockResolvedValue(undefined) };
-  return { service: creerCompteService(fournisseur, cgu, () => LE), creerCompte, connecter, cgu };
+  const tentatives = {
+    reserverEssai: vi.fn().mockResolvedValue(null),
+    enregistrerEchec: vi.fn().mockResolvedValue(null),
+    effacer: vi.fn().mockResolvedValue(undefined),
+  };
+  const { log, lignes } = captureLogs();
+  const service = creerCompteService(fournisseur, { cgu, tentatives, maintenant: () => LE, log });
+  return { service, creerCompte, connecter, cgu, tentatives, lignes };
 }
 
 async function erreurDe(promesse: Promise<unknown>): Promise<HttpError> {
@@ -123,5 +140,85 @@ describe('CompteService.connecter (US-03a)', () => {
     const panne = new Error('base indisponible');
     const { service } = preparer(vi.fn(), vi.fn().mockRejectedValue(panne));
     await expect(service.connecter({ email: 'a@b.fr', motDePasse: 'x' })).rejects.toBe(panne);
+  });
+});
+
+describe('CompteService.connecter : blocage après 5 échecs (US-03b)', () => {
+  const compte = { utilisateur: { id: 'u1', email: 'jean@exemple.fr' }, jeton: 'jeton' };
+  const FIN = new Date(LE.getTime() + DUREE_BLOCAGE_MS);
+  const CLE = empreinte('jean@exemple.fr');
+  const REGLE = { echecsAvantBlocage: 5, dureeMs: 600_000 };
+
+  it('5 échecs, 10 minutes ; clé = empreinte de l’email, jamais l’email', () => {
+    expect([ECHECS_AVANT_BLOCAGE, DUREE_BLOCAGE_MS]).toEqual([5, 600_000]);
+    expect(CLE).toMatch(/^[0-9a-f]{64}$/);
+    expect(CLE).not.toContain('jean');
+  });
+
+  it('connexion réussie : compteur effacé', async () => {
+    const { service, tentatives } = preparer(vi.fn(), vi.fn().mockResolvedValue(compte));
+    await service.connecter({ email: ' Jean@Exemple.fr ', motDePasse: 'Tr0pBien!Choisi' });
+    expect(tentatives.reserverEssai).toHaveBeenCalledWith(CLE, LE, REGLE);
+    expect(tentatives.effacer).toHaveBeenCalledWith(CLE);
+    expect(tentatives.enregistrerEchec).not.toHaveBeenCalled();
+  });
+
+  it('échec sans blocage : échec compté, 401', async () => {
+    const { service, tentatives } = preparer(vi.fn(), vi.fn().mockResolvedValue(null));
+    const err = await erreurDe(service.connecter({ email: 'jean@exemple.fr', motDePasse: 'x' }));
+    expect(err.status).toBe(401);
+    expect(tentatives.reserverEssai).toHaveBeenCalledWith(CLE, LE, REGLE);
+    expect(tentatives.enregistrerEchec).toHaveBeenCalledWith(CLE, LE, REGLE);
+    expect(tentatives.effacer).not.toHaveBeenCalled();
+  });
+
+  it('échec qui bloque : 429 avec l’heure de déblocage, log avec l’identifiant', async () => {
+    const { service, tentatives, lignes } = preparer(
+      vi.fn(),
+      vi.fn().mockResolvedValue(null),
+      vi.fn().mockResolvedValue('u1'),
+    );
+    tentatives.enregistrerEchec.mockResolvedValue(FIN);
+    const err = await erreurDe(service.connecter({ email: 'jean@exemple.fr', motDePasse: 'x' }));
+    expect([err.status, err.message, err.details]).toEqual([
+      429,
+      TROP_DE_TENTATIVES,
+      { debloqueA: FIN.toISOString() },
+    ]);
+    const blocage = lignes.find((l) => l.msg === 'compte bloqué après 5 échecs');
+    expect(blocage).toMatchObject({ level: 'WARN', layer: 'service', userId: 'u1' });
+    expect(JSON.stringify(lignes)).not.toContain('jean@exemple.fr');
+  });
+
+  it('email sans compte : bloqué de la même façon, log « compte inconnu »', async () => {
+    const { service, tentatives, lignes } = preparer(
+      vi.fn(),
+      vi.fn().mockResolvedValue(null),
+      vi.fn().mockResolvedValue(null),
+    );
+    tentatives.enregistrerEchec.mockResolvedValue(FIN);
+    const err = await erreurDe(service.connecter({ email: 'inconnu@exemple.fr', motDePasse: 'x' }));
+    expect(err.status).toBe(429);
+    const blocage = lignes.find((l) => l.msg === 'compte bloqué après 5 échecs');
+    expect(blocage).toMatchObject({ compteInconnu: true });
+    expect(blocage?.userId).toBeUndefined();
+  });
+
+  it('essai refusé (blocage, essais simultanés) : 429 sans vérifier le mot de passe', async () => {
+    const { service, connecter, tentatives } = preparer(vi.fn(), vi.fn().mockResolvedValue(compte));
+    tentatives.reserverEssai.mockResolvedValue(FIN);
+    const err = await erreurDe(
+      service.connecter({ email: 'jean@exemple.fr', motDePasse: 'Tr0pBien!Choisi' }),
+    );
+    expect([err.status, err.details]).toEqual([429, { debloqueA: FIN.toISOString() }]);
+    expect(connecter).not.toHaveBeenCalled();
+    expect(tentatives.enregistrerEchec).not.toHaveBeenCalled();
+  });
+
+  it('champs vides : non comptés', async () => {
+    const { service, tentatives } = preparer();
+    await erreurDe(service.connecter({ email: 'jean@exemple.fr', motDePasse: '' }));
+    expect(tentatives.reserverEssai).not.toHaveBeenCalled();
+    expect(tentatives.enregistrerEchec).not.toHaveBeenCalled();
   });
 });

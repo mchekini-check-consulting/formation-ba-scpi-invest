@@ -9,10 +9,16 @@ import { authAccount, authSession, authUser, authVerification } from '../db/sche
 import { logger as loggerParDefaut } from '../logging/logger.js';
 import { EmailDejaUtilise, type FournisseurIdentite } from './fournisseur.js';
 
-const JOUR = 24 * 60 * 60;
+const MINUTE = 60;
+
+// US-03b : session valable 45 minutes, repoussée à 45 minutes à chaque appel d'une route
+// réservée aux utilisateurs connectés (exigerConnexion -> getSession). Une écriture en
+// base au plus par minute : la session expire après 44 à 45 minutes sans activité.
+export const DUREE_SESSION = 45 * MINUTE;
+export const PROLONGATION_SESSION = MINUTE;
 
 // Better-Auth : email + mot de passe (haché scrypt), sessions stockées en base
-// (table auth_session), valables 7 jours et prolongées une fois par jour d'activité.
+// (table auth_session), prolongées par l'activité (voir DUREE_SESSION).
 // Routes Better-Auth sous /auth (get-session, sign-out...) ; l'inscription passe par
 // POST /comptes (règles métier : CGU, mot de passe), d'où /sign-up/email désactivée.
 export function creerAuth(db: Db, secret: string, log: Logger = loggerParDefaut) {
@@ -34,7 +40,7 @@ export function creerAuth(db: Db, secret: string, log: Logger = loggerParDefaut)
       minPasswordLength: 12,
       maxPasswordLength: 128,
     },
-    session: { expiresIn: 7 * JOUR, updateAge: JOUR },
+    session: { expiresIn: DUREE_SESSION, updateAge: PROLONGATION_SESSION },
     disabledPaths: ['/sign-up/email'],
     // Session transmise par "Authorization: Bearer <jeton>" (frontend et gateway sur
     // deux adresses différentes ; même principe qu'un jeton OIDC)
@@ -94,6 +100,10 @@ export function fournisseurBetterAuth(auth: Auth): FournisseurIdentite {
     async utilisateurConnecte(headers) {
       const session = await auth.api.getSession({ headers: fromNodeHeaders(headers) });
       return session ? { id: session.user.id, email: session.user.email } : null;
+    },
+    async identifiantDe(email) {
+      const { internalAdapter } = await auth.$context;
+      return (await internalAdapter.findUserByEmail(email))?.user.id ?? null;
     },
   };
 }

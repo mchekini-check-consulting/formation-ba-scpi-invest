@@ -96,6 +96,18 @@ export const parametre = pgTable('parametre', {
   valeur: text('valeur').notNull(),
 });
 
+// US-03b : échecs de connexion à la suite, par email (y compris un email sans compte).
+// cle = empreinte SHA-256 de l'email normalisé : aucune adresse stockée en clair.
+// Ligne supprimée à la connexion réussie, effacée une fois périmée. Un essai est compté
+// dès son arrivée (avant la vérification du mot de passe) : echecs et dernier_echec
+// incluent donc un essai en cours de vérification.
+export const tentativeConnexion = pgTable('tentative_connexion', {
+  cle: text('cle').primaryKey(),
+  echecs: integer('echecs').notNull(),
+  dernierEchec: horodatage('dernier_echec').notNull(),
+  bloqueJusqua: horodatage('bloque_jusqua'),
+});
+
 // ---- Métier
 
 // US-02a : date d'acceptation et version des CGU, à chaque acceptation.

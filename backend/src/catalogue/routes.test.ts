@@ -15,6 +15,7 @@ function application(
   const fournisseur: FournisseurIdentite = {
     creerCompte: vi.fn(),
     connecter: vi.fn(),
+    identifiantDe: vi.fn(),
     utilisateurConnecte: vi
       .fn()
       .mockResolvedValue(connecte ? { id: 'u1', email: 'jean@exemple.fr' } : null),

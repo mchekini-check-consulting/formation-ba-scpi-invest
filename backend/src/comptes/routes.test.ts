@@ -13,6 +13,7 @@ function application(creer = vi.fn(), utilisateurConnecte = vi.fn(), connecter =
     creerCompte: vi.fn(),
     connecter: vi.fn(),
     utilisateurConnecte,
+    identifiantDe: vi.fn(),
   };
   const { log, lignes } = captureLogs();
   const app = createApp(vi.fn(), log, { routeurs: [routesComptes(service, fournisseur)] });

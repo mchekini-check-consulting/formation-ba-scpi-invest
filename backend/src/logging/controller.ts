@@ -46,7 +46,11 @@ export function errorHandler(log: Logger): ErrorRequestHandler {
     if (status >= 500) {
       log.error({ err }, 'erreur non gérée');
     }
-    res.status(status).json({ message: status >= 500 ? 'erreur interne' : err.message });
+    res
+      .status(status)
+      .json(
+        status >= 500 ? { message: 'erreur interne' } : { ...err.details, message: err.message },
+      );
   };
 }
 

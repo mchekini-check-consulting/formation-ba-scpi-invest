@@ -11,6 +11,7 @@ import { routesComptes } from '../src/comptes/routes.js';
 import { creerCompteService } from '../src/comptes/service.js';
 import {
   depotAcceptationsCgu,
+  depotTentativesConnexion,
   depotKyc,
   depotPieces,
   secretDesSessions,
@@ -52,7 +53,13 @@ describe('KYC (e2e)', () => {
     app = createApp(() => db.execute(sql`select 1`), log, {
       auth: toNodeHandler(auth),
       routeurs: [
-        routesComptes(creerCompteService(fournisseur, depotAcceptationsCgu(db)), fournisseur),
+        routesComptes(
+          creerCompteService(fournisseur, {
+            cgu: depotAcceptationsCgu(db),
+            tentatives: depotTentativesConnexion(db),
+          }),
+          fournisseur,
+        ),
         routesKyc(creerKycService(depotKyc(db)), fournisseur),
         routesPiecesKyc(creerPiecesService(depotKyc(db), depotPieces(db), stockage), fournisseur),
       ],

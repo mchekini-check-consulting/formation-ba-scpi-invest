@@ -1,10 +1,15 @@
 // Écran de connexion (US-03a) : email + mot de passe, icône « œil » pour l'afficher.
-// Le blocage après 5 échecs et l'expiration de session relèvent de l'US-03b.
-import { useState } from 'react';
-import { connecter as connecterParDefaut } from '../auth.js';
+// US-03b : heure de déblocage après 5 échecs, message « session expirée ».
+import { useEffect, useState } from 'react';
+import {
+  connecter as connecterParDefaut,
+  oublierSessionExpiree,
+  sessionExpiree as sessionExpireeParDefaut,
+} from '../auth.js';
 import { lireQuestionnaire } from '../investisseur/api.js';
 import PageCompte from '../PageCompte.jsx';
 import { destinationApresConnexion } from './destination.js';
+import { MESSAGE_SESSION_EXPIREE, messageErreur } from './messages.js';
 
 function naviguer(url) {
   window.location.assign(url);
@@ -16,12 +21,18 @@ export default function Connexion({
   connecter = connecterParDefaut,
   lireAvancement = lireQuestionnaire,
   allerA = naviguer,
+  sessionExpiree = sessionExpireeParDefaut,
 }) {
   const [email, setEmail] = useState(emailInitial);
   const [motDePasse, setMotDePasse] = useState('');
   const [afficher, setAfficher] = useState(false);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreur, setErreur] = useState('');
+  // Lu une fois à l'arrivée sur l'écran, puis oublié (pas de message à la visite suivante)
+  const [expiree] = useState(sessionExpiree);
+  useEffect(() => {
+    oublierSessionExpiree();
+  }, []);
 
   const peutEnvoyer = email.trim() !== '' && motDePasse !== '' && !envoiEnCours;
 
@@ -36,7 +47,7 @@ export default function Connexion({
       const avancement = await lireAvancement().catch(() => null);
       allerA(destinationApresConnexion(avancement));
     } catch (err) {
-      setErreur(err.message);
+      setErreur(messageErreur(err));
       setEnvoiEnCours(false);
     }
   }
@@ -51,6 +62,11 @@ export default function Connexion({
   return (
     <PageCompte titre="Se connecter" origine={origine}>
       <form className="compte__form" aria-label="Connexion" onSubmit={envoyer} noValidate>
+        {expiree && !erreur && (
+          <p className="compte__info" role="status">
+            {MESSAGE_SESSION_EXPIREE}
+          </p>
+        )}
         <div className="champ">
           <label htmlFor="email">Adresse e-mail</label>
           <input

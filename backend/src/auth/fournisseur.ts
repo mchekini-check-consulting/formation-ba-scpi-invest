@@ -18,6 +18,8 @@ export interface FournisseurIdentite {
   // Ouvre une session ; null si l'email ou le mot de passe est incorrect
   connecter(email: string, motDePasse: string): Promise<CompteCree | null>;
   utilisateurConnecte(headers: IncomingHttpHeaders): Promise<Utilisateur | null>;
+  // Identifiant du compte de cet email, null s'il n'existe pas (logs métier sans email)
+  identifiantDe(email: string): Promise<string | null>;
 }
 
 export class EmailDejaUtilise extends Error {
