@@ -7,7 +7,11 @@ import { HttpError } from '../logging/http-error.js';
 import { routesCatalogue } from './routes.js';
 import type { CatalogueService } from './service.js';
 
-function application(lister: CatalogueService['lister'], connecte = true) {
+function application(
+  lister: CatalogueService['lister'],
+  connecte = true,
+  filtres: CatalogueService['filtres'] = vi.fn(),
+) {
   const fournisseur: FournisseurIdentite = {
     creerCompte: vi.fn(),
     connecter: vi.fn(),
@@ -17,7 +21,7 @@ function application(lister: CatalogueService['lister'], connecte = true) {
   };
   const { log, lignes } = captureLogs();
   const app = createApp(vi.fn(), log, {
-    routeurs: [routesCatalogue({ lister }, fournisseur)],
+    routeurs: [routesCatalogue({ lister, filtres }, fournisseur)],
   });
   return { app, lignes };
 }
@@ -37,7 +41,7 @@ describe('routes du Catalogue (US-08)', () => {
     const lister = vi.fn().mockResolvedValue(PAGE);
     const { app, lignes } = application(lister);
     await request(app).get('/scpis?page=2').set('Authorization', 'Bearer jeton').expect(200, PAGE);
-    expect(lister).toHaveBeenCalledWith('2');
+    expect(lister).toHaveBeenCalledWith('2', {});
     expect(lignes.at(-1)).toMatchObject({ layer: 'controller', method: 'listerScpis' });
   });
 
@@ -53,5 +57,29 @@ describe('routes du Catalogue (US-08)', () => {
     const { app } = application(lister, false);
     await request(app).get('/scpis').expect(401);
     expect(lister).not.toHaveBeenCalled();
+  });
+
+  it('US-10 : filtres de l’URL transmis au service, valeurs répétées en liste', async () => {
+    const lister = vi.fn().mockResolvedValue(PAGE);
+    const { app } = application(lister);
+    await request(app)
+      .get('/scpis?page=1&categorie=Sant%C3%A9&categorie=Bureaux&tauxMin=4')
+      .expect(200);
+    expect(lister).toHaveBeenCalledWith('1', { categorie: ['Santé', 'Bureaux'], tauxMin: '4' });
+  });
+
+  it('US-10 : GET /scpis/filtres renvoie les valeurs du panneau', async () => {
+    const options = { categories: ['Santé'], anneeTaux: 2025 };
+    const filtres = vi.fn().mockResolvedValue(options);
+    const { app, lignes } = application(vi.fn(), true, filtres);
+    await request(app).get('/scpis/filtres').expect(200, options);
+    expect(lignes.at(-1)).toMatchObject({ layer: 'controller', method: 'filtresScpis' });
+  });
+
+  it('US-10 : GET /scpis/filtres sans session -> 401', async () => {
+    const filtres = vi.fn();
+    const { app } = application(vi.fn(), false, filtres);
+    await request(app).get('/scpis/filtres').expect(401);
+    expect(filtres).not.toHaveBeenCalled();
   });
 });

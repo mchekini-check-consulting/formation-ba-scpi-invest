@@ -1,0 +1,333 @@
+/* Filtres du Catalogue (PanneauFiltres.jsx) : barre des filtres actifs au-dessus de la
+   liste, panneau ouvert sur la droite de l'écran */
+
+/* Barre : bouton « Filtres », pastilles des filtres actifs, « Réinitialiser les filtres » */
+.barre-filtres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 20px;
+}
+
+.barre-filtres__bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--bleu);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.barre-filtres__bouton:hover {
+  border-color: var(--bleu-pied);
+}
+
+.barre-filtres__bouton svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.barre-filtres__nombre {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bleu-vif);
+  color: #fff;
+  font-size: 12.5px;
+}
+
+.barre-filtres__pastilles {
+  display: contents;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pastille-filtre {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 4px 0 12px;
+  border-radius: 999px;
+  background: var(--bleu-ciel);
+  color: var(--bleu);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pastille-filtre__retirer {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pastille-filtre__retirer:hover {
+  background: rgb(30 58 138 / 12%);
+}
+
+.barre-filtres__reinitialiser {
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  color: var(--bleu-vif);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.barre-filtres button:focus-visible,
+.filtres button:focus-visible,
+.filtres input:focus-visible {
+  outline: 3px solid var(--bleu-pied);
+  outline-offset: 2px;
+}
+
+.catalogue__aucun {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+/* Panneau : voile sombre, panneau sur toute la hauteur à droite, contenu qui défile */
+.filtres {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+  background: rgb(15 31 69 / 45%);
+  animation: filtres-voile 0.15s ease-out;
+}
+
+.filtres__panneau {
+  display: flex;
+  flex-direction: column;
+  width: min(400px, 100%);
+  height: 100%;
+  background: #fff;
+  color: var(--encre);
+  font-family: var(--sans);
+  box-shadow: -20px 0 50px -20px rgb(15 31 69 / 50%);
+  animation: filtres-entree 0.2s ease-out;
+}
+
+.filtres__haut,
+.filtres__bas {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 22px;
+}
+
+.filtres__haut {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ligne);
+}
+
+.filtres__entete {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--bleu);
+}
+
+.filtres__fermer {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--papier);
+  color: var(--encre);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Défilement propre à la liste des filtres : arrivé en haut ou en bas, il ne se
+   propage pas à la page du Catalogue */
+.filtres__corps {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 22px 18px;
+}
+
+.filtres__bas {
+  border-top: 1px solid var(--ligne);
+}
+
+.filtres__bas > button {
+  flex: 1;
+}
+
+.filtres__groupe {
+  margin: 0;
+  padding: 16px 0;
+  border: 0;
+  border-bottom: 1px solid var(--ligne);
+}
+
+.filtres__groupe:last-child {
+  border-bottom: 0;
+}
+
+/* Titre posé dans le flux (et non sur la bordure) pour un espacement régulier */
+.filtres__titre {
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bleu);
+}
+
+.filtres__titre + * {
+  clear: both;
+}
+
+.filtres__cases {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.filtres__case {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.filtres__case input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--bleu-vif);
+}
+
+.filtres__vide,
+.filtres__plage {
+  margin: 0;
+  font-size: 14px;
+  color: var(--encre-douce);
+}
+
+.filtres__plage {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--encre);
+}
+
+/* Curseur à deux poignées : deux curseurs superposés sur une même piste, la partie
+   choisie (entre --debut et --fin) en bleu */
+.curseur {
+  position: relative;
+  height: 28px;
+}
+
+.curseur::before {
+  position: absolute;
+  top: 12px;
+  right: 0;
+  left: 0;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    var(--sable) var(--debut),
+    var(--bleu-vif) var(--debut),
+    var(--bleu-vif) var(--fin),
+    var(--sable) var(--fin)
+  );
+  content: '';
+}
+
+.curseur input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  background: none;
+  pointer-events: none;
+  appearance: none;
+}
+
+.curseur input::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--bleu-vif);
+  box-shadow: 0 1px 4px rgb(15 31 69 / 35%);
+  pointer-events: auto;
+  cursor: pointer;
+  appearance: none;
+}
+
+.curseur input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--bleu-vif);
+  box-shadow: 0 1px 4px rgb(15 31 69 / 35%);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.curseur input:disabled::-webkit-slider-thumb {
+  background: var(--discret);
+  cursor: default;
+}
+
+@keyframes filtres-voile {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes filtres-entree {
+  from {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filtres,
+  .filtres__panneau {
+    animation: none;
+  }
+}

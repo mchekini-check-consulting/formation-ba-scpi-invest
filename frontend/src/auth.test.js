@@ -130,6 +130,13 @@ describe('deconnecter', () => {
     expect(jeton()).toBeNull();
   });
 
+  it('oublie aussi les filtres du Catalogue (US-10a)', async () => {
+    sessionStorage.setItem('scpi-invest.catalogue.filtres', '{}');
+    fetchMock.mockResolvedValue(reponse(200, { success: true }));
+    await deconnecter('/api');
+    expect(sessionStorage.getItem('scpi-invest.catalogue.filtres')).toBeNull();
+  });
+
   it('serveur injoignable : jeton oublié quand même', async () => {
     sessionStorage.setItem('scpi-invest.session', 'jeton-1');
     fetchMock.mockRejectedValue(new TypeError('réseau'));

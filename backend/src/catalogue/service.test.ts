@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../logging/http-error.js';
+import { AUCUN_FILTRE } from './filtres.js';
 import { type ScpiCatalogue, TAILLE_PAGE, creerCatalogueService } from './service.js';
 
 const SCPI: ScpiCatalogue = {
@@ -12,6 +13,16 @@ const SCPI: ScpiCatalogue = {
   zoneGeographique: 'France',
 };
 
+const VALEURS = {
+  categories: ['Bureaux', 'Santé'],
+  pays: ['Espagne', 'France'],
+  gerants: ['Gestion & Co'],
+  taux: { min: 2.26, max: 8.35 },
+  prix: { min: 168, max: 1664 },
+  frais: { min: 0, max: 12 },
+  minimum: { min: 180, max: 10200 },
+};
+
 const MAJ = new Date('2026-11-05T02:00:00Z');
 
 function preparer(total = 30, scpis = [SCPI], misAJourLe: Date | null = MAJ) {
@@ -19,6 +30,7 @@ function preparer(total = 30, scpis = [SCPI], misAJourLe: Date | null = MAJ) {
     compter: vi.fn().mockResolvedValue(total),
     lister: vi.fn().mockResolvedValue(scpis),
     dateDernierImport: vi.fn().mockResolvedValue(misAJourLe),
+    valeursFiltres: vi.fn().mockResolvedValue(VALEURS),
   };
   const service = creerCatalogueService(depot, () => new Date('2026-11-06T10:00:00Z'));
   return { service, depot };
@@ -46,19 +58,20 @@ describe('CatalogueService (US-08)', () => {
       misAJourLe: MAJ,
     });
     expect(TAILLE_PAGE).toBe(12);
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, AUCUN_FILTRE);
+    expect(depot.compter).toHaveBeenCalledWith(2025, AUCUN_FILTRE);
   });
 
   it('page demandée (texte de l’URL) : décalage de 12 par page', async () => {
     const { service, depot } = preparer();
     expect((await service.lister('3')).page).toBe(3);
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 24);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 24, AUCUN_FILTRE);
   });
 
   it('page vide dans l’URL : première page', async () => {
     const { service, depot } = preparer();
     await service.lister('');
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, AUCUN_FILTRE);
   });
 
   it('catalogue vide, aucun import réussi : 1 page, date non renseignée', async () => {
@@ -82,8 +95,51 @@ describe('CatalogueService (US-08)', () => {
       compter: vi.fn().mockResolvedValue(0),
       lister: vi.fn().mockResolvedValue([]),
       dateDernierImport: vi.fn().mockResolvedValue(null),
+      valeursFiltres: vi.fn(),
     };
     const { anneeTaux } = await creerCatalogueService(depot).lister();
     expect(anneeTaux).toBe(new Date().getFullYear() - 1);
+  });
+
+  it('US-10 : filtres de l’URL transmis au comptage et à la liste', async () => {
+    const { service, depot } = preparer(3);
+    const page = await service.lister('1', {
+      categorie: ['Santé', 'Bureaux'],
+      pays: 'France',
+      tauxMin: '4',
+      tauxMax: '6',
+    });
+    const attendus = {
+      ...AUCUN_FILTRE,
+      categories: ['Santé', 'Bureaux'],
+      pays: ['France'],
+      taux: { min: 4, max: 6 },
+    };
+    expect(depot.compter).toHaveBeenCalledWith(2025, attendus);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, attendus);
+    expect(page).toMatchObject({ total: 3, nombrePages: 1 });
+  });
+
+  it('US-10 : filtre invalide -> 400, la base n’est pas lue', async () => {
+    const { service, depot } = preparer();
+    const err = await erreurDe(service.lister('1', { prixMin: 'abc' }));
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Filtre invalide');
+    expect(depot.lister).not.toHaveBeenCalled();
+  });
+
+  it('US-10 : valeurs du panneau des filtres, tranches de capitalisation et année N-1', async () => {
+    const { service, depot } = preparer();
+    const options = await service.filtres();
+    expect(depot.valeursFiltres).toHaveBeenCalledWith(2025);
+    expect(options).toMatchObject({ ...VALEURS, anneeTaux: 2025 });
+    expect(options.capitalisations.map((t) => t.libelle)).toEqual([
+      'Moins de 100 M€',
+      '100 à 500 M€',
+      '500 M€ à 1 Md€',
+      '1 à 3 Md€',
+      'Plus de 3 Md€',
+    ]);
+    expect(options.capitalisations[0]).toEqual({ code: 'moins-100m', libelle: 'Moins de 100 M€' });
   });
 });
