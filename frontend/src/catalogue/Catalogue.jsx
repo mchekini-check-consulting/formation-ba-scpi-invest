@@ -7,14 +7,18 @@
 // par le backend), nombre total de SCPI et date de mise à jour des données.
 // Filtres (US-10a, US-10b, US-10c) : panneau, pastilles des filtres actifs, appliqués par
 // le backend sur tout le catalogue ; changer un filtre ramène à la première page.
+// Recherche par nom (Recherche.jsx) : ses résultats remplacent la liste tant qu'elle est
+// active.
 import { useEffect, useId, useRef, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import { lireQuestionnaire } from '../investisseur/api.js';
 import { formulairesPassables } from '../outils/passerFormulaires.js';
 import PageApplication from '../navigation/PageApplication.jsx';
-import { lireFiltresCatalogue, listerScpis } from './api.js';
+import { lireFiltresCatalogue, listerScpis, rechercherScpis } from './api.js';
 import { FILTRES_VIDES, memoriserFiltres, pastilles, relireFiltres } from './filtres.js';
 import { BarreFiltres, PanneauFiltres } from './PanneauFiltres.jsx';
+import { BarreRecherche, ResultatsRecherche } from './Recherche.jsx';
+import { useRecherche } from './useRecherche.js';
 import { photosPage } from './photos.js';
 import './catalogue.css';
 import {
@@ -236,23 +240,25 @@ function AucunResultat({ filtre, reinitialiser }) {
   );
 }
 
+// Cartes des SCPI, pour la liste du Catalogue comme pour les résultats de la recherche
+function Cartes({ scpis, anneeTaux }) {
+  const photos = photosPage(scpis);
+  return (
+    <ul className="catalogue__liste">
+      {scpis.map((scpi) => (
+        <CarteScpi key={scpi.id} scpi={scpi} anneeTaux={anneeTaux} photo={photos.get(scpi.id)} />
+      ))}
+    </ul>
+  );
+}
+
 function ListeScpis({ donnees, allerPage, filtre, reinitialiser }) {
-  const photos = photosPage(donnees.scpis);
   return (
     <>
       {donnees.total === 0 ? (
         <AucunResultat filtre={filtre} reinitialiser={reinitialiser} />
       ) : (
-        <ul className="catalogue__liste">
-          {donnees.scpis.map((scpi) => (
-            <CarteScpi
-              key={scpi.id}
-              scpi={scpi}
-              anneeTaux={donnees.anneeTaux}
-              photo={photos.get(scpi.id)}
-            />
-          ))}
-        </ul>
+        <Cartes scpis={donnees.scpis} anneeTaux={donnees.anneeTaux} />
       )}
       <Pagination page={donnees.page} nombrePages={donnees.nombrePages} allerPage={allerPage} />
     </>
@@ -263,6 +269,7 @@ export default function Catalogue({
   lire = lireQuestionnaire,
   lister = listerScpis,
   lireFiltres = lireFiltresCatalogue,
+  rechercher = rechercherScpis,
   seDeconnecter = deconnecter,
   allerA = naviguer,
   chargerIdentite,
@@ -278,6 +285,14 @@ export default function Catalogue({
   const [panneauOuvert, setPanneauOuvert] = useState(false);
   const boutonFiltres = useRef(null);
   const filtre = pastilles(filtres, options).length > 0;
+  const [saisie, setSaisie] = useState('');
+  const recherche = useRecherche(saisie, rechercher);
+  const sessionExpiree = recherche.erreur?.status === 401;
+
+  // Session expirée pendant une recherche : connexion, comme pour la liste
+  useEffect(() => {
+    if (sessionExpiree) allerA('/connexion');
+  }, [sessionExpiree, allerA]);
 
   useEffect(() => {
     if (passer) return undefined;
@@ -348,15 +363,19 @@ export default function Catalogue({
       chargerIdentite={chargerIdentite}
       entete={<EnteteCatalogue donnees={donnees} filtre={filtre} />}
     >
+      {/* Filtres à gauche, recherche tout à droite, sur la même ligne */}
       {valide && (
-        <BarreFiltres
-          filtres={filtres}
-          options={options}
-          onChange={changerFiltres}
-          onOuvrir={() => setPanneauOuvert(true)}
-          refBouton={boutonFiltres}
-          ouvert={panneauOuvert}
-        />
+        <div className="catalogue__outils">
+          <BarreFiltres
+            filtres={filtres}
+            options={options}
+            onChange={changerFiltres}
+            onOuvrir={() => setPanneauOuvert(true)}
+            refBouton={boutonFiltres}
+            ouvert={panneauOuvert}
+          />
+          <BarreRecherche valeur={saisie} onChange={setSaisie} />
+        </div>
       )}
       {panneauOuvert && (
         <PanneauFiltres
@@ -373,7 +392,13 @@ export default function Catalogue({
           {alerte}
         </p>
       )}
-      {donnees ? (
+      {recherche.active ? (
+        <ResultatsRecherche
+          recherche={recherche}
+          effacer={() => setSaisie('')}
+          afficherCartes={({ scpis, anneeTaux }) => <Cartes scpis={scpis} anneeTaux={anneeTaux} />}
+        />
+      ) : donnees ? (
         <ListeScpis
           donnees={donnees}
           allerPage={allerPage}

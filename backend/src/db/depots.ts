@@ -317,6 +317,26 @@ function conditionsFiltres(filtres: FiltresCatalogue): SQL {
   return conditions.length ? sql.join(conditions, sql` and `) : sql`true`;
 }
 
+// Cartes du Catalogue qui satisfont les conditions (filtres ou recherche par nom), triées
+// par taux N-1 décroissant (sans taux N-1 : fin de liste), puis par nom
+function cartesCatalogue(anneeTaux: number, conditions: SQL, limite: number, decalage: number) {
+  return sql`
+    select c.id,
+           c.nom,
+           nullif(trim(c.gerant), '') as gerant,
+           t.taux::float8 as "tauxDistribution",
+           c.capitalisation,
+           (select s.secteur::text from scpi_secteurs s where s.scpi_id = c.id
+             order by s.pourcentage desc, s.secteur limit 1) as categorie,
+           (select l.pays from scpi_localisation l where l.scpi_id = c.id
+             order by l.pourcentage desc, l.pays limit 1) as "zoneGeographique"
+    from scpi_catalog c
+    left join scpi_taux_distribution t on t.scpi_id = c.id and t.annee = ${anneeTaux}
+    where ${conditions}
+    order by t.taux desc nulls last, c.nom, c.id
+    limit ${limite} offset ${decalage}`;
+}
+
 export function depotCatalogue(db: Db): DepotCatalogue {
   return {
     async compter(anneeTaux, filtres): Promise<number> {
@@ -329,21 +349,9 @@ export function depotCatalogue(db: Db): DepotCatalogue {
     },
 
     async lister(anneeTaux, limite, decalage, filtres): Promise<ScpiCatalogue[]> {
-      const resultat = await db.execute<ScpiCatalogue>(sql`
-        select c.id,
-               c.nom,
-               nullif(trim(c.gerant), '') as gerant,
-               t.taux::float8 as "tauxDistribution",
-               c.capitalisation,
-               (select s.secteur::text from scpi_secteurs s where s.scpi_id = c.id
-                 order by s.pourcentage desc, s.secteur limit 1) as categorie,
-               (select l.pays from scpi_localisation l where l.scpi_id = c.id
-                 order by l.pourcentage desc, l.pays limit 1) as "zoneGeographique"
-        from scpi_catalog c
-        left join scpi_taux_distribution t on t.scpi_id = c.id and t.annee = ${anneeTaux}
-        where ${conditionsFiltres(filtres)}
-        order by t.taux desc nulls last, c.nom, c.id
-        limit ${limite} offset ${decalage}`);
+      const resultat = await db.execute<ScpiCatalogue>(
+        cartesCatalogue(anneeTaux, conditionsFiltres(filtres), limite, decalage),
+      );
       return resultat.rows;
     },
 
@@ -389,6 +397,16 @@ export function depotCatalogue(db: Db): DepotCatalogue {
         .from(TABLE_IMPORT_RAPPORT)
         .where(eq(TABLE_IMPORT_RAPPORT.statut, 'reussi'));
       return ligne?.fin ?? null;
+    },
+
+    // Recherche d'une SCPI par son nom
+    // % et _ tapés par l'utilisateur sont cherchés tels quels (pas comme jokers de ilike)
+    async rechercher(anneeTaux, texte, limite): Promise<ScpiCatalogue[]> {
+      const motif = `%${texte.replace(/[\\%_]/g, '\\$&')}%`;
+      const resultat = await db.execute<ScpiCatalogue>(
+        cartesCatalogue(anneeTaux, sql`c.nom ilike ${motif}`, limite, 0),
+      );
+      return resultat.rows;
     },
   };
 }

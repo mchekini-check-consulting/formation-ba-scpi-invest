@@ -63,7 +63,19 @@ export type DepotCatalogue = {
   ): Promise<ScpiCatalogue[]>;
   valeursFiltres(anneeTaux: number): Promise<ValeursFiltres>;
   dateDernierImport(): Promise<Date | null>;
+  // SCPI dont le nom contient le texte recherché (majuscules ignorées), même carte et même
+  // tri que le Catalogue (taux N-1 décroissant)
+  rechercher(anneeTaux: number, texte: string, limite: number): Promise<ScpiCatalogue[]>;
 };
+
+// Résultat de la recherche par nom : SCPI trouvées, avec l'année de leur taux affiché
+export type ResultatRecherche = {
+  scpis: ScpiCatalogue[];
+  anneeTaux: number;
+};
+
+// Nombre maximum de SCPI renvoyées par la recherche
+export const LIMITE_RECHERCHE = 20;
 
 export const TAILLE_PAGE = 12;
 
@@ -107,7 +119,22 @@ export function creerCatalogueService(depot: DepotCatalogue, maintenant = () => 
     };
   }
 
-  return loggable('CatalogueService', { lister, filtres });
+  // Recherche d'une SCPI par son nom
+  // 400 si q n'est pas un texte (absent ou répété dans l'adresse), aucune SCPI si le texte
+  // est vide
+  async function rechercher(q: unknown): Promise<ResultatRecherche> {
+    if (typeof q !== 'string') {
+      throw new HttpError(400, 'Recherche invalide');
+    }
+    const texte = q.trim();
+    const anneeTaux = anneeN1();
+    if (texte === '') {
+      return { scpis: [], anneeTaux };
+    }
+    return { scpis: await depot.rechercher(anneeTaux, texte, LIMITE_RECHERCHE), anneeTaux };
+  }
+
+  return loggable('CatalogueService', { lister, filtres, rechercher });
 }
 
 export type CatalogueService = ReturnType<typeof creerCatalogueService>;
