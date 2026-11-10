@@ -4,13 +4,18 @@ import { REPONSES_EXEMPLE as REPONSES } from './reponses-exemple.js';
 import { VERSION_QUESTIONNAIRE } from './questionnaire.js';
 import { type Avancement, creerQuestionnaireService } from './service.js';
 
-function preparer(existant: Avancement | null = null, valide = false) {
+function preparer(
+  existant: Avancement | null = null,
+  valide = false,
+  derniereValidation: Date | null = null,
+) {
   const depot = {
     lire: vi.fn().mockResolvedValue(existant),
     enregistrer: vi.fn().mockResolvedValue(undefined),
   };
   const profils = {
     existe: vi.fn().mockResolvedValue(valide),
+    derniereValidation: vi.fn().mockResolvedValue(derniereValidation),
     enregistrer: vi.fn().mockResolvedValue(undefined),
   };
   return { service: creerQuestionnaireService(depot, profils), depot, profils };
@@ -121,11 +126,19 @@ describe('QuestionnaireService (US-05b)', () => {
     expect((await preparer(TERMINE, true).service.lire('u1')).valide).toBe(true);
   });
 
-  it('profil : affiché sans le score, avec les avertissements', async () => {
+  it('profil : affiché sans le score, avec les avertissements, pas encore validé', async () => {
     expect(await preparer(TERMINE).service.profil('u1')).toEqual({
       profil: 'equilibre',
       avertissements: [],
+      valideLe: null,
     });
+  });
+
+  it('profil : date de la dernière validation (page Profil)', async () => {
+    const date = new Date('2026-11-04T09:30:00.000Z');
+    const { service, profils } = preparer(TERMINE, true, date);
+    expect((await service.profil('u1')).valideLe).toBe('2026-11-04T09:30:00.000Z');
+    expect(profils.derniereValidation).toHaveBeenCalledWith('u1');
   });
 
   it('profil : questionnaire pas terminé -> 409', async () => {

@@ -1,0 +1,260 @@
+/* Page Profil (maquette C) : carte d'identité à gauche, détail à droite. Couleurs et
+   rayons de index.css. */
+.profil__sous-titre {
+  margin: 0 0 28px;
+  color: var(--encre-douce);
+}
+
+.profil__colonnes {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.profil__carte {
+  padding: 24px 26px;
+  border: 1px solid var(--ligne);
+  border-radius: var(--r-m);
+  background: #fff;
+}
+
+/* Carte d'identité */
+.profil__identite {
+  position: sticky;
+  top: 24px;
+  border: 0;
+  background: var(--nuit);
+  color: #fff;
+  text-align: center;
+}
+
+.profil__pastille {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  margin: 6px auto 14px;
+  border: 3px solid rgb(255 255 255 / 35%);
+  border-radius: 50%;
+  background: var(--bleu-vif);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.profil__nom {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.profil__email {
+  margin: 4px 0 0;
+  color: var(--texte-sur-nuit);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.profil__etiquette {
+  margin: 22px 0 0;
+  color: var(--texte-sur-nuit);
+  font-size: 13px;
+}
+
+.profil__type {
+  margin: 2px 0 0;
+  font-family: var(--serif);
+  font-size: 26px;
+}
+
+.profil__curseur {
+  position: relative;
+  height: 8px;
+  margin: 22px 10px 10px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--vert), var(--ocre), var(--orange));
+}
+
+.profil__curseur span {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--nuit);
+}
+
+.profil__graduations {
+  display: flex;
+  justify-content: space-between;
+  color: var(--texte-sur-nuit);
+  font-size: 12px;
+}
+
+.profil__graduation--active {
+  color: #fff;
+  font-weight: 700;
+}
+
+.profil__explication {
+  margin: 18px 0 0;
+  color: var(--texte-sur-nuit);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.profil__a-completer {
+  margin: 6px 0 0;
+  color: var(--texte-sur-nuit);
+  font-size: 14px;
+}
+
+.compte .profil__a-completer a {
+  color: var(--ocre);
+}
+
+.profil__statuts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid rgb(255 255 255 / 15%);
+  font-size: 13px;
+  text-align: left;
+}
+
+.profil__statut {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profil__statut dt {
+  color: var(--texte-sur-nuit);
+}
+
+.profil__statut dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.profil__ok {
+  color: #8fe0b7;
+}
+
+.profil__attente {
+  color: var(--ocre);
+}
+
+/* Détail */
+.profil__details {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.profil__rubrique h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.profil__rubrique h2::before {
+  content: '';
+  width: 6px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--bleu-vif);
+}
+
+.profil__fiche {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 28px;
+  margin: 0;
+}
+
+.profil__fiche dt {
+  margin-bottom: 3px;
+  color: var(--discret);
+  font-size: 13px;
+}
+
+.profil__fiche dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.profil__pieces {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profil__piece {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ligne);
+}
+
+.profil__piece:last-child {
+  border-bottom: 0;
+}
+
+.profil__piece-nom {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.profil__piece-nom small {
+  display: block;
+  color: var(--discret);
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.profil__badge {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #dcefe5;
+  color: #1d6b47;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profil__badge--manquante {
+  background: var(--papier);
+  color: var(--encre-douce);
+}
+
+@media (max-width: 1100px) {
+  .profil__colonnes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profil__identite {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .profil__fiche {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
