@@ -47,6 +47,13 @@ describe('Contenu du KYC (US-04a)', () => {
       'usPerson',
     ]);
   });
+
+  it('propose le secteur « Informatique », juste après « Information, communication »', () => {
+    const secteurs = situation.champs.find((c) => c.nom === 'secteur').options;
+    const position = secteurs.indexOf('Information, communication');
+    expect(secteurs[position + 1]).toBe('Informatique');
+    expect(secteurs).toHaveLength(17);
+  });
 });
 
 describe('Règles de saisie', () => {
