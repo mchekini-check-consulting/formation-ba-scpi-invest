@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../logging/http-error.js';
 import { AUCUN_FILTRE } from './filtres.js';
 import { type ScpiCatalogue, TAILLE_PAGE, creerCatalogueService } from './service.js';
+import { TRI_PAR_DEFAUT } from './tri.js';
 
 const SCPI: ScpiCatalogue = {
   id: 1,
@@ -59,20 +60,20 @@ describe('CatalogueService (US-08)', () => {
       misAJourLe: MAJ,
     });
     expect(TAILLE_PAGE).toBe(12);
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, AUCUN_FILTRE);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, AUCUN_FILTRE, TRI_PAR_DEFAUT);
     expect(depot.compter).toHaveBeenCalledWith(2025, AUCUN_FILTRE);
   });
 
   it('page demandée (texte de l’URL) : décalage de 12 par page', async () => {
     const { service, depot } = preparer();
     expect((await service.lister('3')).page).toBe(3);
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 24, AUCUN_FILTRE);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 24, AUCUN_FILTRE, TRI_PAR_DEFAUT);
   });
 
   it('page vide dans l’URL : première page', async () => {
     const { service, depot } = preparer();
     await service.lister('');
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, AUCUN_FILTRE);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, AUCUN_FILTRE, TRI_PAR_DEFAUT);
   });
 
   it('catalogue vide, aucun import réussi : 1 page, date non renseignée', async () => {
@@ -117,8 +118,27 @@ describe('CatalogueService (US-08)', () => {
       taux: { min: 4, max: 6 },
     };
     expect(depot.compter).toHaveBeenCalledWith(2025, attendus);
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, attendus);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, attendus, TRI_PAR_DEFAUT);
     expect(page).toMatchObject({ total: 3, nombrePages: 1 });
+  });
+
+  it('US-11 : tri de l’URL transmis à la liste, filtres conservés', async () => {
+    const { service, depot } = preparer();
+    await service.lister('2', { tri: 'capitalisation-asc', pays: 'France' });
+    expect(depot.lister).toHaveBeenCalledWith(
+      2025,
+      12,
+      12,
+      { ...AUCUN_FILTRE, pays: ['France'] },
+      { critere: 'capitalisation', sens: 'asc' },
+    );
+  });
+
+  it('US-11 : tri invalide -> 400, la base n’est pas lue', async () => {
+    const { service, depot } = preparer();
+    const err = await erreurDe(service.lister('1', { tri: 'prix-asc' }));
+    expect(err).toMatchObject({ status: 400, message: 'Tri invalide' });
+    expect(depot.lister).not.toHaveBeenCalled();
   });
 
   it('US-10 : filtre invalide -> 400, la base n’est pas lue', async () => {

@@ -7,6 +7,8 @@
 // par le backend), nombre total de SCPI et date de mise à jour des données.
 // Filtres (US-10a, US-10b, US-10c) : panneau, pastilles des filtres actifs, appliqués par
 // le backend sur tout le catalogue ; changer un filtre ramène à la première page.
+// Tri (US-11) : menu « Trier par » à côté de la barre de recherche, appliqué par le backend
+// sur tout le catalogue ; changer de tri garde les filtres et ramène à la première page.
 // Recherche par nom (Recherche.jsx) : ses résultats remplacent la liste tant qu'elle est
 // active.
 import { useEffect, useId, useRef, useState } from 'react';
@@ -20,6 +22,8 @@ import { BarreFiltres, PanneauFiltres } from './PanneauFiltres.jsx';
 import { BarreRecherche, ResultatsRecherche } from './Recherche.jsx';
 import { useRecherche } from './useRecherche.js';
 import { photosPage } from './photos.js';
+import MenuTri from './MenuTri.jsx';
+import { TRI_PAR_DEFAUT } from './tri.js';
 import './catalogue.css';
 import {
   SEGMENTS,
@@ -281,6 +285,7 @@ export default function Catalogue({
   const [donnees, setDonnees] = useState(null);
   const [alerte, setAlerte] = useState('');
   const [filtres, setFiltres] = useState(relireFiltres);
+  const [tri, setTri] = useState(TRI_PAR_DEFAUT);
   const [options, setOptions] = useState(null);
   const [panneauOuvert, setPanneauOuvert] = useState(false);
   const boutonFiltres = useRef(null);
@@ -315,7 +320,7 @@ export default function Catalogue({
   useEffect(() => {
     if (!valide) return undefined;
     let actif = true;
-    lister(page, filtres)
+    lister(page, filtres, tri)
       .then((resultat) => {
         if (!actif) return;
         setAlerte('');
@@ -325,7 +330,7 @@ export default function Catalogue({
     return () => {
       actif = false;
     };
-  }, [valide, page, filtres, lister, allerA]);
+  }, [valide, page, filtres, tri, lister, allerA]);
 
   // Valeurs du panneau ; indisponibles : le panneau le dit, la liste reste affichée
   useEffect(() => {
@@ -342,6 +347,11 @@ export default function Catalogue({
   function changerFiltres(nouveaux) {
     setFiltres(nouveaux);
     memoriserFiltres(nouveaux);
+    setPage(1);
+  }
+
+  function changerTri(nouveau) {
+    setTri(nouveau);
     setPage(1);
   }
 
@@ -363,7 +373,8 @@ export default function Catalogue({
       chargerIdentite={chargerIdentite}
       entete={<EnteteCatalogue donnees={donnees} filtre={filtre} />}
     >
-      {/* Filtres à gauche, recherche tout à droite, sur la même ligne */}
+      {/* Filtres à gauche, menu de tri (US-11) puis recherche tout à droite, sur la même
+          ligne */}
       {valide && (
         <div className="catalogue__outils">
           <BarreFiltres
@@ -374,6 +385,7 @@ export default function Catalogue({
             refBouton={boutonFiltres}
             ouvert={panneauOuvert}
           />
+          <MenuTri tri={tri} onChange={changerTri} />
           <BarreRecherche valeur={saisie} onChange={setSaisie} />
         </div>
       )}

@@ -3,9 +3,10 @@ import { exigerConnexion, type FournisseurIdentite } from '../auth/fournisseur.j
 import type { CatalogueService } from './service.js';
 
 // Couche contrôleur du Catalogue, réservée aux utilisateurs connectés (US-08, US-10) :
-//   GET /scpis?page=n&<filtres>  -> { scpis, total, page, taillePage, nombrePages, anneeTaux,
-//                                   misAJourLe }, 12 SCPI par page, 400 si la page ou un
-//                                   filtre est invalide (filtres : catalogue/filtres.ts)
+//   GET /scpis?page=n&tri=<critère>-<sens>&<filtres>
+//                                -> { scpis, total, page, taillePage, nombrePages, anneeTaux,
+//                                   misAJourLe }, 12 SCPI par page, 400 si la page, le tri
+//                                   ou un filtre est invalide (catalogue/tri.ts, filtres.ts)
 //   GET /scpis/filtres           -> valeurs proposées dans le panneau des filtres
 export function routesCatalogue(service: CatalogueService, fournisseur: FournisseurIdentite) {
   const routeur = Router();
