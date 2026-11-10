@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../logging/http-error.js';
 import { AUCUN_FILTRE } from './filtres.js';
 import { type ScpiCatalogue, TAILLE_PAGE, creerCatalogueService } from './service.js';
+import { TRI_PAR_DEFAUT } from './tri.js';
 
 const SCPI: ScpiCatalogue = {
   id: 1,
@@ -59,20 +60,20 @@ describe('CatalogueService (US-08)', () => {
       misAJourLe: MAJ,
     });
     expect(TAILLE_PAGE).toBe(12);
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, AUCUN_FILTRE);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, AUCUN_FILTRE, TRI_PAR_DEFAUT);
     expect(depot.compter).toHaveBeenCalledWith(2025, AUCUN_FILTRE);
   });
 
   it('page demandée (texte de l’URL) : décalage de 12 par page', async () => {
     const { service, depot } = preparer();
     expect((await service.lister('3')).page).toBe(3);
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 24, AUCUN_FILTRE);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 24, AUCUN_FILTRE, TRI_PAR_DEFAUT);
   });
 
   it('page vide dans l’URL : première page', async () => {
     const { service, depot } = preparer();
     await service.lister('');
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, AUCUN_FILTRE);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, AUCUN_FILTRE, TRI_PAR_DEFAUT);
   });
 
   it('catalogue vide, aucun import réussi : 1 page, date non renseignée', async () => {
@@ -117,8 +118,27 @@ describe('CatalogueService (US-08)', () => {
       taux: { min: 4, max: 6 },
     };
     expect(depot.compter).toHaveBeenCalledWith(2025, attendus);
-    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, attendus);
+    expect(depot.lister).toHaveBeenCalledWith(2025, 12, 0, attendus, TRI_PAR_DEFAUT);
     expect(page).toMatchObject({ total: 3, nombrePages: 1 });
+  });
+
+  it('US-11 : tri de l’URL transmis à la liste, filtres conservés', async () => {
+    const { service, depot } = preparer();
+    await service.lister('2', { tri: 'capitalisation-asc', pays: 'France' });
+    expect(depot.lister).toHaveBeenCalledWith(
+      2025,
+      12,
+      12,
+      { ...AUCUN_FILTRE, pays: ['France'] },
+      { critere: 'capitalisation', sens: 'asc' },
+    );
+  });
+
+  it('US-11 : tri invalide -> 400, la base n’est pas lue', async () => {
+    const { service, depot } = preparer();
+    const err = await erreurDe(service.lister('1', { tri: 'prix-asc' }));
+    expect(err).toMatchObject({ status: 400, message: 'Tri invalide' });
+    expect(depot.lister).not.toHaveBeenCalled();
   });
 
   it('US-10 : filtre invalide -> 400, la base n’est pas lue', async () => {
@@ -148,7 +168,35 @@ describe('CatalogueService (US-08)', () => {
     it('texte nettoyé transmis au dépôt avec l’année N-1 et la limite de 20', async () => {
       const { service, depot } = preparer();
       expect(await service.rechercher('  pierre ')).toEqual({ scpis: [SCPI], anneeTaux: 2025 });
-      expect(depot.rechercher).toHaveBeenCalledWith(2025, 'pierre', 20);
+      expect(depot.rechercher).toHaveBeenCalledWith(
+        2025,
+        'pierre',
+        20,
+        AUCUN_FILTRE,
+        TRI_PAR_DEFAUT,
+      );
+    });
+
+    it('US-12 : filtres et tri de l’URL transmis avec le texte', async () => {
+      const { service, depot } = preparer();
+      await service.rechercher('pierre', { tri: 'nom-desc', pays: 'France', tauxMin: '4' });
+      expect(depot.rechercher).toHaveBeenCalledWith(
+        2025,
+        'pierre',
+        20,
+        { ...AUCUN_FILTRE, pays: ['France'], taux: { min: 4, max: null } },
+        { critere: 'nom', sens: 'desc' },
+      );
+    });
+
+    it.each([
+      [{ tri: 'prix-asc' }, 'Tri invalide'],
+      [{ prixMin: 'abc' }, 'Filtre invalide'],
+    ])('US-12 : %j invalide -> 400, la base n’est pas lue', async (requete, message) => {
+      const { service, depot } = preparer();
+      const err = await erreurDe(service.rechercher('pierre', requete));
+      expect(err).toMatchObject({ status: 400, message });
+      expect(depot.rechercher).not.toHaveBeenCalled();
     });
 
     it('texte vide ou fait d’espaces : aucune SCPI, la base n’est pas lue', async () => {

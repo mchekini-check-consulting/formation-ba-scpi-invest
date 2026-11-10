@@ -1,5 +1,5 @@
 // Barre de recherche par nom, au-dessus du Catalogue, et ses résultats (logique dans
-// useRecherche.js). Porte sur tout le catalogue, sans les filtres ; pendant la recherche,
+// useRecherche.js). Combinée aux filtres et au tri actifs (US-12) ; pendant la recherche,
 // ses résultats (mêmes cartes) remplacent la liste du Catalogue.
 import { useId, useRef } from 'react';
 import { LIMITE_RECHERCHE, RECHERCHE_MIN } from './useRecherche.js';
@@ -59,8 +59,10 @@ export function BarreRecherche({ valeur, onChange }) {
 }
 
 // afficherCartes(resultats) : cartes des SCPI trouvées, les mêmes que dans le Catalogue
-export function ResultatsRecherche({ recherche, effacer, afficherCartes }) {
+// filtre : des filtres sont actifs (US-12), rappelé dans le nombre de résultats
+export function ResultatsRecherche({ recherche, effacer, afficherCartes, filtre = false }) {
   const { texte, enCours, resultats, erreur } = recherche;
+  const avecFiltres = filtre ? ' avec les filtres actifs' : '';
   if (enCours) {
     return (
       <p className="compte__texte" aria-live="polite">
@@ -80,7 +82,7 @@ export function ResultatsRecherche({ recherche, effacer, afficherCartes }) {
     return (
       <div className="catalogue__aucun">
         <p className="compte__texte" aria-live="polite">
-          Aucune SCPI ne correspond à « {texte} ».
+          Aucune SCPI ne correspond à « {texte} »{avecFiltres}.
         </p>
         <button type="button" className="compte__bouton" onClick={effacer}>
           Effacer la recherche
@@ -92,8 +94,8 @@ export function ResultatsRecherche({ recherche, effacer, afficherCartes }) {
     <section aria-label="Résultats de la recherche">
       <p className="recherche-scpi__total" aria-live="polite">
         {nombre > 1
-          ? `${nombre} SCPI trouvées pour « ${texte} »`
-          : `1 SCPI trouvée pour « ${texte} »`}
+          ? `${nombre} SCPI trouvées pour « ${texte} »${avecFiltres}`
+          : `1 SCPI trouvée pour « ${texte} »${avecFiltres}`}
         {nombre >= LIMITE_RECHERCHE &&
           ` : seules les ${LIMITE_RECHERCHE} premières sont affichées, précisez votre recherche`}
       </p>

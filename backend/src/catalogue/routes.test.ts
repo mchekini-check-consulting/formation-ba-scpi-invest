@@ -93,7 +93,7 @@ describe('routes du Catalogue (US-08)', () => {
       .get('/scpis/recherche?q=pierre')
       .set('Authorization', 'Bearer jeton')
       .expect(200, resultat);
-    expect(rechercher).toHaveBeenCalledWith('pierre');
+    expect(rechercher).toHaveBeenCalledWith('pierre', {});
     expect(lignes.at(-1)).toMatchObject({ layer: 'controller', method: 'rechercherScpis' });
   });
 
@@ -102,7 +102,21 @@ describe('routes du Catalogue (US-08)', () => {
     const { app } = application(vi.fn(), true, vi.fn(), rechercher);
     const res = await request(app).get('/scpis/recherche').expect(400);
     expect(res.body.message).toBe('Recherche invalide');
-    expect(rechercher).toHaveBeenCalledWith(undefined);
+    expect(rechercher).toHaveBeenCalledWith(undefined, {});
+  });
+
+  it('GET /scpis/recherche : filtres et tri transmis avec le texte (US-12)', async () => {
+    const rechercher = vi.fn().mockResolvedValue({ scpis: [], anneeTaux: 2025 });
+    const { app } = application(vi.fn(), true, vi.fn(), rechercher);
+    await request(app)
+      .get('/scpis/recherche?q=pierre&tri=nom-asc&pays=France&tauxMin=4')
+      .set('Authorization', 'Bearer jeton')
+      .expect(200);
+    expect(rechercher).toHaveBeenCalledWith('pierre', {
+      tri: 'nom-asc',
+      pays: 'France',
+      tauxMin: '4',
+    });
   });
 
   it('GET /scpis/recherche sans session -> 401, le service n’est pas appelé', async () => {

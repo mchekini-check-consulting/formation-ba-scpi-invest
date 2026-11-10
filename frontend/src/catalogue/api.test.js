@@ -21,14 +21,17 @@ afterEach(() => {
 
 describe('API du Catalogue (US-08)', () => {
   it('listerScpis : GET de la page demandée avec la session', async () => {
-    expect(await listerScpis(2, FILTRES_VIDES, '/api')).toEqual({ scpis: [], total: 0 });
+    expect(await listerScpis(2, FILTRES_VIDES, undefined, '/api')).toEqual({
+      scpis: [],
+      total: 0,
+    });
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/scpis?page=2');
     expect(options.headers).toEqual({ Authorization: 'Bearer jeton-1' });
   });
 
   it('listerScpis : première page par défaut', async () => {
-    await listerScpis(undefined, undefined, '/api');
+    await listerScpis(undefined, undefined, undefined, '/api');
     expect(fetchMock.mock.calls[0][0]).toBe('/api/scpis?page=1');
   });
 
@@ -36,9 +39,15 @@ describe('API du Catalogue (US-08)', () => {
     await listerScpis(
       1,
       { ...FILTRES_VIDES, categories: ['Santé'], taux: { min: 4, max: null } },
+      'taux-desc',
       '/api',
     );
     expect(fetchMock.mock.calls[0][0]).toBe('/api/scpis?page=1&categorie=Sant%C3%A9&tauxMin=4');
+  });
+
+  it('listerScpis : tri choisi ajouté à l’URL avec les filtres (US-11)', async () => {
+    await listerScpis(3, { ...FILTRES_VIDES, pays: ['France'] }, 'capitalisation-asc', '/api');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/scpis?page=3&tri=capitalisation-asc&pays=France');
   });
 
   it('lireFiltresCatalogue : GET des valeurs du panneau avec la session', async () => {
@@ -49,9 +58,16 @@ describe('API du Catalogue (US-08)', () => {
   });
 
   it('rechercherScpis : GET de la recherche avec la session, texte encodé dans l’URL', async () => {
-    await rechercherScpis('Épargne 100% & co', '/api');
+    await rechercherScpis('Épargne 100% & co', undefined, undefined, '/api');
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/scpis/recherche?q=%C3%89pargne%20100%25%20%26%20co');
     expect(options.headers).toEqual({ Authorization: 'Bearer jeton-1' });
+  });
+
+  it('rechercherScpis : filtres et tri ajoutés au texte (US-12)', async () => {
+    await rechercherScpis('pierre', { ...FILTRES_VIDES, pays: ['France'] }, 'nom-asc', '/api');
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      '/api/scpis/recherche?q=pierre&tri=nom-asc&pays=France',
+    );
   });
 });

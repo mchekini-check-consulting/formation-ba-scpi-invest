@@ -4,6 +4,7 @@ import { ErreurApi } from '../auth.js';
 import Catalogue from './Catalogue.jsx';
 import { FILTRES_VIDES } from './filtres.js';
 import { photoScpi } from './photos.js';
+import { TRI_PAR_DEFAUT } from './tri.js';
 
 afterEach(cleanup);
 beforeEach(() => sessionStorage.clear());
@@ -90,7 +91,7 @@ const cartes = () => screen.getAllByRole('listitem').filter((li) => li.className
 describe('Catalogue : liste des SCPI (US-08)', () => {
   it('scénario 1 : profil validé -> première page, dans l’ordre du backend', async () => {
     const { lister, allerA } = await afficher();
-    expect(lister).toHaveBeenCalledWith(1, FILTRES_VIDES);
+    expect(lister).toHaveBeenCalledWith(1, FILTRES_VIDES, TRI_PAR_DEFAUT);
     expect(allerA).not.toHaveBeenCalled();
     expect(cartes().map((c) => c.querySelector('h2').textContent)).toEqual([
       'Pierre Plus',
@@ -206,7 +207,7 @@ describe('Catalogue : liste des SCPI (US-08)', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
     });
-    expect(lister).toHaveBeenLastCalledWith(2, FILTRES_VIDES);
+    expect(lister).toHaveBeenLastCalledWith(2, FILTRES_VIDES, TRI_PAR_DEFAUT);
     expect(texte()).toContain('Page 2 sur 2');
     const carte = cartes()[0];
     expect(carte.textContent).toContain('Nouvelle');
@@ -224,7 +225,7 @@ describe('Catalogue : liste des SCPI (US-08)', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Précédent' }));
     });
-    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES);
+    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, TRI_PAR_DEFAUT);
     expect(screen.getByRole('button', { name: 'Précédent' }).disabled).toBe(true);
   });
 
@@ -254,6 +255,69 @@ describe('Catalogue : liste des SCPI (US-08)', () => {
       lister: vi.fn().mockRejectedValue(new ErreurApi(401, 'connexion requise')),
     });
     expect(allerA).toHaveBeenCalledWith('/connexion');
+  });
+});
+
+describe('Catalogue : tri (US-11)', () => {
+  const menu = () => screen.getByRole('button', { name: /^Trier par/ });
+  // Choix à la souris dans le menu sur mesure (MenuTri.jsx), par le libellé complet
+  const choisir = async (libelle) => {
+    fireEvent.click(menu());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('option', { name: libelle }));
+    });
+  };
+
+  it('scénario 1 : sans tri choisi, taux N-1 décroissant affiché dans le menu', async () => {
+    const { lister } = await afficher();
+    expect(lister).toHaveBeenCalledWith(1, FILTRES_VIDES, 'taux-desc');
+    expect(menu().getAttribute('aria-label')).toBe(
+      'Trier par : Taux de distribution — décroissant',
+    );
+    fireEvent.click(menu());
+    expect(screen.getAllByRole('option')).toHaveLength(12);
+  });
+
+  it('scénarios 2 et 3 : changer de tri puis inverser le sens, retour en page 1', async () => {
+    const { lister } = await afficher();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
+    });
+    await choisir('Capitalisation — croissant');
+    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, 'capitalisation-asc');
+    expect(menu().textContent).toContain('Capitalisation — croissant');
+    await choisir('Capitalisation — décroissant');
+    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, 'capitalisation-desc');
+  });
+
+  it('scénario 4 : « Nom A → Z » ; la liste suit l’ordre renvoyé par le backend', async () => {
+    const parNom = { ...PAGE_1, scpis: [...PAGE_1.scpis].reverse() };
+    const lister = vi.fn((page, filtres, tri) =>
+      Promise.resolve(tri === 'nom-desc' ? parNom : PAGE_1),
+    );
+    await afficher({ lister });
+    await choisir('Nom A → Z');
+    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, 'nom-asc');
+    await choisir('Nom Z → A');
+    expect(cartes().map((c) => c.querySelector('h2').textContent)).toEqual([
+      'Rivoli Avenir',
+      'Pierre Plus',
+    ]);
+  });
+
+  it('scénario 6 : changer de tri conserve les filtres actifs', async () => {
+    sessionStorage.setItem(
+      'scpi-invest.catalogue.filtres',
+      JSON.stringify({ ...FILTRES_VIDES, pays: ['France'] }),
+    );
+    const { lister } = await afficher();
+    await choisir('Société de gestion A → Z');
+    expect(lister).toHaveBeenLastCalledWith(
+      1,
+      { ...FILTRES_VIDES, pays: ['France'] },
+      'gerant-asc',
+    );
+    expect(screen.getByRole('list', { name: 'Filtres actifs' }).textContent).toContain('France');
   });
 });
 
@@ -364,11 +428,15 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
         fireEvent.click(within(panneau()).getByRole('checkbox', { name: nom }));
       });
     }
-    expect(lister).toHaveBeenLastCalledWith(1, {
-      ...FILTRES_VIDES,
-      categories: ['Santé', 'Bureaux'],
-      pays: ['France'],
-    });
+    expect(lister).toHaveBeenLastCalledWith(
+      1,
+      {
+        ...FILTRES_VIDES,
+        categories: ['Santé', 'Bureaux'],
+        pays: ['France'],
+      },
+      TRI_PAR_DEFAUT,
+    );
     expect(texte()).toContain('2 SCPI correspondant à vos critères');
     expect(within(panneau()).getByRole('button', { name: 'Voir les 2 SCPI' })).toBeDefined();
     // Gardés le temps de la session du navigateur
@@ -386,7 +454,11 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     await act(async () => {
       fireEvent.pointerUp(minimum);
     });
-    expect(lister).toHaveBeenLastCalledWith(1, { ...FILTRES_VIDES, taux: { min: 4, max: null } });
+    expect(lister).toHaveBeenLastCalledWith(
+      1,
+      { ...FILTRES_VIDES, taux: { min: 4, max: null } },
+      TRI_PAR_DEFAUT,
+    );
     // Le maximum ne passe jamais sous le minimum
     const maximum = within(panneau()).getByRole('slider', {
       name: 'Taux de distribution 2025 : maximum',
@@ -431,11 +503,15 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     memoriser({ categories: ['Santé'], pays: ['France'] });
     const { lister } = await afficher();
     // Filtres de la session repris à l’arrivée
-    expect(lister).toHaveBeenCalledWith(1, {
-      ...FILTRES_VIDES,
-      categories: ['Santé'],
-      pays: ['France'],
-    });
+    expect(lister).toHaveBeenCalledWith(
+      1,
+      {
+        ...FILTRES_VIDES,
+        categories: ['Santé'],
+        pays: ['France'],
+      },
+      TRI_PAR_DEFAUT,
+    );
     const actifs = screen.getByRole('list', { name: 'Filtres actifs' });
     const libelles = within(actifs)
       .getAllByRole('listitem')
@@ -449,12 +525,16 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre Santé' }));
     });
-    expect(lister).toHaveBeenLastCalledWith(1, { ...FILTRES_VIDES, pays: ['France'] });
+    expect(lister).toHaveBeenLastCalledWith(
+      1,
+      { ...FILTRES_VIDES, pays: ['France'] },
+      TRI_PAR_DEFAUT,
+    );
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser les filtres' }));
     });
-    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES);
+    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, TRI_PAR_DEFAUT);
     expect(screen.queryByRole('list', { name: 'Filtres actifs' })).toBeNull();
   });
 
@@ -471,7 +551,7 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     await act(async () => {
       fireEvent.click(boutons[1]);
     });
-    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES);
+    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, TRI_PAR_DEFAUT);
     expect(texte()).toContain('14 SCPI disponibles');
   });
 
@@ -483,7 +563,7 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     await act(async () => {
       fireEvent.click(within(panneau()).getByRole('button', { name: 'Réinitialiser' }));
     });
-    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES);
+    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, TRI_PAR_DEFAUT);
     expect(prix.value).toBe('168');
     const reinitialiser = within(panneau()).getByRole('button', { name: 'Réinitialiser' });
     expect(reinitialiser.disabled).toBe(true);
@@ -530,7 +610,7 @@ describe('Catalogue : recherche par nom', () => {
     expect(texte()).toContain('Recherche en cours…');
     await attendre(1);
     expect(rechercher).toHaveBeenCalledTimes(1);
-    expect(rechercher).toHaveBeenCalledWith('pier');
+    expect(rechercher).toHaveBeenCalledWith('pier', FILTRES_VIDES, TRI_PAR_DEFAUT);
   });
 
   it('résultats à la place de la liste, avec les mêmes cartes que le Catalogue', async () => {
@@ -627,5 +707,72 @@ describe('Catalogue : recherche par nom', () => {
     taper('pierre');
     await attendre(300);
     expect(allerA).toHaveBeenCalledWith('/connexion');
+  });
+});
+
+describe('Catalogue : recherche, filtres et tri combinés (US-12)', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const champ = () => screen.getByRole('searchbox', { name: 'Rechercher une SCPI par son nom' });
+  const attendre = (ms) => act(() => vi.advanceTimersByTimeAsync(ms));
+  const FRANCE = { ...FILTRES_VIDES, pays: ['France'] };
+  const trouvees = (...scpis) => ({ scpis, anneeTaux: 2025 });
+  const memoriser = (filtres) =>
+    sessionStorage.setItem('scpi-invest.catalogue.filtres', JSON.stringify(filtres));
+  const choisirTri = async (libelle) => {
+    fireEvent.click(screen.getByRole('button', { name: /^Trier par/ }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('option', { name: libelle }));
+    });
+  };
+
+  it('scénario 1 : filtres et tri actifs, puis recherche -> les trois envoyés', async () => {
+    memoriser(FRANCE);
+    const rechercher = vi.fn().mockResolvedValue(trouvees(scpi(1, 'Pierre Plus', 6.2)));
+    await afficher({ rechercher });
+    await choisirTri('Nom A → Z');
+    fireEvent.change(champ(), { target: { value: 'pierre' } });
+    await attendre(300);
+    expect(rechercher).toHaveBeenCalledWith('pierre', FRANCE, 'nom-asc');
+    expect(texte()).toContain('1 SCPI trouvée pour « pierre » avec les filtres actifs');
+  });
+
+  it('scénario 2 : filtre appliqué pendant une recherche -> relancée, texte gardé', async () => {
+    memoriser(FRANCE);
+    const rechercher = vi.fn().mockResolvedValue(trouvees());
+    await afficher({ rechercher });
+    fireEvent.change(champ(), { target: { value: 'pierre' } });
+    await attendre(300);
+    expect(texte()).toContain('Aucune SCPI ne correspond à « pierre » avec les filtres actifs.');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre France' }));
+    });
+    await attendre(300);
+    expect(rechercher).toHaveBeenLastCalledWith('pierre', FILTRES_VIDES, TRI_PAR_DEFAUT);
+    expect(champ().value).toBe('pierre');
+    expect(texte()).toContain('Aucune SCPI ne correspond à « pierre ».');
+  });
+
+  it('scénarios 3 et 4 : tri changé pendant une recherche filtrée -> recherche et filtres gardés', async () => {
+    memoriser(FRANCE);
+    const PIERRE = scpi(1, 'Pierre Plus', 6.2);
+    const RIVOLI = scpi(7, 'Rivoli Pierre', 4);
+    const rechercher = vi.fn((texteCherche, filtres, tri) =>
+      Promise.resolve(tri === 'nom-desc' ? trouvees(RIVOLI, PIERRE) : trouvees(PIERRE, RIVOLI)),
+    );
+    await afficher({ rechercher });
+    fireEvent.change(champ(), { target: { value: 'pierre' } });
+    await attendre(300);
+    await choisirTri('Nom Z → A');
+    expect(texte()).toContain('Recherche en cours…');
+    await attendre(300);
+    expect(rechercher).toHaveBeenLastCalledWith('pierre', FRANCE, 'nom-desc');
+    expect(cartes().map((li) => within(li).getByRole('heading').textContent)).toEqual([
+      'Rivoli Pierre',
+      'Pierre Plus',
+    ]);
+    expect(champ().value).toBe('pierre');
+    expect(screen.getByRole('list', { name: 'Filtres actifs' }).textContent).toContain('France');
   });
 });
