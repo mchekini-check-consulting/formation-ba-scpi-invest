@@ -66,9 +66,15 @@ export type DepotCatalogue = {
   ): Promise<ScpiCatalogue[]>;
   valeursFiltres(anneeTaux: number): Promise<ValeursFiltres>;
   dateDernierImport(): Promise<Date | null>;
-  // SCPI dont le nom contient le texte recherché (majuscules ignorées), même carte et même
-  // tri que le Catalogue (taux N-1 décroissant)
-  rechercher(anneeTaux: number, texte: string, limite: number): Promise<ScpiCatalogue[]>;
+  // SCPI dont le nom contient le texte recherché (majuscules ignorées) et qui satisfont les
+  // filtres (US-12), même carte et même tri que le Catalogue
+  rechercher(
+    anneeTaux: number,
+    texte: string,
+    limite: number,
+    filtres: FiltresCatalogue,
+    tri: TriCatalogue,
+  ): Promise<ScpiCatalogue[]>;
 };
 
 // Résultat de la recherche par nom : SCPI trouvées, avec l'année de leur taux affiché
@@ -123,19 +129,27 @@ export function creerCatalogueService(depot: DepotCatalogue, maintenant = () => 
     };
   }
 
-  // Recherche d'une SCPI par son nom
-  // 400 si q n'est pas un texte (absent ou répété dans l'adresse), aucune SCPI si le texte
-  // est vide
-  async function rechercher(q: unknown): Promise<ResultatRecherche> {
+  // Recherche d'une SCPI par son nom, combinée aux filtres et au tri du Catalogue (US-12)
+  // 400 si q n'est pas un texte (absent ou répété dans l'adresse), si un filtre ou le tri
+  // est invalide ; aucune SCPI si le texte est vide
+  async function rechercher(
+    q: unknown,
+    requete: Record<string, unknown> = {},
+  ): Promise<ResultatRecherche> {
     if (typeof q !== 'string') {
       throw new HttpError(400, 'Recherche invalide');
     }
+    const filtres = lireFiltres(requete);
+    const tri = lireTri(requete.tri);
     const texte = q.trim();
     const anneeTaux = anneeN1();
     if (texte === '') {
       return { scpis: [], anneeTaux };
     }
-    return { scpis: await depot.rechercher(anneeTaux, texte, LIMITE_RECHERCHE), anneeTaux };
+    return {
+      scpis: await depot.rechercher(anneeTaux, texte, LIMITE_RECHERCHE, filtres, tri),
+      anneeTaux,
+    };
   }
 
   return loggable('CatalogueService', { lister, filtres, rechercher });

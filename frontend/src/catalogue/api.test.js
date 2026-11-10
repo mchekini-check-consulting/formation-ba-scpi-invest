@@ -58,9 +58,16 @@ describe('API du Catalogue (US-08)', () => {
   });
 
   it('rechercherScpis : GET de la recherche avec la session, texte encodé dans l’URL', async () => {
-    await rechercherScpis('Épargne 100% & co', '/api');
+    await rechercherScpis('Épargne 100% & co', undefined, undefined, '/api');
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/scpis/recherche?q=%C3%89pargne%20100%25%20%26%20co');
     expect(options.headers).toEqual({ Authorization: 'Bearer jeton-1' });
+  });
+
+  it('rechercherScpis : filtres et tri ajoutés au texte (US-12)', async () => {
+    await rechercherScpis('pierre', { ...FILTRES_VIDES, pays: ['France'] }, 'nom-asc', '/api');
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      '/api/scpis/recherche?q=pierre&tri=nom-asc&pays=France',
+    );
   });
 });

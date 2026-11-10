@@ -610,7 +610,7 @@ describe('Catalogue : recherche par nom', () => {
     expect(texte()).toContain('Recherche en cours…');
     await attendre(1);
     expect(rechercher).toHaveBeenCalledTimes(1);
-    expect(rechercher).toHaveBeenCalledWith('pier');
+    expect(rechercher).toHaveBeenCalledWith('pier', FILTRES_VIDES, TRI_PAR_DEFAUT);
   });
 
   it('résultats à la place de la liste, avec les mêmes cartes que le Catalogue', async () => {
@@ -707,5 +707,72 @@ describe('Catalogue : recherche par nom', () => {
     taper('pierre');
     await attendre(300);
     expect(allerA).toHaveBeenCalledWith('/connexion');
+  });
+});
+
+describe('Catalogue : recherche, filtres et tri combinés (US-12)', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const champ = () => screen.getByRole('searchbox', { name: 'Rechercher une SCPI par son nom' });
+  const attendre = (ms) => act(() => vi.advanceTimersByTimeAsync(ms));
+  const FRANCE = { ...FILTRES_VIDES, pays: ['France'] };
+  const trouvees = (...scpis) => ({ scpis, anneeTaux: 2025 });
+  const memoriser = (filtres) =>
+    sessionStorage.setItem('scpi-invest.catalogue.filtres', JSON.stringify(filtres));
+  const choisirTri = async (libelle) => {
+    fireEvent.click(screen.getByRole('button', { name: /^Trier par/ }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('option', { name: libelle }));
+    });
+  };
+
+  it('scénario 1 : filtres et tri actifs, puis recherche -> les trois envoyés', async () => {
+    memoriser(FRANCE);
+    const rechercher = vi.fn().mockResolvedValue(trouvees(scpi(1, 'Pierre Plus', 6.2)));
+    await afficher({ rechercher });
+    await choisirTri('Nom A → Z');
+    fireEvent.change(champ(), { target: { value: 'pierre' } });
+    await attendre(300);
+    expect(rechercher).toHaveBeenCalledWith('pierre', FRANCE, 'nom-asc');
+    expect(texte()).toContain('1 SCPI trouvée pour « pierre » avec les filtres actifs');
+  });
+
+  it('scénario 2 : filtre appliqué pendant une recherche -> relancée, texte gardé', async () => {
+    memoriser(FRANCE);
+    const rechercher = vi.fn().mockResolvedValue(trouvees());
+    await afficher({ rechercher });
+    fireEvent.change(champ(), { target: { value: 'pierre' } });
+    await attendre(300);
+    expect(texte()).toContain('Aucune SCPI ne correspond à « pierre » avec les filtres actifs.');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre France' }));
+    });
+    await attendre(300);
+    expect(rechercher).toHaveBeenLastCalledWith('pierre', FILTRES_VIDES, TRI_PAR_DEFAUT);
+    expect(champ().value).toBe('pierre');
+    expect(texte()).toContain('Aucune SCPI ne correspond à « pierre ».');
+  });
+
+  it('scénarios 3 et 4 : tri changé pendant une recherche filtrée -> recherche et filtres gardés', async () => {
+    memoriser(FRANCE);
+    const PIERRE = scpi(1, 'Pierre Plus', 6.2);
+    const RIVOLI = scpi(7, 'Rivoli Pierre', 4);
+    const rechercher = vi.fn((texteCherche, filtres, tri) =>
+      Promise.resolve(tri === 'nom-desc' ? trouvees(RIVOLI, PIERRE) : trouvees(PIERRE, RIVOLI)),
+    );
+    await afficher({ rechercher });
+    fireEvent.change(champ(), { target: { value: 'pierre' } });
+    await attendre(300);
+    await choisirTri('Nom Z → A');
+    expect(texte()).toContain('Recherche en cours…');
+    await attendre(300);
+    expect(rechercher).toHaveBeenLastCalledWith('pierre', FRANCE, 'nom-desc');
+    expect(cartes().map((li) => within(li).getByRole('heading').textContent)).toEqual([
+      'Rivoli Pierre',
+      'Pierre Plus',
+    ]);
+    expect(champ().value).toBe('pierre');
+    expect(screen.getByRole('list', { name: 'Filtres actifs' }).textContent).toContain('France');
   });
 });
