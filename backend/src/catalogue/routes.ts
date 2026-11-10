@@ -20,9 +20,11 @@ export function routesCatalogue(service: CatalogueService, fournisseur: Fourniss
     res.json(await service.filtres());
   };
 
-  // GET /scpis/recherche?q=<texte> -> SCPI dont le nom contient le texte
+  // GET /scpis/recherche?q=<texte>&tri=<critère>-<sens>&<filtres> -> SCPI dont le nom
+  // contient le texte et qui satisfont les filtres, dans l'ordre du tri (US-12)
   const rechercherScpis: RequestHandler = async (req, res) => {
-    res.json(await service.rechercher(req.query.q));
+    const { q, ...reste } = req.query;
+    res.json(await service.rechercher(q, reste));
   };
 
   routeur.get('/scpis', exigerConnexion(fournisseur), listerScpis);

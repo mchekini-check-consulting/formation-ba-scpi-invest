@@ -10,7 +10,7 @@
 // Tri (US-11) : menu « Trier par » à côté de la barre de recherche, appliqué par le backend
 // sur tout le catalogue ; changer de tri garde les filtres et ramène à la première page.
 // Recherche par nom (Recherche.jsx) : ses résultats remplacent la liste tant qu'elle est
-// active.
+// active. Recherche, filtres et tri se combinent (US-12) : changer l'un garde les autres.
 import { useEffect, useId, useRef, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import { lireQuestionnaire } from '../investisseur/api.js';
@@ -291,7 +291,8 @@ export default function Catalogue({
   const boutonFiltres = useRef(null);
   const filtre = pastilles(filtres, options).length > 0;
   const [saisie, setSaisie] = useState('');
-  const recherche = useRecherche(saisie, rechercher);
+  // US-12 : la recherche suit les filtres et le tri actifs
+  const recherche = useRecherche(saisie, rechercher, filtres, tri);
   const sessionExpiree = recherche.erreur?.status === 401;
 
   // Session expirée pendant une recherche : connexion, comme pour la liste
@@ -409,6 +410,7 @@ export default function Catalogue({
           recherche={recherche}
           effacer={() => setSaisie('')}
           afficherCartes={({ scpis, anneeTaux }) => <Cartes scpis={scpis} anneeTaux={anneeTaux} />}
+          filtre={filtre}
         />
       ) : donnees ? (
         <ListeScpis

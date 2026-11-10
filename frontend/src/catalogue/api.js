@@ -25,8 +25,18 @@ export function lireFiltresCatalogue(base = apiBase()) {
   return appelAuthentifie(`${base}/scpis/filtres`);
 }
 
-// Recherche par nom, sur tout le catalogue (sans les filtres) : 20 SCPI au plus, mêmes
-// cartes et même tri que listerScpis -> { scpis, anneeTaux }
-export function rechercherScpis(texte, base = apiBase()) {
-  return appelAuthentifie(`${base}/scpis/recherche?q=${encodeURIComponent(texte)}`);
+// Recherche par nom, combinée aux filtres et au tri choisis (US-12) : 20 SCPI au plus,
+// mêmes cartes que listerScpis -> { scpis, anneeTaux }
+export function rechercherScpis(
+  texte,
+  filtres = FILTRES_VIDES,
+  tri = TRI_PAR_DEFAUT,
+  base = apiBase(),
+) {
+  const parametres = [
+    `q=${encodeURIComponent(texte)}`,
+    parametreTri(tri),
+    parametresFiltres(filtres),
+  ];
+  return appelAuthentifie(`${base}/scpis/recherche?${parametres.filter(Boolean).join('&')}`);
 }

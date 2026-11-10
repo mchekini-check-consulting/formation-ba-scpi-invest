@@ -426,10 +426,12 @@ export function depotCatalogue(db: Db): DepotCatalogue {
 
     // Recherche d'une SCPI par son nom
     // % et _ tapés par l'utilisateur sont cherchés tels quels (pas comme jokers de ilike)
-    async rechercher(anneeTaux, texte, limite): Promise<ScpiCatalogue[]> {
+    // US-12 : nom qui contient le texte ET filtres actifs, dans l'ordre du tri choisi
+    async rechercher(anneeTaux, texte, limite, filtres, tri): Promise<ScpiCatalogue[]> {
       const motif = `%${texte.replace(/[\\%_]/g, '\\$&')}%`;
+      const conditions = sql`c.nom ilike ${motif} and ${conditionsFiltres(filtres)}`;
       const resultat = await db.execute<ScpiCatalogue>(
-        cartesCatalogue(anneeTaux, sql`c.nom ilike ${motif}`, limite, 0),
+        cartesCatalogue(anneeTaux, conditions, limite, 0, tri),
       );
       return resultat.rows;
     },

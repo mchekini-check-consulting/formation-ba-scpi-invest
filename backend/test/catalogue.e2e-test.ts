@@ -286,5 +286,48 @@ describe('Catalogue (e2e)', () => {
     expect(trouvees).toHaveLength(20);
     expect(trouvees[0].nom).toBe('SCPI 01');
     expect(trouvees[19].nom).toBe('SCPI 20');
+    // US-12 : la limite de 20 s'applique après le tri choisi
+    const parNomDecroissant = (await service.rechercher('scpi', { tri: 'nom-desc' })).scpis;
+    expect(parNomDecroissant[0].nom).toBe('SCPI 25');
+    expect(parNomDecroissant[19].nom).toBe('SCPI 06');
+  });
+
+  it('US-12 : recherche combinée aux filtres et au tri', async () => {
+    const db = createDb(pool);
+    await pool.query('delete from scpi_catalog');
+    await importScpis(
+      db,
+      lignes(
+        scpi('Pierre Alpha', '6', { localisation: 'France,100', capitalisation: '300000000' }),
+        scpi('Pierre Beta', '4', { localisation: 'France,100', capitalisation: '100000000' }),
+        scpi('Pierre Gamma', '8', { localisation: 'Espagne,100', capitalisation: '50000000' }),
+        scpi('Pierre Delta', '', { localisation: 'France,100', capitalisation: '200000000' }),
+        scpi('Rivoli', '9', { localisation: 'France,100' }),
+      ),
+    );
+    const noms = async (requete: Record<string, unknown>) =>
+      (await service.rechercher('pierre', requete)).scpis.map((s) => s.nom);
+
+    // Scénario 1 : recherche + filtres + tri ; Gamma (Espagne) et Rivoli (nom) exclues
+    expect(await noms({ pays: 'France', tri: 'capitalisation-asc' })).toEqual([
+      'Pierre Beta',
+      'Pierre Delta',
+      'Pierre Alpha',
+    ]);
+    // Scénario 4 : changer de tri réordonne seulement les résultats filtrés ; valeur
+    // manquante (Delta sans taux) en fin dans les deux sens
+    expect(await noms({ pays: 'France', tri: 'taux-asc' })).toEqual([
+      'Pierre Beta',
+      'Pierre Alpha',
+      'Pierre Delta',
+    ]);
+    expect(await noms({ pays: 'France', tri: 'taux-desc' })).toEqual([
+      'Pierre Alpha',
+      'Pierre Beta',
+      'Pierre Delta',
+    ]);
+    // Scénario 2 : sans tri choisi, taux N-1 décroissant ; un filtre restreint la recherche
+    expect(await noms({})).toEqual(['Pierre Gamma', 'Pierre Alpha', 'Pierre Beta', 'Pierre Delta']);
+    expect(await noms({ tauxMin: '5' })).toEqual(['Pierre Gamma', 'Pierre Alpha']);
   });
 });

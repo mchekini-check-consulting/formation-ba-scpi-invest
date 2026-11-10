@@ -168,7 +168,35 @@ describe('CatalogueService (US-08)', () => {
     it('texte nettoyé transmis au dépôt avec l’année N-1 et la limite de 20', async () => {
       const { service, depot } = preparer();
       expect(await service.rechercher('  pierre ')).toEqual({ scpis: [SCPI], anneeTaux: 2025 });
-      expect(depot.rechercher).toHaveBeenCalledWith(2025, 'pierre', 20);
+      expect(depot.rechercher).toHaveBeenCalledWith(
+        2025,
+        'pierre',
+        20,
+        AUCUN_FILTRE,
+        TRI_PAR_DEFAUT,
+      );
+    });
+
+    it('US-12 : filtres et tri de l’URL transmis avec le texte', async () => {
+      const { service, depot } = preparer();
+      await service.rechercher('pierre', { tri: 'nom-desc', pays: 'France', tauxMin: '4' });
+      expect(depot.rechercher).toHaveBeenCalledWith(
+        2025,
+        'pierre',
+        20,
+        { ...AUCUN_FILTRE, pays: ['France'], taux: { min: 4, max: null } },
+        { critere: 'nom', sens: 'desc' },
+      );
+    });
+
+    it.each([
+      [{ tri: 'prix-asc' }, 'Tri invalide'],
+      [{ prixMin: 'abc' }, 'Filtre invalide'],
+    ])('US-12 : %j invalide -> 400, la base n’est pas lue', async (requete, message) => {
+      const { service, depot } = preparer();
+      const err = await erreurDe(service.rechercher('pierre', requete));
+      expect(err).toMatchObject({ status: 400, message });
+      expect(depot.rechercher).not.toHaveBeenCalled();
     });
 
     it('texte vide ou fait d’espaces : aucune SCPI, la base n’est pas lue', async () => {
