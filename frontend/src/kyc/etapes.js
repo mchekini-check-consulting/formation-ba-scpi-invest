@@ -143,6 +143,7 @@ export const ETAPES = [
           'Transports, logistique',
           'Hôtellerie, restauration',
           'Information, communication',
+          'Informatique',
           'Banque, finance, assurance',
           'Immobilier',
           'Conseil, activités juridiques et techniques',
