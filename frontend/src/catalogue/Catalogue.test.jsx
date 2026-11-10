@@ -518,9 +518,15 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
       .map((li) => li.firstChild.textContent);
     expect(libelles).toEqual(['Santé', 'France']);
     const boutonFiltres = screen.getByRole('button', { name: 'Filtres, 2 actifs' });
-    // « Réinitialiser les filtres » juste après « Filtres », avant les pastilles
-    expect(boutonFiltres.nextElementSibling.textContent).toBe('Réinitialiser les filtres');
-    expect(boutonFiltres.nextElementSibling.nextElementSibling).toBe(actifs);
+    // Une ligne : recherche, « Filtres », tri ; en dessous « Réinitialiser les
+    // filtres » puis les pastilles
+    const ligne = boutonFiltres.parentElement;
+    expect(ligne.firstElementChild.getAttribute('role')).toBe('search');
+    expect(boutonFiltres.previousElementSibling).toBe(ligne.firstElementChild);
+    expect(boutonFiltres.nextElementSibling.className).toBe('menu-tri');
+    const reinitialiser = ligne.nextElementSibling.firstElementChild;
+    expect(reinitialiser.textContent).toBe('Réinitialiser les filtres');
+    expect(reinitialiser.nextElementSibling).toBe(actifs);
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre Santé' }));

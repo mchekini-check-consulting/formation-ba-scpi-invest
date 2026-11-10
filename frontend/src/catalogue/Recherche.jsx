@@ -31,7 +31,7 @@ export function BarreRecherche({ valeur, onChange }) {
         ref={champ}
         type="search"
         className="recherche-scpi__champ"
-        placeholder="Rechercher une SCPI par son nom"
+        placeholder="Rechercher une SCPI..."
         aria-label="Rechercher une SCPI par son nom"
         aria-describedby={tropCourt ? idAide : undefined}
         value={valeur}
