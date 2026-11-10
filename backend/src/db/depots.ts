@@ -7,6 +7,7 @@ import {
   TRANCHES_CAPITALISATION,
 } from '../catalogue/filtres.js';
 import type { DepotCatalogue, ScpiCatalogue, ValeursFiltres } from '../catalogue/service.js';
+import type { CritereTri } from '../catalogue/tri.js';
 import type { DepotTentativesConnexion } from '../comptes/service.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
@@ -263,7 +264,8 @@ export function depotPieces(db: Db): DepotPieces {
 }
 
 // US-08 : SCPI du Catalogue, une ligne par SCPI avec son taux N-1, son secteur et son pays
-// majoritaires (null si non renseignés : jamais 0). Taux absent -> fin de liste.
+// majoritaires (null si non renseignés : jamais 0), triées selon le choix de l'investisseur
+// (US-11) ; valeur absente pour le critère -> fin de liste.
 // Conditions SQL des filtres du Catalogue (US-10a, US-10b), sur scpi_catalog c et le taux
 // N-1 t. Une comparaison avec une valeur absente (null) est fausse : une SCPI sans valeur
 // ne satisfait jamais un filtre actif sur cette donnée.
@@ -317,6 +319,18 @@ function conditionsFiltres(filtres: FiltresCatalogue): SQL {
   return conditions.length ? sql.join(conditions, sql` and `) : sql`true`;
 }
 
+// US-11 : colonne de la liste du Catalogue pour chaque critère de tri (catalogue/tri.ts).
+// Valeur manquante (null) en fin de liste dans les deux sens (nulls last), égalité ->
+// ordre alphabétique du nom. Pays et secteur : ceux affichés (majoritaires).
+const COLONNES_TRI: Record<CritereTri, string> = {
+  taux: 'x."tauxDistribution"',
+  capitalisation: 'x.capitalisation',
+  pays: 'x."zoneGeographique"',
+  secteur: 'x.categorie',
+  gerant: 'x.gerant',
+  nom: 'x.nom',
+};
+
 export function depotCatalogue(db: Db): DepotCatalogue {
   return {
     async compter(anneeTaux, filtres): Promise<number> {
@@ -328,8 +342,11 @@ export function depotCatalogue(db: Db): DepotCatalogue {
       return resultat.rows[0].total;
     },
 
-    async lister(anneeTaux, limite, decalage, filtres): Promise<ScpiCatalogue[]> {
+    async lister(anneeTaux, limite, decalage, filtres, tri): Promise<ScpiCatalogue[]> {
+      const colonne = sql.raw(COLONNES_TRI[tri.critere]);
+      const sens = sql.raw(tri.sens === 'asc' ? 'asc' : 'desc');
       const resultat = await db.execute<ScpiCatalogue>(sql`
+        select * from (
         select c.id,
                c.nom,
                nullif(trim(c.gerant), '') as gerant,
@@ -342,7 +359,8 @@ export function depotCatalogue(db: Db): DepotCatalogue {
         from scpi_catalog c
         left join scpi_taux_distribution t on t.scpi_id = c.id and t.annee = ${anneeTaux}
         where ${conditionsFiltres(filtres)}
-        order by t.taux desc nulls last, c.nom, c.id
+        ) x
+        order by ${colonne} ${sens} nulls last, x.nom, x.id
         limit ${limite} offset ${decalage}`);
       return resultat.rows;
     },

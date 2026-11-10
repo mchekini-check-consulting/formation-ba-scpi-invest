@@ -7,6 +7,8 @@
 // par le backend), nombre total de SCPI et date de mise à jour des données.
 // Filtres (US-10a, US-10b, US-10c) : panneau, pastilles des filtres actifs, appliqués par
 // le backend sur tout le catalogue ; changer un filtre ramène à la première page.
+// Tri (US-11) : menu « Trier par » à côté du bouton Filtres, appliqué par le backend sur
+// tout le catalogue ; changer de tri garde les filtres et ramène à la première page.
 import { useEffect, useId, useRef, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import { lireQuestionnaire } from '../investisseur/api.js';
@@ -16,6 +18,7 @@ import { lireFiltresCatalogue, listerScpis } from './api.js';
 import { FILTRES_VIDES, memoriserFiltres, pastilles, relireFiltres } from './filtres.js';
 import { BarreFiltres, PanneauFiltres } from './PanneauFiltres.jsx';
 import { photosPage } from './photos.js';
+import { OPTIONS_TRI, TRI_PAR_DEFAUT } from './tri.js';
 import './catalogue.css';
 import {
   SEGMENTS,
@@ -172,6 +175,30 @@ function CarteScpi({ scpi, anneeTaux, photo }) {
   );
 }
 
+// Menu de tri (US-11) : le tri actif reste affiché dans la liste
+function MenuTri({ tri, onChange }) {
+  const id = useId();
+  return (
+    <div className="tri-catalogue">
+      <label htmlFor={id} className="tri-catalogue__libelle">
+        Trier par
+      </label>
+      <select
+        id={id}
+        className="tri-catalogue__liste"
+        value={tri}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {OPTIONS_TRI.map((option) => (
+          <option key={option.valeur} value={option.valeur}>
+            {option.libelle}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function Pagination({ page, nombrePages, allerPage }) {
   if (nombrePages <= 1) return null;
   return (
@@ -274,6 +301,7 @@ export default function Catalogue({
   const [donnees, setDonnees] = useState(null);
   const [alerte, setAlerte] = useState('');
   const [filtres, setFiltres] = useState(relireFiltres);
+  const [tri, setTri] = useState(TRI_PAR_DEFAUT);
   const [options, setOptions] = useState(null);
   const [panneauOuvert, setPanneauOuvert] = useState(false);
   const boutonFiltres = useRef(null);
@@ -300,7 +328,7 @@ export default function Catalogue({
   useEffect(() => {
     if (!valide) return undefined;
     let actif = true;
-    lister(page, filtres)
+    lister(page, filtres, tri)
       .then((resultat) => {
         if (!actif) return;
         setAlerte('');
@@ -310,7 +338,7 @@ export default function Catalogue({
     return () => {
       actif = false;
     };
-  }, [valide, page, filtres, lister, allerA]);
+  }, [valide, page, filtres, tri, lister, allerA]);
 
   // Valeurs du panneau ; indisponibles : le panneau le dit, la liste reste affichée
   useEffect(() => {
@@ -327,6 +355,11 @@ export default function Catalogue({
   function changerFiltres(nouveaux) {
     setFiltres(nouveaux);
     memoriserFiltres(nouveaux);
+    setPage(1);
+  }
+
+  function changerTri(nouveau) {
+    setTri(nouveau);
     setPage(1);
   }
 
@@ -349,14 +382,17 @@ export default function Catalogue({
       entete={<EnteteCatalogue donnees={donnees} filtre={filtre} />}
     >
       {valide && (
-        <BarreFiltres
-          filtres={filtres}
-          options={options}
-          onChange={changerFiltres}
-          onOuvrir={() => setPanneauOuvert(true)}
-          refBouton={boutonFiltres}
-          ouvert={panneauOuvert}
-        />
+        <div className="catalogue__outils">
+          <BarreFiltres
+            filtres={filtres}
+            options={options}
+            onChange={changerFiltres}
+            onOuvrir={() => setPanneauOuvert(true)}
+            refBouton={boutonFiltres}
+            ouvert={panneauOuvert}
+          />
+          <MenuTri tri={tri} onChange={changerTri} />
+        </div>
       )}
       {panneauOuvert && (
         <PanneauFiltres

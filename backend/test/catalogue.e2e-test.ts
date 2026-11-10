@@ -182,4 +182,59 @@ describe('Catalogue (e2e)', () => {
       anneeTaux: new Date().getFullYear() - 1,
     });
   });
+
+  it('US-11 : tri dans les deux sens, égalité alphabétique, valeur manquante en fin', async () => {
+    const db = createDb(pool);
+    await pool.query('delete from scpi_catalog');
+    // Alpha et Delta : mêmes valeurs partout (égalité) ; Gamma : aucune valeur renseignée
+    const commun = { localisation: 'France,100', secteurs: 'Bureaux,100' };
+    await importScpis(
+      db,
+      lignes(
+        scpi('Delta', '5', { ...commun, capitalisation: '300000000', Gerant: 'Zeta Gestion' }),
+        scpi('Gamma', ''),
+        scpi('Alpha', '5', { ...commun, capitalisation: '300000000', Gerant: 'Zeta Gestion' }),
+        scpi('Beta', '7', {
+          localisation: 'Espagne,100',
+          secteurs: 'Commerces,100',
+          capitalisation: '100000000',
+          Gerant: 'Abc Gestion',
+        }),
+      ),
+    );
+    await pool.query(
+      `update scpi_catalog set gerant = ' ', capitalisation = null where nom = 'Gamma'`,
+    );
+    for (const table of ['scpi_secteurs', 'scpi_localisation']) {
+      await pool.query(
+        `delete from ${table} where scpi_id = (select id from scpi_catalog where nom = 'Gamma')`,
+      );
+    }
+    const noms = async (requete: Record<string, unknown>) =>
+      (await service.lister('1', requete)).scpis.map((s) => s.nom);
+
+    // Scénario 1 : par défaut, taux N-1 décroissant
+    expect(await noms({})).toEqual(['Beta', 'Alpha', 'Delta', 'Gamma']);
+    // Scénarios 2, 3, 5 et 6 : les deux sens, égalité -> A à Z, manquant toujours en fin
+    const attendus: Record<string, string[]> = {
+      'taux-asc': ['Alpha', 'Delta', 'Beta', 'Gamma'],
+      'taux-desc': ['Beta', 'Alpha', 'Delta', 'Gamma'],
+      'capitalisation-asc': ['Beta', 'Alpha', 'Delta', 'Gamma'],
+      'capitalisation-desc': ['Alpha', 'Delta', 'Beta', 'Gamma'],
+      'pays-asc': ['Beta', 'Alpha', 'Delta', 'Gamma'],
+      'pays-desc': ['Alpha', 'Delta', 'Beta', 'Gamma'],
+      'secteur-asc': ['Alpha', 'Delta', 'Beta', 'Gamma'],
+      'secteur-desc': ['Beta', 'Alpha', 'Delta', 'Gamma'],
+      'gerant-asc': ['Beta', 'Alpha', 'Delta', 'Gamma'],
+      'gerant-desc': ['Alpha', 'Delta', 'Beta', 'Gamma'],
+      // Scénario 4 : par nom
+      'nom-asc': ['Alpha', 'Beta', 'Delta', 'Gamma'],
+      'nom-desc': ['Gamma', 'Delta', 'Beta', 'Alpha'],
+    };
+    for (const [tri, ordre] of Object.entries(attendus)) {
+      expect({ tri, ordre: await noms({ tri }) }).toEqual({ tri, ordre });
+    }
+    // Filtres actifs conservés
+    expect(await noms({ tri: 'capitalisation-desc', pays: 'France' })).toEqual(['Alpha', 'Delta']);
+  });
 });

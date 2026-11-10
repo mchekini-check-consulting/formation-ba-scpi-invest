@@ -6,6 +6,7 @@ import {
   TRANCHES_CAPITALISATION,
   lireFiltres,
 } from './filtres.js';
+import { type TriCatalogue, lireTri } from './tri.js';
 
 // US-08 : liste des SCPI du Catalogue. Une donnée non renseignée reste null (affichée
 // « N/C » par l'écran), jamais remplacée par 0.
@@ -54,12 +55,14 @@ export type OptionsFiltres = ValeursFiltres & {
 export type DepotCatalogue = {
   // SCPI qui satisfont les filtres (toutes sans filtre)
   compter(anneeTaux: number, filtres: FiltresCatalogue): Promise<number>;
-  // Tri par défaut : taux N-1 décroissant, SCPI sans taux N-1 en fin de liste
+  // Tri choisi (US-11, tri.ts) ; égalité -> ordre alphabétique, valeur manquante -> fin
+  // de liste
   lister(
     anneeTaux: number,
     limite: number,
     decalage: number,
     filtres: FiltresCatalogue,
+    tri: TriCatalogue,
   ): Promise<ScpiCatalogue[]>;
   valeursFiltres(anneeTaux: number): Promise<ValeursFiltres>;
   dateDernierImport(): Promise<Date | null>;
@@ -81,10 +84,11 @@ export function creerCatalogueService(depot: DepotCatalogue, maintenant = () => 
       throw new HttpError(400, 'Numéro de page invalide');
     }
     const filtres = lireFiltres(requete);
+    const tri = lireTri(requete.tri);
     const anneeTaux = anneeN1();
     const [total, scpis, misAJourLe] = await Promise.all([
       depot.compter(anneeTaux, filtres),
-      depot.lister(anneeTaux, TAILLE_PAGE, (page - 1) * TAILLE_PAGE, filtres),
+      depot.lister(anneeTaux, TAILLE_PAGE, (page - 1) * TAILLE_PAGE, filtres, tri),
       depot.dateDernierImport(),
     ]);
     return {

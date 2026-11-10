@@ -101,6 +101,53 @@
   cursor: pointer;
 }
 
+/* Ligne des outils : barre des filtres à gauche, menu de tri (US-11) à droite ; le menu
+   passe sous les filtres quand la place manque */
+.catalogue__outils {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin: 0 0 20px;
+}
+
+.catalogue__outils .barre-filtres {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.tri-catalogue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tri-catalogue__libelle {
+  color: var(--bleu);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tri-catalogue__liste {
+  min-height: 42px;
+  max-width: 100%;
+  padding: 0 12px;
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--bleu);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.tri-catalogue__liste:hover {
+  border-color: var(--bleu-pied);
+}
+
+.tri-catalogue__liste:focus-visible,
 .barre-filtres button:focus-visible,
 .filtres button:focus-visible,
 .filtres input:focus-visible {
