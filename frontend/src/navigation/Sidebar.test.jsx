@@ -130,6 +130,40 @@ describe('Sidebar de navigation (US-06)', () => {
     expect(profil.getAttribute('data-infobulle')).toBe('Marie Curie');
   });
 
+  it('initiales : lien vers la page Profil, sélectionné quand elle est affichée', async () => {
+    const chargerIdentite = () =>
+      Promise.resolve({ nomComplet: 'Marie Curie', email: 'm@x.fr', profil: null });
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={['/catalogue']}>
+          <Routes>
+            <Route
+              path="*"
+              element={
+                <>
+                  <Sidebar actif="catalogue" chargerIdentite={chargerIdentite} />
+                  <Adresse />
+                </>
+              }
+            />
+          </Routes>
+        </MemoryRouter>,
+      );
+    });
+    const lien = screen.getByRole('link', { name: 'Mon profil : Marie Curie' });
+    expect(lien.getAttribute('aria-current')).toBeNull();
+    fireEvent.click(lien);
+    expect(screen.getByTestId('adresse').textContent).toBe('/profil');
+    cleanup();
+
+    await act(async () => {
+      render(<Sidebar actif="profil" chargerIdentite={chargerIdentite} />);
+    });
+    const actif = screen.getByRole('link', { name: 'Mon profil : Marie Curie' });
+    expect(actif.getAttribute('aria-current')).toBe('page');
+    expect(actif.getAttribute('href')).toBe('/profil');
+  });
+
   it('sans nom : initiale de l’email, sans profil', async () => {
     const chargerIdentite = vi
       .fn()

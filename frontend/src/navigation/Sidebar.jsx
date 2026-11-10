@@ -6,7 +6,8 @@
 //   Seul le Catalogue est cliquable ; les 3 autres sont grisées, sans lien ni curseur
 //   de clic, avec l'infobulle « Bientôt disponible » au survol (règle optionnelle de la
 //   story, à valider avec le PO) ;
-// - en bas : la pastille aux initiales de l'investisseur et le bouton « Se déconnecter »,
+// - en bas : la pastille aux initiales de l'investisseur (lien vers la page Profil,
+//   entourée quand elle est affichée) et le bouton « Se déconnecter »,
 //   qui demande confirmation (« Oui » / « Non ») avant de déconnecter.
 import { useEffect, useRef, useState } from 'react';
 import LogoIcone from '../LogoIcone.jsx';
@@ -75,13 +76,20 @@ function useIdentite(charger) {
   return identite;
 }
 
-function Profil({ identite }) {
+// Lien vers la page Profil (lecture seule), marqué sélectionné quand elle est affichée
+function Profil({ identite, actif }) {
   const lettres = identite ? initiales(identite) : '';
   if (!lettres) return null;
   const nom = identite.nomComplet || identite.email;
   const profil = identite.profil ? `Profil ${PROFILS[identite.profil].nom.toLowerCase()}` : '';
   return (
-    <div className="sidebar__profil" data-infobulle={nom}>
+    <LienInterne
+      to="/profil"
+      className="sidebar__profil"
+      aria-label={`Mon profil : ${nom}`}
+      aria-current={actif ? 'page' : undefined}
+      data-infobulle={nom}
+    >
       <span className="sidebar__pastille" aria-hidden="true">
         {lettres}
       </span>
@@ -89,7 +97,7 @@ function Profil({ identite }) {
         <span className="sidebar__nom">{nom}</span>
         {profil && <span className="sidebar__profil-type">{profil}</span>}
       </span>
-    </div>
+    </LienInterne>
   );
 }
 
@@ -156,7 +164,7 @@ export default function Sidebar({ actif, seDeconnecter, chargerIdentite = lireId
       </ul>
 
       <div className="sidebar__bas">
-        <Profil identite={identite} />
+        <Profil identite={identite} actif={actif === 'profil'} />
         {seDeconnecter && (
           <button
             ref={boutonDeconnexion}
