@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { lireFiltresCatalogue, listerScpis } from './api.js';
+import { lireFiltresCatalogue, listerScpis, rechercherScpis } from './api.js';
 import { FILTRES_VIDES } from './filtres.js';
 
 let fetchMock;
@@ -54,6 +54,13 @@ describe('API du Catalogue (US-08)', () => {
     await lireFiltresCatalogue('/api');
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/scpis/filtres');
+    expect(options.headers).toEqual({ Authorization: 'Bearer jeton-1' });
+  });
+
+  it('rechercherScpis : GET de la recherche avec la session, texte encodé dans l’URL', async () => {
+    await rechercherScpis('Épargne 100% & co', '/api');
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/scpis/recherche?q=%C3%89pargne%20100%25%20%26%20co');
     expect(options.headers).toEqual({ Authorization: 'Bearer jeton-1' });
   });
 });

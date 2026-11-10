@@ -1,7 +1,7 @@
 /* Filtres du Catalogue (PanneauFiltres.jsx) : barre des filtres actifs au-dessus de la
    liste, panneau ouvert sur la droite de l'écran */
 
-/* Barre : bouton « Filtres », pastilles des filtres actifs, « Réinitialiser les filtres » */
+/* Barre : bouton « Filtres », « Réinitialiser les filtres », pastilles des filtres actifs */
 .barre-filtres {
   display: flex;
   flex-wrap: wrap;
@@ -89,34 +89,41 @@
   background: rgb(30 58 138 / 12%);
 }
 
+/* Bouton secondaire, juste après « Filtres » : même forme, plus discret */
 .barre-filtres__reinitialiser {
-  padding: 6px 4px;
-  border: 0;
-  background: none;
-  color: var(--bleu-vif);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--encre-douce);
   font: inherit;
   font-size: 14px;
   font-weight: 600;
-  text-decoration: underline;
   cursor: pointer;
 }
 
-/* Ligne des outils : barre des filtres à gauche, menu de tri (US-11) à droite ; le menu
-   passe sous les filtres quand la place manque */
-.catalogue__outils {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px 16px;
-  margin: 0 0 20px;
+.barre-filtres__reinitialiser:hover {
+  border-color: var(--bleu-pied);
+  background: #fff;
+  color: var(--bleu);
 }
 
-.catalogue__outils .barre-filtres {
-  flex: 1 1 auto;
-  margin: 0;
+.barre-filtres__reinitialiser svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
+/* Menu de tri (US-11), dans la ligne des outils (.catalogue__outils, catalogue.css) juste
+   à gauche de la recherche */
 .tri-catalogue {
   display: flex;
   align-items: center;
