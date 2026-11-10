@@ -1,0 +1,105 @@
+/* Recherche par nom (Recherche.jsx) : champ à droite des filtres (.catalogue__outils dans
+   catalogue.css) ; résultats affichés
+   avec les cartes du Catalogue (catalogue.css). Préfixe recherche-scpi : la classe
+   .recherche est déjà prise par l'écran des indicateurs (Indicateurs.css). */
+
+.recherche-scpi {
+  position: relative;
+  max-width: 520px;
+  margin: 0 0 14px;
+}
+
+.recherche-scpi__icone {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--discret);
+  stroke-width: 2;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.recherche-scpi__champ {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
+  margin: 0;
+  padding: 0 44px;
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--encre);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+  appearance: none;
+}
+
+/* Croix native de Chrome et Safari masquée : remplacée par .recherche-scpi__effacer,
+   la même dans tous les navigateurs */
+.recherche-scpi__champ::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.recherche-scpi__effacer {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--discret);
+  cursor: pointer;
+}
+
+.recherche-scpi__effacer:hover {
+  background: var(--papier);
+  color: var(--encre);
+}
+
+.recherche-scpi__effacer:focus-visible {
+  outline: 3px solid var(--bleu-pied);
+  outline-offset: 0;
+}
+
+.recherche-scpi__effacer svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.recherche-scpi__champ::placeholder {
+  color: var(--discret);
+}
+
+.recherche-scpi__champ:hover {
+  border-color: var(--bleu-pied);
+}
+
+.recherche-scpi__champ:focus-visible {
+  border-color: var(--bleu-vif);
+  box-shadow: 0 0 0 3px var(--bleu-ciel);
+}
+
+.recherche-scpi__aide {
+  margin: 6px 0 0 16px;
+  font-size: 13px;
+  color: var(--encre-douce);
+}
+
+.recherche-scpi__total {
+  margin: 0 0 16px;
+  font-size: 15px;
+  color: var(--encre-douce);
+}

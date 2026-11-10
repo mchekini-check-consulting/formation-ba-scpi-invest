@@ -11,6 +11,7 @@ function application(
   lister: CatalogueService['lister'],
   connecte = true,
   filtres: CatalogueService['filtres'] = vi.fn(),
+  rechercher: CatalogueService['rechercher'] = vi.fn(),
 ) {
   const fournisseur: FournisseurIdentite = {
     creerCompte: vi.fn(),
@@ -22,7 +23,7 @@ function application(
   };
   const { log, lignes } = captureLogs();
   const app = createApp(vi.fn(), log, {
-    routeurs: [routesCatalogue({ lister, filtres }, fournisseur)],
+    routeurs: [routesCatalogue({ lister, filtres, rechercher }, fournisseur)],
   });
   return { app, lignes };
 }
@@ -82,5 +83,32 @@ describe('routes du Catalogue (US-08)', () => {
     const { app } = application(vi.fn(), false, filtres);
     await request(app).get('/scpis/filtres').expect(401);
     expect(filtres).not.toHaveBeenCalled();
+  });
+
+  it('GET /scpis/recherche : texte q transmis au service, résultat renvoyé', async () => {
+    const resultat = { scpis: [{ id: 1, nom: 'Pierre Plus' }], anneeTaux: 2025 };
+    const rechercher = vi.fn().mockResolvedValue(resultat);
+    const { app, lignes } = application(vi.fn(), true, vi.fn(), rechercher);
+    await request(app)
+      .get('/scpis/recherche?q=pierre')
+      .set('Authorization', 'Bearer jeton')
+      .expect(200, resultat);
+    expect(rechercher).toHaveBeenCalledWith('pierre');
+    expect(lignes.at(-1)).toMatchObject({ layer: 'controller', method: 'rechercherScpis' });
+  });
+
+  it('GET /scpis/recherche : recherche invalide -> 400 avec le message du service', async () => {
+    const rechercher = vi.fn().mockRejectedValue(new HttpError(400, 'Recherche invalide'));
+    const { app } = application(vi.fn(), true, vi.fn(), rechercher);
+    const res = await request(app).get('/scpis/recherche').expect(400);
+    expect(res.body.message).toBe('Recherche invalide');
+    expect(rechercher).toHaveBeenCalledWith(undefined);
+  });
+
+  it('GET /scpis/recherche sans session -> 401, le service n’est pas appelé', async () => {
+    const rechercher = vi.fn();
+    const { app } = application(vi.fn(), false, vi.fn(), rechercher);
+    await request(app).get('/scpis/recherche?q=pierre').expect(401);
+    expect(rechercher).not.toHaveBeenCalled();
   });
 });

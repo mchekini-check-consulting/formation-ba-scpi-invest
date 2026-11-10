@@ -271,8 +271,8 @@ export function PanneauFiltres({ filtres, options, total, onChange, onFermer, re
   );
 }
 
-// Bouton d'ouverture du panneau, puis une pastille par filtre actif (croix pour le
-// retirer) et « Réinitialiser les filtres » (US-10c)
+// Bouton d'ouverture du panneau, « Réinitialiser les filtres », puis une pastille par
+// filtre actif (croix pour le retirer) (US-10c)
 export function BarreFiltres({ filtres, options, onChange, onOuvrir, refBouton, ouvert }) {
   const liste = pastilles(filtres, options);
   return (
@@ -294,6 +294,16 @@ export function BarreFiltres({ filtres, options, onChange, onOuvrir, refBouton, 
       </button>
       {liste.length > 0 && (
         <>
+          <button
+            type="button"
+            className="barre-filtres__reinitialiser"
+            onClick={() => onChange(FILTRES_VIDES)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" />
+            </svg>
+            Réinitialiser les filtres
+          </button>
           <ul className="barre-filtres__pastilles" aria-label="Filtres actifs">
             {liste.map((p) => (
               <li key={p.id} className="pastille-filtre">
@@ -309,13 +319,6 @@ export function BarreFiltres({ filtres, options, onChange, onOuvrir, refBouton, 
               </li>
             ))}
           </ul>
-          <button
-            type="button"
-            className="barre-filtres__reinitialiser"
-            onClick={() => onChange(FILTRES_VIDES)}
-          >
-            Réinitialiser les filtres
-          </button>
         </>
       )}
     </div>

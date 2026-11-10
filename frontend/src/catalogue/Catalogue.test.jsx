@@ -61,6 +61,7 @@ async function afficher({
   lire = vi.fn().mockResolvedValue({ etapeCourante: 6, reponses: {}, valide: true }),
   lister = vi.fn((page) => Promise.resolve(page === 2 ? PAGE_2 : PAGE_1)),
   lireFiltres = vi.fn().mockResolvedValue(OPTIONS),
+  rechercher = vi.fn().mockResolvedValue({ scpis: [], anneeTaux: 2025 }),
   seDeconnecter = vi.fn().mockResolvedValue(undefined),
   allerA = vi.fn(),
   passer = false,
@@ -72,6 +73,7 @@ async function afficher({
         lire={lire}
         lister={lister}
         lireFiltres={lireFiltres}
+        rechercher={rechercher}
         seDeconnecter={seDeconnecter}
         allerA={allerA}
         chargerIdentite={chargerIdentite}
@@ -79,7 +81,7 @@ async function afficher({
       />,
     );
   });
-  return { lister, lireFiltres, seDeconnecter, allerA };
+  return { lister, lireFiltres, rechercher, seDeconnecter, allerA };
 }
 
 const texte = () => document.body.textContent.replaceAll(' ', ' ');
@@ -439,7 +441,10 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
       .getAllByRole('listitem')
       .map((li) => li.firstChild.textContent);
     expect(libelles).toEqual(['Santé', 'France']);
-    expect(screen.getByRole('button', { name: 'Filtres, 2 actifs' })).toBeDefined();
+    const boutonFiltres = screen.getByRole('button', { name: 'Filtres, 2 actifs' });
+    // « Réinitialiser les filtres » juste après « Filtres », avant les pastilles
+    expect(boutonFiltres.nextElementSibling.textContent).toBe('Réinitialiser les filtres');
+    expect(boutonFiltres.nextElementSibling.nextElementSibling).toBe(actifs);
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre Santé' }));
@@ -488,5 +493,139 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     await ouvrir({ lireFiltres: vi.fn().mockRejectedValue(new ErreurApi(503, 'Indisponible')) });
     expect(panneau().textContent).toContain('Les filtres ne sont pas disponibles pour le moment.');
     expect(cartes()).toHaveLength(2);
+  });
+});
+
+describe('Catalogue : recherche par nom', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const champ = () => screen.getByRole('searchbox', { name: 'Rechercher une SCPI par son nom' });
+  const taper = (valeur) => fireEvent.change(champ(), { target: { value: valeur } });
+  const attendre = (ms) => act(() => vi.advanceTimersByTimeAsync(ms));
+  const noms = () => cartes().map((li) => within(li).getByRole('heading').textContent);
+  const trouvees = (...scpis) => ({ scpis, anneeTaux: 2025 });
+  const PIERRE = scpi(1, 'Pierre Plus', 6.2);
+  const RIVOLI = scpi(7, 'Rivoli Pierre', null, { gerant: null });
+  const TROUVEES = trouvees(PIERRE, RIVOLI);
+
+  it('1 caractère : aide affichée, aucune recherche, liste du Catalogue gardée', async () => {
+    const { rechercher } = await afficher();
+    taper('p');
+    await attendre(1000);
+    expect(texte()).toContain('Saisissez au moins 2 caractères');
+    expect(rechercher).not.toHaveBeenCalled();
+    expect(cartes()).toHaveLength(2);
+  });
+
+  it('lancée 300 ms après la dernière frappe, une seule fois, texte sans espaces autour', async () => {
+    const { rechercher } = await afficher({ rechercher: vi.fn().mockResolvedValue(TROUVEES) });
+    taper('pi');
+    await attendre(200);
+    taper('pie');
+    await attendre(200);
+    taper(' pier ');
+    await attendre(299);
+    expect(rechercher).not.toHaveBeenCalled();
+    expect(texte()).toContain('Recherche en cours…');
+    await attendre(1);
+    expect(rechercher).toHaveBeenCalledTimes(1);
+    expect(rechercher).toHaveBeenCalledWith('pier');
+  });
+
+  it('résultats à la place de la liste, avec les mêmes cartes que le Catalogue', async () => {
+    const lister = vi.fn().mockResolvedValue({
+      ...PAGE_1,
+      scpis: [scpi(2, 'Rivoli Avenir', 5.1), scpi(3, 'Autre', 4)],
+    });
+    await afficher({ lister, rechercher: vi.fn().mockResolvedValue(TROUVEES) });
+    taper('pierre');
+    await attendre(300);
+    expect(texte()).toContain('2 SCPI trouvées pour « pierre »');
+    expect(noms()).toEqual(['Pierre Plus', 'Rivoli Pierre']);
+    expect(screen.queryByRole('navigation', { name: 'Pagination du catalogue' })).toBeNull();
+    const [carte, sansTaux] = cartes();
+    const contenu = carte.textContent.replace(/\s/g, ' ');
+    expect(contenu).toContain('Gérant Pierre Plus');
+    expect(contenu).toContain('Taux de distribution 2025');
+    expect(contenu).toContain('6,20 %');
+    expect(carte.querySelector('img').getAttribute('src')).toBe(photoScpi(1));
+    expect(sansTaux.querySelector('.scpi__gerant').textContent).toBe('N/C');
+  });
+
+  it('une seule SCPI trouvée : libellé au singulier', async () => {
+    await afficher({ rechercher: vi.fn().mockResolvedValue(trouvees(PIERRE)) });
+    taper('plus');
+    await attendre(300);
+    expect(texte()).toContain('1 SCPI trouvée pour « plus »');
+  });
+
+  it('20 SCPI trouvées : invite à préciser la recherche', async () => {
+    const vingt = Array.from({ length: 20 }, (_, i) => scpi(i + 1, `SCPI ${i + 1}`, 5));
+    await afficher({ rechercher: vi.fn().mockResolvedValue(trouvees(...vingt)) });
+    taper('scpi');
+    await attendre(300);
+    expect(cartes()).toHaveLength(20);
+    expect(texte()).toContain('seules les 20 premières sont affichées, précisez votre recherche');
+  });
+
+  it('aucun résultat : message, « Effacer la recherche » ramène la liste du Catalogue', async () => {
+    await afficher();
+    taper('zzz');
+    await attendre(300);
+    expect(texte()).toContain('Aucune SCPI ne correspond à « zzz ».');
+    fireEvent.click(screen.getByRole('button', { name: 'Effacer la recherche' }));
+    expect(champ().value).toBe('');
+    expect(cartes()).toHaveLength(2);
+  });
+
+  it('croix « Effacer la saisie » : visible dès qu’il y a du texte, vide le champ, liste revenue', async () => {
+    await afficher({ rechercher: vi.fn().mockResolvedValue(TROUVEES) });
+    const croix = () => screen.queryByRole('button', { name: 'Effacer la saisie' });
+    expect(croix()).toBeNull();
+    taper('pierre');
+    await attendre(300);
+    expect(noms()).toEqual(['Pierre Plus', 'Rivoli Pierre']);
+    fireEvent.click(croix());
+    expect(champ().value).toBe('');
+    expect(document.activeElement).toBe(champ());
+    expect(croix()).toBeNull();
+    expect(noms()).toEqual(['Pierre Plus', 'Rivoli Avenir']);
+  });
+
+  it('seule la réponse au dernier texte est affichée', async () => {
+    const reponses = [];
+    const rechercher = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          reponses.push(resolve);
+        }),
+    );
+    await afficher({ rechercher });
+    taper('pi');
+    await attendre(300);
+    taper('rivoli');
+    await attendre(300);
+    await act(async () => {
+      reponses[1](trouvees(RIVOLI));
+      reponses[0](trouvees(PIERRE));
+    });
+    expect(noms()).toEqual(['Rivoli Pierre']);
+  });
+
+  it('recherche indisponible : message d’erreur', async () => {
+    await afficher({ rechercher: vi.fn().mockRejectedValue(new ErreurApi(503, 'Indisponible')) });
+    taper('pierre');
+    await attendre(300);
+    expect(screen.getByRole('alert').textContent).toBe('Indisponible');
+  });
+
+  it('session expirée pendant la recherche : connexion', async () => {
+    const { allerA } = await afficher({
+      rechercher: vi.fn().mockRejectedValue(new ErreurApi(401, 'Session expirée')),
+    });
+    taper('pierre');
+    await attendre(300);
+    expect(allerA).toHaveBeenCalledWith('/connexion');
   });
 });

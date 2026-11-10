@@ -182,4 +182,54 @@ describe('Catalogue (e2e)', () => {
       anneeTaux: new Date().getFullYear() - 1,
     });
   });
+
+  it('recherche : nom qui contient le texte, majuscules ignorées, % et _ cherchés tels quels', async () => {
+    const db = createDb(pool);
+    await pool.query('delete from scpi_catalog');
+    await importScpis(
+      db,
+      lignes(
+        scpi('Pierre Plus', '4'),
+        scpi('Rivoli Pierre', '6'),
+        scpi('Epargne 100%', '5'),
+        scpi('Autre', '5'),
+      ),
+    );
+    const noms = async (q: string) => (await service.rechercher(q)).scpis.map((s) => s.nom);
+
+    // Même tri que le Catalogue : taux N-1 décroissant
+    expect(await noms('PIERRE')).toEqual(['Rivoli Pierre', 'Pierre Plus']);
+    // Même carte que le Catalogue, avec l'année du taux
+    expect(await service.rechercher('rivoli')).toEqual({
+      scpis: [
+        {
+          id: expect.any(Number),
+          nom: 'Rivoli Pierre',
+          gerant: 'Gérant Rivoli Pierre',
+          tauxDistribution: 6,
+          capitalisation: 150000000,
+          categorie: 'Santé',
+          zoneGeographique: 'France',
+        },
+      ],
+      anneeTaux: new Date().getFullYear() - 1,
+    });
+    expect(await noms('100%')).toEqual(['Epargne 100%']);
+    expect(await noms('%')).toEqual(['Epargne 100%']);
+    expect(await noms('_')).toEqual([]);
+    expect(await noms('introuvable')).toEqual([]);
+  });
+
+  it('recherche : 20 SCPI au plus ; à taux égal, triées par nom', async () => {
+    const db = createDb(pool);
+    await pool.query('delete from scpi_catalog');
+    const nombreuses = Array.from({ length: 25 }, (_, i) =>
+      scpi(`SCPI ${String(i + 1).padStart(2, '0')}`, '5'),
+    );
+    await importScpis(db, lignes(...nombreuses));
+    const trouvees = (await service.rechercher('scpi')).scpis;
+    expect(trouvees).toHaveLength(20);
+    expect(trouvees[0].nom).toBe('SCPI 01');
+    expect(trouvees[19].nom).toBe('SCPI 20');
+  });
 });

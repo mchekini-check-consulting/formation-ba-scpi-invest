@@ -31,6 +31,7 @@ function preparer(total = 30, scpis = [SCPI], misAJourLe: Date | null = MAJ) {
     lister: vi.fn().mockResolvedValue(scpis),
     dateDernierImport: vi.fn().mockResolvedValue(misAJourLe),
     valeursFiltres: vi.fn().mockResolvedValue(VALEURS),
+    rechercher: vi.fn().mockResolvedValue([SCPI]),
   };
   const service = creerCatalogueService(depot, () => new Date('2026-11-06T10:00:00Z'));
   return { service, depot };
@@ -141,5 +142,31 @@ describe('CatalogueService (US-08)', () => {
       'Plus de 3 Md€',
     ]);
     expect(options.capitalisations[0]).toEqual({ code: 'moins-100m', libelle: 'Moins de 100 M€' });
+  });
+
+  describe('recherche par nom', () => {
+    it('texte nettoyé transmis au dépôt avec l’année N-1 et la limite de 20', async () => {
+      const { service, depot } = preparer();
+      expect(await service.rechercher('  pierre ')).toEqual({ scpis: [SCPI], anneeTaux: 2025 });
+      expect(depot.rechercher).toHaveBeenCalledWith(2025, 'pierre', 20);
+    });
+
+    it('texte vide ou fait d’espaces : aucune SCPI, la base n’est pas lue', async () => {
+      const { service, depot } = preparer();
+      expect(await service.rechercher('')).toEqual({ scpis: [], anneeTaux: 2025 });
+      expect(await service.rechercher('   ')).toEqual({ scpis: [], anneeTaux: 2025 });
+      expect(depot.rechercher).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['absent', undefined],
+      ['répété dans l’adresse', ['a', 'b']],
+    ])('q %s -> 400 « Recherche invalide », la base n’est pas lue', async (_cas, q) => {
+      const { service, depot } = preparer();
+      const err = await erreurDe(service.rechercher(q));
+      expect(err.status).toBe(400);
+      expect(err.message).toBe('Recherche invalide');
+      expect(depot.rechercher).not.toHaveBeenCalled();
+    });
   });
 });

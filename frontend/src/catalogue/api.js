@@ -17,3 +17,9 @@ export function listerScpis(page = 1, filtres = FILTRES_VIDES, base = apiBase())
 export function lireFiltresCatalogue(base = apiBase()) {
   return appelAuthentifie(`${base}/scpis/filtres`);
 }
+
+// Recherche par nom, sur tout le catalogue (sans les filtres) : 20 SCPI au plus, mêmes
+// cartes et même tri que listerScpis -> { scpis, anneeTaux }
+export function rechercherScpis(texte, base = apiBase()) {
+  return appelAuthentifie(`${base}/scpis/recherche?q=${encodeURIComponent(texte)}`);
+}
