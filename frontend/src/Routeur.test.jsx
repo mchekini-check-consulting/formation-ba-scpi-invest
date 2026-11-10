@@ -81,6 +81,15 @@ describe('Routeur', () => {
     expect(localStorage.getItem('scpi-invest.derniere-page')).toBe('/catalogue');
   });
 
+  it('/profil : écran protégé (KYC validé), hors parcours de reprise après connexion', () => {
+    sessionStorage.clear();
+    localStorage.clear();
+    afficher('/profil');
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
+    expect(screen.getByTestId('adresse').textContent).toBe('/profil');
+    expect(localStorage.getItem('scpi-invest.derniere-page')).toBeNull();
+  });
+
   it('/indicateurs : définitions des indicateurs', () => {
     afficher('/indicateurs');
     expect(titre()).toBe('Les indicateurs des SCPI, expliqués simplement.');

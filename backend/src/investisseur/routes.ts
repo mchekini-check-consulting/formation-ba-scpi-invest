@@ -8,7 +8,8 @@ import type { QuestionnaireService } from './service.js';
 //                                               -> { etapeCourante, reponses }, 400 si invalide
 //   DELETE /formulaire-investisseur/etapes/:n   « Réinitialiser » : efface les réponses
 //                                               de l'étape n -> { etapeCourante, reponses }
-//   GET    /formulaire-investisseur/profil      -> { profil, avertissements }    (US-05b)
+//   GET    /formulaire-investisseur/profil      -> { profil, avertissements,     (US-05b)
+//                                                    valideLe } (date ISO ou null : page Profil)
 //                                               409 si les 5 étapes ne sont pas complétées
 //   POST   /formulaire-investisseur/validation  { certification: true }        (US-05b)
 //                                               -> { profil, avertissements }

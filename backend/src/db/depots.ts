@@ -83,6 +83,15 @@ export function depotProfils(db: Db): DepotProfils {
         .limit(1);
       return lignes.length > 0;
     },
+    async derniereValidation(utilisateurId) {
+      const [ligne] = await db
+        .select({ valideLe: profilInvestisseur.valideLe })
+        .from(profilInvestisseur)
+        .where(eq(profilInvestisseur.utilisateurId, utilisateurId))
+        .orderBy(desc(profilInvestisseur.valideLe))
+        .limit(1);
+      return ligne?.valideLe ?? null;
+    },
     async enregistrer(utilisateurId, p) {
       await db.insert(profilInvestisseur).values({
         utilisateurId,

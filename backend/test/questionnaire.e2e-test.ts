@@ -119,7 +119,11 @@ describe('formulaire investisseur (e2e)', () => {
     for (const etape of [3, 4, 5]) {
       await appel('put', `/etapes/${etape}`).send(REPONSES_EXEMPLE[etape]).expect(200);
     }
-    await appel('get', '/profil').expect(200, { profil: 'equilibre', avertissements: [] });
+    await appel('get', '/profil').expect(200, {
+      profil: 'equilibre',
+      avertissements: [],
+      valideLe: null,
+    });
 
     // certification obligatoire, puis validation
     await appel('post', '/validation').send({ certification: false }).expect(400);
@@ -134,6 +138,10 @@ describe('formulaire investisseur (e2e)', () => {
     expect(rows[0]).toMatchObject({ profil: 'equilibre', score: 4, version_questionnaire: '1.0' });
     expect(Date.now() - new Date(rows[0].valide_le).getTime()).toBeLessThan(60_000);
     expect(rows[0].reponses['4']).toEqual(REPONSES_EXEMPLE[4]);
+
+    // page Profil : date de validation renvoyée avec le profil
+    const { body } = await appel('get', '/profil').expect(200);
+    expect(body.valideLe).toBe(new Date(rows[0].valide_le).toISOString());
 
     // formulaire terminé : signalé, plus modifiable, pas de seconde validation
     expect((await appel('get').expect(200)).body.valide).toBe(true);

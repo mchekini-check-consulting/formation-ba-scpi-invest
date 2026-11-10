@@ -21,6 +21,7 @@ import { CHEMINS_INACTIFS } from './navigation/entrees.js';
 import { CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
 import { formulairesPassables } from './outils/passerFormulaires.js';
 import ImportCatalogue from './outils/ImportCatalogue.jsx';
+import Profil from './profil/Profil.jsx';
 
 // Email pré-rempli transmis par l'adresse (?email=...)
 function useEmailDeLAdresse() {
@@ -90,6 +91,15 @@ export default function Routeur({ passer = formulairesPassables() }) {
           element={
             <ExigerKycComplete>
               <Catalogue />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Page Profil, en lecture seule : ouverte par les initiales de la sidebar */}
+        <Route
+          path="/profil"
+          element={
+            <ExigerKycComplete>
+              <Profil />
             </ExigerKycComplete>
           }
         />

@@ -14,6 +14,9 @@ export type Etat = Avancement & { valide: boolean };
 // Profil affiché à l'écran : jamais le score (US-05b, règle 5)
 export type ProfilAffiche = { profil: Profil; avertissements: Avertissement[] };
 
+// Page Profil : date et heure de la dernière validation (ISO), null si pas encore validé
+export type ProfilConsulte = ProfilAffiche & { valideLe: string | null };
+
 export type ProfilValide = ProfilAffiche & {
   score: number;
   reponses: ReponsesQuestionnaire;
@@ -27,6 +30,8 @@ export type DepotQuestionnaires = {
 
 export type DepotProfils = {
   existe(utilisateurId: string): Promise<boolean>;
+  // Date de la dernière validation (US-05d : une mise à jour ajoute une ligne), null si aucune
+  derniereValidation(utilisateurId: string): Promise<Date | null>;
   enregistrer(utilisateurId: string, profil: ProfilValide): Promise<void>;
 };
 
@@ -117,9 +122,12 @@ export function creerQuestionnaireService(depot: DepotQuestionnaires, profils: D
     return { ...calculerProfil(actuel.reponses), reponses: actuel.reponses };
   }
 
-  async function profil(utilisateurId: string): Promise<ProfilAffiche> {
-    const { profil: nom, avertissements } = await calculer(utilisateurId);
-    return { profil: nom, avertissements };
+  async function profil(utilisateurId: string): Promise<ProfilConsulte> {
+    const [{ profil: nom, avertissements }, valideLe] = await Promise.all([
+      calculer(utilisateurId),
+      profils.derniereValidation(utilisateurId),
+    ]);
+    return { profil: nom, avertissements, valideLe: valideLe?.toISOString() ?? null };
   }
 
   // Certification obligatoire ; enregistre profil, score, réponses, avertissements,
