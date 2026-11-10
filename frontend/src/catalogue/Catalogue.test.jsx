@@ -259,19 +259,23 @@ describe('Catalogue : liste des SCPI (US-08)', () => {
 });
 
 describe('Catalogue : tri (US-11)', () => {
-  const menu = () => screen.getByRole('combobox', { name: 'Trier par' });
-  const choisir = async (valeur) => {
+  const menu = () => screen.getByRole('button', { name: /^Trier par/ });
+  // Choix à la souris dans le menu sur mesure (MenuTri.jsx), par le libellé complet
+  const choisir = async (libelle) => {
+    fireEvent.click(menu());
     await act(async () => {
-      fireEvent.change(menu(), { target: { value: valeur } });
+      fireEvent.click(screen.getByRole('option', { name: libelle }));
     });
   };
 
   it('scénario 1 : sans tri choisi, taux N-1 décroissant affiché dans le menu', async () => {
     const { lister } = await afficher();
     expect(lister).toHaveBeenCalledWith(1, FILTRES_VIDES, 'taux-desc');
-    expect(menu().value).toBe('taux-desc');
-    expect(menu().selectedOptions[0].textContent).toBe('Taux de distribution — décroissant');
-    expect(within(menu()).getAllByRole('option')).toHaveLength(12);
+    expect(menu().getAttribute('aria-label')).toBe(
+      'Trier par : Taux de distribution — décroissant',
+    );
+    fireEvent.click(menu());
+    expect(screen.getAllByRole('option')).toHaveLength(12);
   });
 
   it('scénarios 2 et 3 : changer de tri puis inverser le sens, retour en page 1', async () => {
@@ -279,10 +283,10 @@ describe('Catalogue : tri (US-11)', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
     });
-    await choisir('capitalisation-asc');
+    await choisir('Capitalisation — croissant');
     expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, 'capitalisation-asc');
-    expect(menu().selectedOptions[0].textContent).toBe('Capitalisation — croissant');
-    await choisir('capitalisation-desc');
+    expect(menu().textContent).toContain('Capitalisation — croissant');
+    await choisir('Capitalisation — décroissant');
     expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, 'capitalisation-desc');
   });
 
@@ -292,9 +296,9 @@ describe('Catalogue : tri (US-11)', () => {
       Promise.resolve(tri === 'nom-desc' ? parNom : PAGE_1),
     );
     await afficher({ lister });
-    await choisir('nom-asc');
+    await choisir('Nom A → Z');
     expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, 'nom-asc');
-    await choisir('nom-desc');
+    await choisir('Nom Z → A');
     expect(cartes().map((c) => c.querySelector('h2').textContent)).toEqual([
       'Rivoli Avenir',
       'Pierre Plus',
@@ -307,7 +311,7 @@ describe('Catalogue : tri (US-11)', () => {
       JSON.stringify({ ...FILTRES_VIDES, pays: ['France'] }),
     );
     const { lister } = await afficher();
-    await choisir('gerant-asc');
+    await choisir('Société de gestion A → Z');
     expect(lister).toHaveBeenLastCalledWith(
       1,
       { ...FILTRES_VIDES, pays: ['France'] },

@@ -22,7 +22,8 @@ import { BarreFiltres, PanneauFiltres } from './PanneauFiltres.jsx';
 import { BarreRecherche, ResultatsRecherche } from './Recherche.jsx';
 import { useRecherche } from './useRecherche.js';
 import { photosPage } from './photos.js';
-import { OPTIONS_TRI, TRI_PAR_DEFAUT } from './tri.js';
+import MenuTri from './MenuTri.jsx';
+import { TRI_PAR_DEFAUT } from './tri.js';
 import './catalogue.css';
 import {
   SEGMENTS,
@@ -176,30 +177,6 @@ function CarteScpi({ scpi, anneeTaux, photo }) {
         </BoutonBientot>
       </div>
     </li>
-  );
-}
-
-// Menu de tri (US-11) : le tri actif reste affiché dans la liste
-function MenuTri({ tri, onChange }) {
-  const id = useId();
-  return (
-    <div className="tri-catalogue">
-      <label htmlFor={id} className="tri-catalogue__libelle">
-        Trier par
-      </label>
-      <select
-        id={id}
-        className="tri-catalogue__liste"
-        value={tri}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {OPTIONS_TRI.map((option) => (
-          <option key={option.valeur} value={option.valeur}>
-            {option.libelle}
-          </option>
-        ))}
-      </select>
-    </div>
   );
 }
 

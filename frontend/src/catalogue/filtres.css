@@ -122,39 +122,6 @@
   stroke-linejoin: round;
 }
 
-/* Menu de tri (US-11), dans la ligne des outils (.catalogue__outils, catalogue.css) juste
-   à gauche de la recherche */
-.tri-catalogue {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tri-catalogue__libelle {
-  color: var(--bleu);
-  font-size: 15px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.tri-catalogue__liste {
-  min-height: 42px;
-  max-width: 100%;
-  padding: 0 12px;
-  border: 1px solid var(--ligne);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--bleu);
-  font: inherit;
-  font-size: 15px;
-  cursor: pointer;
-}
-
-.tri-catalogue__liste:hover {
-  border-color: var(--bleu-pied);
-}
-
-.tri-catalogue__liste:focus-visible,
 .barre-filtres button:focus-visible,
 .filtres button:focus-visible,
 .filtres input:focus-visible {

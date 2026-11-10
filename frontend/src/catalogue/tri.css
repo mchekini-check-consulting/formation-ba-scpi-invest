@@ -1,0 +1,169 @@
+/* Menu « Trier par » du Catalogue (MenuTri.jsx, US-11), dans la ligne des outils
+   (.catalogue__outils, catalogue.css) entre les filtres et la recherche. Bouton arrondi
+   comme « Filtres » et la recherche ; liste au style de la liste des pays du KYC. */
+
+.menu-tri {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.menu-tri__bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 42px;
+  padding: 0 14px 0 16px;
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--bleu);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.menu-tri__bouton:hover {
+  border-color: var(--bleu-pied);
+}
+
+.menu-tri__bouton:focus-visible {
+  outline: 3px solid var(--bleu-pied);
+  outline-offset: 2px;
+}
+
+.menu-tri__bouton[aria-expanded='true'] {
+  border-color: var(--bleu-vif);
+  box-shadow: 0 0 0 3px var(--bleu-ciel);
+}
+
+.menu-tri__icone,
+.menu-tri__chevron,
+.menu-tri__coche {
+  flex: none;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.menu-tri__icone {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+.menu-tri__intitule {
+  color: var(--encre-douce);
+  white-space: nowrap;
+}
+
+.menu-tri__valeur {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.menu-tri__chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--discret);
+  stroke-width: 2.2;
+  transition: transform 0.15s ease;
+}
+
+.menu-tri__bouton[aria-expanded='true'] .menu-tri__chevron {
+  transform: rotate(180deg);
+}
+
+.menu-tri__liste {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  box-sizing: border-box;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: min(440px, 60vh);
+  padding: 6px;
+  overflow-y: auto;
+  background: var(--cadre);
+  border: 1px solid var(--ligne);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgb(14 26 51 / 12%);
+  outline: none;
+  animation: menu-tri-ouverture 0.12s ease-out;
+}
+
+.menu-tri__groupe + .menu-tri__groupe {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--ligne);
+}
+
+.menu-tri__titre {
+  padding: 6px 10px 2px;
+  color: var(--discret);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.menu-tri__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  color: var(--encre);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.menu-tri__option[data-actif='true'] {
+  background: var(--papier);
+}
+
+.menu-tri__option[aria-selected='true'] {
+  color: var(--bleu-vif);
+  font-weight: 600;
+}
+
+.menu-tri__coche {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.4;
+  visibility: hidden;
+}
+
+.menu-tri__option[aria-selected='true'] .menu-tri__coche {
+  visibility: visible;
+}
+
+@keyframes menu-tri-ouverture {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-tri__liste {
+    animation: none;
+  }
+
+  .menu-tri__chevron {
+    transition: none;
+  }
+}

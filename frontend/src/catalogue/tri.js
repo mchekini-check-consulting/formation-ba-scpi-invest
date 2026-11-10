@@ -5,20 +5,41 @@
 
 export const TRI_PAR_DEFAUT = 'taux-desc';
 
-export const OPTIONS_TRI = [
-  { valeur: 'taux-desc', libelle: 'Taux de distribution — décroissant' },
-  { valeur: 'taux-asc', libelle: 'Taux de distribution — croissant' },
-  { valeur: 'capitalisation-desc', libelle: 'Capitalisation — décroissant' },
-  { valeur: 'capitalisation-asc', libelle: 'Capitalisation — croissant' },
-  { valeur: 'pays-asc', libelle: 'Zone géographique A → Z' },
-  { valeur: 'pays-desc', libelle: 'Zone géographique Z → A' },
-  { valeur: 'secteur-asc', libelle: 'Catégorie A → Z' },
-  { valeur: 'secteur-desc', libelle: 'Catégorie Z → A' },
-  { valeur: 'gerant-asc', libelle: 'Société de gestion A → Z' },
-  { valeur: 'gerant-desc', libelle: 'Société de gestion Z → A' },
-  { valeur: 'nom-asc', libelle: 'Nom A → Z' },
-  { valeur: 'nom-desc', libelle: 'Nom Z → A' },
+// Critères du menu (MenuTri.jsx), affichés en groupes : titre du critère, puis ses deux
+// sens. Nombres : décroissant / croissant ; textes : A → Z / Z → A.
+const NOMBRE = [
+  ['desc', 'Décroissant'],
+  ['asc', 'Croissant'],
 ];
+const TEXTE = [
+  ['asc', 'A → Z'],
+  ['desc', 'Z → A'],
+];
+
+export const GROUPES_TRI = [
+  { critere: 'taux', titre: 'Taux de distribution', sens: NOMBRE },
+  { critere: 'capitalisation', titre: 'Capitalisation', sens: NOMBRE },
+  { critere: 'pays', titre: 'Zone géographique', sens: TEXTE },
+  { critere: 'secteur', titre: 'Catégorie', sens: TEXTE },
+  { critere: 'gerant', titre: 'Société de gestion', sens: TEXTE },
+  { critere: 'nom', titre: 'Nom', sens: TEXTE },
+].map(({ critere, titre, sens }) => ({
+  critere,
+  titre,
+  options: sens.map(([code, court]) => ({
+    valeur: `${critere}-${code}`,
+    // libellé complet, lu par les lecteurs d'écran et affiché sur le bouton du menu :
+    // « Capitalisation — croissant », « Nom A → Z »
+    libelle: sens === NOMBRE ? `${titre} — ${court.toLowerCase()}` : `${titre} ${court}`,
+    court,
+  })),
+}));
+
+export const OPTIONS_TRI = GROUPES_TRI.flatMap((groupe) => groupe.options);
+
+export function libelleTri(valeur) {
+  return (OPTIONS_TRI.find((o) => o.valeur === valeur) ?? OPTIONS_TRI[0]).libelle;
+}
 
 // Paramètre de l'URL : rien pour le tri par défaut (même résultat côté backend)
 export function parametreTri(tri) {
