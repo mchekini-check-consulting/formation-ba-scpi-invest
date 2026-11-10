@@ -23,7 +23,7 @@ describe('Menu « Trier par » sur mesure (US-11)', () => {
   it('bouton : tri actif affiché, liste fermée', () => {
     afficher('nom-asc');
     expect(bouton().getAttribute('aria-label')).toBe('Trier par : Nom A → Z');
-    expect(bouton().textContent).toBe('Trier parNom A → Z');
+    expect(bouton().textContent).toBe('Nom A → Z');
     expect(bouton().getAttribute('aria-expanded')).toBe('false');
     expect(liste()).toBeNull();
   });

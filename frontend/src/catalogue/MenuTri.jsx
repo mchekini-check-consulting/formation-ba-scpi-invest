@@ -9,7 +9,6 @@ import { GROUPES_TRI, OPTIONS_TRI, libelleTri } from './tri.js';
 import './tri.css';
 
 const TRACES = {
-  tri: 'M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3',
   chevron: 'M6 9l6 6 6-6',
   coche: 'M5 12.5l4.5 4.5L19 7.5',
 };
@@ -111,8 +110,6 @@ export default function MenuTri({ tri, onChange }) {
         onClick={() => (ouvert ? fermer() : ouvrir())}
         onKeyDown={toucheBouton}
       >
-        <Trace nom="tri" className="menu-tri__icone" />
-        <span className="menu-tri__intitule">Trier par</span>
         <span className="menu-tri__valeur">{libelle}</span>
         <Trace nom="chevron" className="menu-tri__chevron" />
       </button>

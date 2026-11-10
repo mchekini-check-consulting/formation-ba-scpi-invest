@@ -39,7 +39,6 @@
   box-shadow: 0 0 0 3px var(--bleu-ciel);
 }
 
-.menu-tri__icone,
 .menu-tri__chevron,
 .menu-tri__coche {
   flex: none;
@@ -47,17 +46,6 @@
   stroke: currentcolor;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.menu-tri__icone {
-  width: 18px;
-  height: 18px;
-  stroke-width: 2;
-}
-
-.menu-tri__intitule {
-  color: var(--encre-douce);
-  white-space: nowrap;
 }
 
 .menu-tri__valeur {

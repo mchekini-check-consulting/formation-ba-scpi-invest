@@ -82,25 +82,34 @@
   color: #555;
 }
 
-/* Barre des filtres à gauche (prend la place restante), recherche tout à droite, sur la
-   même ligne ; la recherche passe en dessous quand l'écran est trop étroit */
+/* Une ligne : recherche (500 px) à gauche, « Filtres » et menu de tri tout à droite.
+   Sur un écran étroit, les deux boutons passent sous la recherche, toujours à droite.
+   Filtres actifs (.barre-filtres) sur la ligne suivante. */
 .catalogue__outils {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 12px 16px;
-  margin: 0 0 20px;
-}
-
-.catalogue__outils .barre-filtres {
-  flex: 1;
-  margin: 0;
+  gap: 12px;
+  margin: 0 0 16px;
 }
 
 .catalogue__outils .recherche-scpi {
-  flex: 0 1 360px;
-  min-width: 240px;
+  flex: 0 1 500px;
+  min-width: 0;
+  max-width: 500px;
   margin: 0;
+}
+
+/* Pousse « Filtres » et le tri tout à droite */
+.catalogue__outils .barre-filtres__bouton {
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .catalogue__outils .recherche-scpi {
+    flex-basis: 100%;
+    max-width: none;
+  }
 }
 
 /* 4 SCPI par ligne sur ordinateur ; 3, 2 puis 1 quand l'écran rétrécit */

@@ -271,56 +271,61 @@ export function PanneauFiltres({ filtres, options, total, onChange, onFermer, re
   );
 }
 
-// Bouton d'ouverture du panneau, « Réinitialiser les filtres », puis une pastille par
-// filtre actif (croix pour le retirer) (US-10c)
-export function BarreFiltres({ filtres, options, onChange, onOuvrir, refBouton, ouvert }) {
+// Bouton « Filtres » : ouvre le panneau, avec le nombre de filtres actifs. Placé
+// dans la ligne des outils, entre la recherche et le tri.
+export function BoutonFiltres({ filtres, options, onOuvrir, refBouton, ouvert }) {
+  const actifs = pastilles(filtres, options).length;
+  return (
+    <button
+      ref={refBouton}
+      type="button"
+      className="barre-filtres__bouton"
+      aria-haspopup="dialog"
+      aria-expanded={ouvert}
+      aria-label={actifs > 0 ? `Filtres, ${actifs} actifs` : undefined}
+      onClick={onOuvrir}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 6h16M7 12h10M10 18h4" />
+      </svg>
+      Filtres
+      {actifs > 0 && <span className="barre-filtres__nombre">{actifs}</span>}
+    </button>
+  );
+}
+
+// Sous la ligne des outils, seulement si des filtres sont actifs : « Réinitialiser les
+// filtres », puis une pastille par filtre actif (croix pour le retirer) (US-10c)
+export function FiltresActifs({ filtres, options, onChange }) {
   const liste = pastilles(filtres, options);
+  if (liste.length === 0) return null;
   return (
     <div className="barre-filtres">
       <button
-        ref={refBouton}
         type="button"
-        className="barre-filtres__bouton"
-        aria-haspopup="dialog"
-        aria-expanded={ouvert}
-        aria-label={liste.length > 0 ? `Filtres, ${liste.length} actifs` : undefined}
-        onClick={onOuvrir}
+        className="barre-filtres__reinitialiser"
+        onClick={() => onChange(FILTRES_VIDES)}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M4 6h16M7 12h10M10 18h4" />
+          <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" />
         </svg>
-        Filtres
-        {liste.length > 0 && <span className="barre-filtres__nombre">{liste.length}</span>}
+        Réinitialiser les filtres
       </button>
-      {liste.length > 0 && (
-        <>
-          <button
-            type="button"
-            className="barre-filtres__reinitialiser"
-            onClick={() => onChange(FILTRES_VIDES)}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" />
-            </svg>
-            Réinitialiser les filtres
-          </button>
-          <ul className="barre-filtres__pastilles" aria-label="Filtres actifs">
-            {liste.map((p) => (
-              <li key={p.id} className="pastille-filtre">
-                {p.libelle}
-                <button
-                  type="button"
-                  className="pastille-filtre__retirer"
-                  aria-label={`Retirer le filtre ${p.libelle}`}
-                  onClick={() => onChange(p.retirer(filtres))}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      <ul className="barre-filtres__pastilles" aria-label="Filtres actifs">
+        {liste.map((p) => (
+          <li key={p.id} className="pastille-filtre">
+            {p.libelle}
+            <button
+              type="button"
+              className="pastille-filtre__retirer"
+              aria-label={`Retirer le filtre ${p.libelle}`}
+              onClick={() => onChange(p.retirer(filtres))}
+            >
+              ×
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

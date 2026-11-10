@@ -18,7 +18,7 @@ import { formulairesPassables } from '../outils/passerFormulaires.js';
 import PageApplication from '../navigation/PageApplication.jsx';
 import { lireFiltresCatalogue, listerScpis, rechercherScpis } from './api.js';
 import { FILTRES_VIDES, memoriserFiltres, pastilles, relireFiltres } from './filtres.js';
-import { BarreFiltres, PanneauFiltres } from './PanneauFiltres.jsx';
+import { BoutonFiltres, FiltresActifs, PanneauFiltres } from './PanneauFiltres.jsx';
 import { BarreRecherche, ResultatsRecherche } from './Recherche.jsx';
 import { useRecherche } from './useRecherche.js';
 import { photosPage } from './photos.js';
@@ -374,21 +374,23 @@ export default function Catalogue({
       chargerIdentite={chargerIdentite}
       entete={<EnteteCatalogue donnees={donnees} filtre={filtre} />}
     >
-      {/* Filtres à gauche, menu de tri (US-11) puis recherche tout à droite, sur la même
-          ligne */}
+      {/* Une seule ligne : recherche (toute la place restante), « Filtres », puis
+          menu de tri (US-11) ; les filtres actifs en dessous */}
       {valide && (
-        <div className="catalogue__outils">
-          <BarreFiltres
-            filtres={filtres}
-            options={options}
-            onChange={changerFiltres}
-            onOuvrir={() => setPanneauOuvert(true)}
-            refBouton={boutonFiltres}
-            ouvert={panneauOuvert}
-          />
-          <MenuTri tri={tri} onChange={changerTri} />
-          <BarreRecherche valeur={saisie} onChange={setSaisie} />
-        </div>
+        <>
+          <div className="catalogue__outils">
+            <BarreRecherche valeur={saisie} onChange={setSaisie} />
+            <BoutonFiltres
+              filtres={filtres}
+              options={options}
+              onOuvrir={() => setPanneauOuvert(true)}
+              refBouton={boutonFiltres}
+              ouvert={panneauOuvert}
+            />
+            <MenuTri tri={tri} onChange={changerTri} />
+          </div>
+          <FiltresActifs filtres={filtres} options={options} onChange={changerFiltres} />
+        </>
       )}
       {panneauOuvert && (
         <PanneauFiltres
