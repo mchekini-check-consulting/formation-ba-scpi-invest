@@ -5,6 +5,8 @@
 // Même modèle « combobox » que l'adresse (ChampAdresse.jsx) : flèches, Entrée, Échap.
 // Hors France, ou si le service ne répond pas : saisie libre.
 import { useEffect, useId, useRef, useState } from 'react';
+import { attributsCombobox } from './combobox.js';
+import ListeSuggestions from './ListeSuggestions.jsx';
 
 const CODE_POSTAL = /^\d{5}$/;
 
@@ -53,7 +55,7 @@ export default function ChampVille({
   }, [communes, valeur, changer]);
 
   const ouvert = !ferme && communes.length > 1;
-  const idOption = (i) => `${idListe}-${i}`;
+  const telle = (commune) => commune;
 
   function retenir(commune) {
     changer(commune);
@@ -84,14 +86,7 @@ export default function ChampVille({
     <div className="choix-pays">
       <input
         id={id}
-        type="text"
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded={ouvert}
-        aria-controls={idListe}
-        aria-activedescendant={ouvert ? idOption(position) : undefined}
-        aria-invalid={invalide ? true : undefined}
-        aria-describedby={decritPar}
+        {...attributsCombobox({ idListe, ouvert, position, invalide, decritPar })}
         autoComplete={communes.length > 1 ? 'off' : autoComplete}
         value={valeur ?? ''}
         onChange={(e) => {
@@ -106,23 +101,16 @@ export default function ChampVille({
         onBlur={() => setFerme(true)}
       />
       {ouvert && (
-        <ul id={idListe} role="listbox" className="choix-pays__liste" aria-label="Communes">
-          {communes.map((commune, i) => (
-            <li
-              key={commune}
-              id={idOption(i)}
-              role="option"
-              aria-selected={i === position}
-              data-actif={i === position}
-              className="choix-pays__option"
-              onMouseDown={(e) => e.preventDefault()} // garde le focus dans le champ
-              onClick={() => retenir(commune)}
-              onMouseEnter={() => setPosition(i)}
-            >
-              {commune}
-            </li>
-          ))}
-        </ul>
+        <ListeSuggestions
+          idListe={idListe}
+          libelle="Communes"
+          elements={communes}
+          position={position}
+          cle={telle}
+          texte={telle}
+          choisir={retenir}
+          survoler={setPosition}
+        />
       )}
     </div>
   );

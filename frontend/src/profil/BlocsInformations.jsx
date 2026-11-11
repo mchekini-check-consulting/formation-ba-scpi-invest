@@ -66,6 +66,59 @@ function Fiche({ lignes }) {
   );
 }
 
+const BADGE_MIS_A_JOUR = <span className="bloc-info__badge">✓ Mise à jour</span>;
+
+// Bloc en lecture : titre, badge, bouton « Modifier », valeurs, message après enregistrement
+function BlocLecture({ idTitre, titre, badge, modifier, lignes, succes }) {
+  return (
+    <section className="profil__carte profil__rubrique bloc-info" aria-labelledby={idTitre}>
+      <EnTete id={idTitre} titre={titre} badge={badge ?? (succes ? BADGE_MIS_A_JOUR : null)}>
+        {modifier}
+      </EnTete>
+      <Fiche lignes={lignes} />
+      {succes && <div className="bloc-info__message">{succes}</div>}
+    </section>
+  );
+}
+
+// Bloc ouvert en formulaire : champs, message d'erreur, « Annuler » et « Enregistrer »
+function BlocFormulaire({ idTitre, titre, envoyer, alerte, envoi, fermer, children }) {
+  return (
+    <section
+      className="profil__carte profil__rubrique bloc-info bloc-info--ouvert"
+      aria-labelledby={idTitre}
+    >
+      <EnTete id={idTitre} titre={`${titre} — modification`} />
+      <form className="compte__form bloc-info__form kyc" onSubmit={envoyer} noValidate>
+        {children}
+        {alerte && (
+          <p className="compte__alerte" role="alert">
+            {alerte}
+          </p>
+        )}
+        <div className="bloc-info__actions">
+          <button
+            type="button"
+            className="compte__bouton compte__bouton--secondaire"
+            onClick={fermer}
+            disabled={envoi}
+          >
+            Annuler
+          </button>
+          <button type="submit" className="compte__bouton" disabled={envoi}>
+            {envoi ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+// Message d'une erreur du backend : le sien pour une demande refusée, sinon un message général
+function messageErreur(err) {
+  return err?.status === 400 || err?.status === 409 ? err.message : MESSAGE_ECHEC;
+}
+
 // Choix d'un fichier (justificatif), présenté comme les pièces du KYC : libellé, aide,
 // bouton « Choisir un fichier » toujours visible (le champ natif, masqué, reste celui qui
 // reçoit le focus au clavier), nom du fichier choisi, erreur de format
@@ -158,7 +211,7 @@ export function BlocModifiable({
 
   function choisirFichier(choisi) {
     setFichier(choisi);
-    setErreurs((e) => ({ ...e, justificatif: choisi ? erreurJustificatif(choisi) : undefined }));
+    setErreurs((e) => ({ ...e, justificatif: erreurJustificatif(choisi) }));
   }
 
   async function envoyer(event) {
@@ -191,14 +244,12 @@ export function BlocModifiable({
         const reste = ESSAIS_MOT_DE_PASSE - faits;
         setErreurs({ motDePasse: `Mot de passe incorrect. Il vous reste ${reste} tentative(s).` });
       } else {
-        setAlerte(err?.status === 400 || err?.status === 409 ? err.message : MESSAGE_ECHEC);
+        setAlerte(messageErreur(err));
       }
     } finally {
       setEnvoi(false);
     }
   }
-
-  const badge = succes ? <span className="bloc-info__badge">✓ Mise à jour</span> : null;
 
   if (!ouvert) {
     const lignes = config.champs.map((c) => ({
@@ -210,90 +261,75 @@ export function BlocModifiable({
           : reponseLisible(c, reponses[c.nom], reponses),
     }));
     return (
-      <section className="profil__carte profil__rubrique bloc-info" aria-labelledby={idTitre}>
-        <EnTete id={idTitre} titre={config.titre} badge={badge}>
-          {enregistrer && (
+      <BlocLecture
+        idTitre={idTitre}
+        titre={config.titre}
+        lignes={lignes}
+        succes={succes}
+        modifier={
+          enregistrer && (
             <BoutonModifier titre={config.titre} desactive={verrouille} onClick={commencer} />
-          )}
-        </EnTete>
-        <Fiche lignes={lignes} />
-        {succes && <div className="bloc-info__message">{succes}</div>}
-      </section>
+          )
+        }
+      />
     );
   }
 
   const exige = config.justificatif?.exige(valeurs, initiales) ?? false;
   return (
-    <section
-      className="profil__carte profil__rubrique bloc-info bloc-info--ouvert"
-      aria-labelledby={idTitre}
+    <BlocFormulaire
+      idTitre={idTitre}
+      titre={config.titre}
+      envoyer={envoyer}
+      alerte={alerte}
+      envoi={envoi}
+      fermer={fermer}
     >
-      <EnTete id={idTitre} titre={`${config.titre} — modification`} />
-      <form className="compte__form bloc-info__form kyc" onSubmit={envoyer} noValidate>
-        {champsAffiches(bloc, valeurs).map((c) => (
-          <Champ
-            key={c.nom}
-            champ={c}
-            reponses={valeurs}
-            erreur={erreurs[c.nom]}
-            changer={changer}
-            chercherAdresses={chercherAdresses}
-            chercherCommunes={chercherCommunes}
+      {champsAffiches(bloc, valeurs).map((c) => (
+        <Champ
+          key={c.nom}
+          champ={c}
+          reponses={valeurs}
+          erreur={erreurs[c.nom]}
+          changer={changer}
+          chercherAdresses={chercherAdresses}
+          chercherCommunes={chercherCommunes}
+        />
+      ))}
+      {config.justificatif && (exige || bloc === 'adresse') && (
+        <ChoixFichier
+          id={`${idTitre}-justificatif`}
+          libelle={config.justificatif.libelle}
+          aide={config.justificatif.aide}
+          fichier={fichier}
+          erreur={erreurs.justificatif}
+          choisir={choisirFichier}
+        />
+      )}
+      {config.motDePasse && (
+        <div className="champ">
+          <label htmlFor={`${idTitre}-mot-de-passe`}>Mot de passe de votre compte</label>
+          <input
+            id={`${idTitre}-mot-de-passe`}
+            type="password"
+            autoComplete="current-password"
+            value={motDePasse}
+            aria-invalid={erreurs.motDePasse ? true : undefined}
+            aria-describedby={`${idTitre}-mot-de-passe-aide ${idTitre}-mot-de-passe-erreur`}
+            onChange={(e) => {
+              setMotDePasse(e.target.value);
+              setErreurs((er) => ({ ...er, motDePasse: undefined }));
+            }}
           />
-        ))}
-        {config.justificatif && (exige || bloc === 'adresse') && (
-          <ChoixFichier
-            id={`${idTitre}-justificatif`}
-            libelle={config.justificatif.libelle}
-            aide={config.justificatif.aide}
-            fichier={fichier}
-            erreur={erreurs.justificatif}
-            choisir={choisirFichier}
-          />
-        )}
-        {config.motDePasse && (
-          <div className="champ">
-            <label htmlFor={`${idTitre}-mot-de-passe`}>Mot de passe de votre compte</label>
-            <input
-              id={`${idTitre}-mot-de-passe`}
-              type="password"
-              autoComplete="current-password"
-              value={motDePasse}
-              aria-invalid={erreurs.motDePasse ? true : undefined}
-              aria-describedby={`${idTitre}-mot-de-passe-aide ${idTitre}-mot-de-passe-erreur`}
-              onChange={(e) => {
-                setMotDePasse(e.target.value);
-                setErreurs((er) => ({ ...er, motDePasse: undefined }));
-              }}
-            />
-            <p id={`${idTitre}-mot-de-passe-aide`} className="bloc-info__aide">
-              Pour protéger votre compte, confirmez la modification avec votre mot de passe.
-            </p>
-            <p id={`${idTitre}-mot-de-passe-erreur`} className="champ__erreur" role="alert">
-              {erreurs.motDePasse ?? ''}
-            </p>
-          </div>
-        )}
-        {alerte && (
-          <p className="compte__alerte" role="alert">
-            {alerte}
+          <p id={`${idTitre}-mot-de-passe-aide`} className="bloc-info__aide">
+            Pour protéger votre compte, confirmez la modification avec votre mot de passe.
           </p>
-        )}
-        <div className="bloc-info__actions">
-          <button
-            type="button"
-            className="compte__bouton compte__bouton--secondaire"
-            onClick={fermer}
-            disabled={envoi}
-          >
-            Annuler
-          </button>
-          <button type="submit" className="compte__bouton" disabled={envoi}>
-            {envoi ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
+          <p id={`${idTitre}-mot-de-passe-erreur`} className="champ__erreur" role="alert">
+            {erreurs.motDePasse ?? ''}
+          </p>
         </div>
-      </form>
-    </section>
+      )}
+    </BlocFormulaire>
   );
 }
 
@@ -338,84 +374,64 @@ export function BlocIdentite({
       const v = verso ? await deposer(verso) : null;
       await enregistrer('identite', v ? { recto: r.id, verso: v.id } : { recto: r.id });
     } catch (err) {
-      setAlerte(err?.status === 400 || err?.status === 409 ? err.message : MESSAGE_ECHEC);
+      setAlerte(messageErreur(err));
     } finally {
       setEnvoi(false);
     }
   }
 
+  // Fichier choisi pour le recto ou le verso, contrôlé tout de suite
+  const choisirPiece = (cle, retenir) => (fichier) => {
+    retenir(fichier);
+    setErreurs((e) => ({ ...e, [cle]: erreurJustificatif(fichier) }));
+  };
+
   const nom = (type) => pieces?.find((p) => p.type === type)?.nomFichier;
-  const badge = succes ? <span className="bloc-info__badge">✓ Mise à jour</span> : null;
 
   if (!ouvert) {
     return (
-      <section className="profil__carte profil__rubrique bloc-info" aria-labelledby={idTitre}>
-        <EnTete id={idTitre} titre={titre} badge={badge}>
-          {enregistrer && (
-            <BoutonModifier titre={titre} desactive={verrouille} onClick={commencer} />
-          )}
-        </EnTete>
-        <Fiche
-          lignes={[
-            { cle: 'recto', libelle: 'Recto', valeur: nom('identite') ?? 'Non fournie' },
-            { cle: 'verso', libelle: 'Verso', valeur: nom('identite_verso') ?? 'Non fourni' },
-          ]}
-        />
-        {succes && <div className="bloc-info__message">{succes}</div>}
-      </section>
+      <BlocLecture
+        idTitre={idTitre}
+        titre={titre}
+        succes={succes}
+        lignes={[
+          { cle: 'recto', libelle: 'Recto', valeur: nom('identite') ?? 'Non fournie' },
+          { cle: 'verso', libelle: 'Verso', valeur: nom('identite_verso') ?? 'Non fourni' },
+        ]}
+        modifier={
+          enregistrer && <BoutonModifier titre={titre} desactive={verrouille} onClick={commencer} />
+        }
+      />
     );
   }
 
   return (
-    <section
-      className="profil__carte profil__rubrique bloc-info bloc-info--ouvert"
-      aria-labelledby={idTitre}
+    <BlocFormulaire
+      idTitre={idTitre}
+      titre={titre}
+      envoyer={envoyer}
+      alerte={alerte}
+      envoi={envoi}
+      fermer={fermer}
     >
-      <EnTete id={idTitre} titre={`${titre} — modification`} />
-      <form className="compte__form bloc-info__form kyc" onSubmit={envoyer} noValidate>
-        <ChoixFichier
-          id={`${idTitre}-recto`}
-          libelle="Recto"
-          aide={PIECES.identite.aide}
-          fichier={recto}
-          erreur={erreurs.recto}
-          choisir={(f) => {
-            setRecto(f);
-            setErreurs((e) => ({ ...e, recto: f ? erreurJustificatif(f) : undefined }));
-          }}
-        />
-        <ChoixFichier
-          id={`${idTitre}-verso`}
-          libelle="Verso"
-          aide={PIECES.identite_verso.aide}
-          facultatif
-          fichier={verso}
-          erreur={erreurs.verso}
-          choisir={(f) => {
-            setVerso(f);
-            setErreurs((e) => ({ ...e, verso: f ? erreurJustificatif(f) : undefined }));
-          }}
-        />
-        {alerte && (
-          <p className="compte__alerte" role="alert">
-            {alerte}
-          </p>
-        )}
-        <div className="bloc-info__actions">
-          <button
-            type="button"
-            className="compte__bouton compte__bouton--secondaire"
-            onClick={fermer}
-            disabled={envoi}
-          >
-            Annuler
-          </button>
-          <button type="submit" className="compte__bouton" disabled={envoi}>
-            {envoi ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
-        </div>
-      </form>
-    </section>
+      <ChoixFichier
+        id={`${idTitre}-recto`}
+        libelle="Recto"
+        aide={PIECES.identite.aide}
+        fichier={recto}
+        erreur={erreurs.recto}
+        choisir={choisirPiece('recto', setRecto)}
+      />
+      <ChoixFichier
+        id={`${idTitre}-verso`}
+        libelle="Verso"
+        aide={PIECES.identite_verso.aide}
+        facultatif
+        fichier={verso}
+        erreur={erreurs.verso}
+        choisir={choisirPiece('verso', setVerso)}
+      />
+    </BlocFormulaire>
   );
 }
 
@@ -423,16 +439,12 @@ export function BlocIdentite({
 export function BlocRib({ piece }) {
   const idTitre = useId();
   return (
-    <section className="profil__carte profil__rubrique bloc-info" aria-labelledby={idTitre}>
-      <EnTete
-        id={idTitre}
-        titre="Coordonnées bancaires (RIB)"
-        badge={
-          <span className="bloc-info__badge bloc-info__badge--bientot">Bientôt modifiable</span>
-        }
-      />
-      <Fiche lignes={[{ cle: 'rib', libelle: 'RIB', valeur: piece?.nomFichier ?? 'Non fourni' }]} />
-    </section>
+    <BlocLecture
+      idTitre={idTitre}
+      titre="Coordonnées bancaires (RIB)"
+      badge={<span className="bloc-info__badge bloc-info__badge--bientot">Bientôt modifiable</span>}
+      lignes={[{ cle: 'rib', libelle: 'RIB', valeur: piece?.nomFichier ?? 'Non fourni' }]}
+    />
   );
 }
 
