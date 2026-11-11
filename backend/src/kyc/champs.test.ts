@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { age, champsIncomplets, nettoyer } from './champs.js';
+import { age, champsIncomplets, nettoyer, residentFrance } from './champs.js';
 import { KYC_COMPLET } from './exemple.js';
 
 const LE = new Date(2026, 10, 4);
@@ -53,10 +53,17 @@ describe('champs incomplets avant validation', () => {
     ]);
   });
 
-  it('pays de résidence fiscale exigé seulement hors de France', () => {
+  it('plus de pays de résidence fiscale demandé', () => {
     const autrePays = { ...KYC_COMPLET, residenceFiscale: 'Autre pays' };
-    expect(champsIncomplets(autrePays, LE)).toEqual(['paysResidenceFiscale']);
-    expect(champsIncomplets({ ...autrePays, paysResidenceFiscale: 'Belgique' }, LE)).toEqual([]);
+    expect(champsIncomplets(autrePays, LE)).toEqual([]);
+    expect(nettoyer({ paysResidenceFiscale: 'Belgique' })).toEqual({});
+  });
+
+  it('résident en France : adresse et résidence fiscale en France', () => {
+    expect(residentFrance(KYC_COMPLET)).toBe(true);
+    expect(residentFrance({ ...KYC_COMPLET, residenceFiscale: 'Autre pays' })).toBe(false);
+    expect(residentFrance({ ...KYC_COMPLET, pays: 'Belgique' })).toBe(false);
+    expect(residentFrance({})).toBe(false);
   });
 
   it('date de naissance : majeur et au format AAAA-MM-JJ', () => {

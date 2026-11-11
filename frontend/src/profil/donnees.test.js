@@ -128,10 +128,9 @@ describe('rubriques', () => {
     expect(identiteKyc.find((l) => l.cle === 'civilite').libelle).toBe('Civilité');
   });
 
-  it('champ masqué selon les réponses : absent', () => {
+  it('déclarations : plus de pays de résidence fiscale (résidents en France uniquement)', () => {
     const declarations = (reponses) => rubriques(reponses)[3].lignes.map((l) => l.cle);
-    expect(declarations(REPONSES)).not.toContain('paysResidenceFiscale');
-    expect(declarations({ residenceFiscale: 'Autre pays' })).toContain('paysResidenceFiscale');
+    expect(declarations({ residenceFiscale: 'Autre pays' })).not.toContain('paysResidenceFiscale');
   });
 
   it('sans réponses : « Non renseigné »', () => {

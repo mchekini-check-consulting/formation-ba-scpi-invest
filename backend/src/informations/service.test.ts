@@ -163,6 +163,15 @@ describe('InformationsService (US-06)', () => {
     expect(resultat.email).toBe(EMAIL);
   });
 
+  it('modifierAdresse : pays toujours France, un autre pays envoyé est ignoré', async () => {
+    const { service, depot } = preparer();
+    const demande = { ...ADRESSE, pays: 'Belgique', justificatif: 7 };
+    await service.modifierAdresse('u1', EMAIL, demande);
+    const modification = vi.mocked(depot.appliquer).mock.calls[0][1];
+    expect(modification.reponses.pays).toBe('France');
+    expect(modification.historique.map((ligne) => ligne.champ)).not.toContain('pays');
+  });
+
   it('modifierAdresse : sans justificatif, ou celui d’un autre -> 400, rien enregistré (scénario 5)', async () => {
     const { service, depot } = preparer();
     for (const justificatif of [undefined, 'abc', 99]) {

@@ -17,6 +17,7 @@ import {
   champsVisibles,
   erreursEtape,
   indicatifChoisi,
+  PAYS_RESIDENCE,
   reponsesAEnregistrer,
 } from './etapes.js';
 import { PAYS_INDICATIFS } from './indicatifs.js';
@@ -345,7 +346,7 @@ export default function FormulaireKyc({
 }) {
   const recap = ETAPES.length; // index du récapitulatif
   const [index, setIndex] = useState(Math.min(Math.max(etapeInitiale, 1), recap + 1) - 1);
-  const [reponses, setReponses] = useState({ ...reponsesInitiales, email });
+  const [reponses, setReponses] = useState({ ...reponsesInitiales, pays: PAYS_RESIDENCE, email });
   const [erreurs, setErreurs] = useState({});
   const [envoi, setEnvoi] = useState(false);
   const [erreurServeur, setErreurServeur] = useState('');

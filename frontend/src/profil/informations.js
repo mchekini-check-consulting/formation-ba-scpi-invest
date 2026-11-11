@@ -6,7 +6,7 @@
 // Un bloc à la fois ; la modification est appliquée dès l'enregistrement. Champs, libellés
 // et contrôles repris du KYC (kyc/etapes.js).
 import { appelConnecte, envoyerFichierConnecte } from '../auth.js';
-import { ETAPES, champsVisibles, erreursEtape } from '../kyc/etapes.js';
+import { ETAPES, PAYS_RESIDENCE, champsVisibles, erreursEtape } from '../kyc/etapes.js';
 import { MESSAGE_FORMAT, MESSAGE_PIECE_MANQUANTE, PIECES, erreurFichier } from '../kyc/pieces.js';
 
 // Justificatifs : mêmes règles que les pièces du KYC (kyc/pieces.js) : PDF, JPG ou PNG,
@@ -62,8 +62,9 @@ export function valeursBloc(bloc, reponses = {}, email = '') {
     valeurs[nom] = nom === 'email' ? email : (reponses[nom] ?? '');
   }
   if (bloc === 'coordonnees' && reponses.indicatif) valeurs.indicatif = reponses.indicatif;
-  // Le pays de l'adresse sert au contrôle du code postal et du téléphone
-  if (bloc === 'coordonnees') valeurs.pays = reponses.pays ?? '';
+  // Pays de l'adresse : toujours France (résidents en France uniquement), non modifiable ;
+  // il sert aussi au contrôle du code postal et du téléphone
+  if (bloc === 'coordonnees' || bloc === 'adresse') valeurs.pays = PAYS_RESIDENCE;
   return valeurs;
 }
 
