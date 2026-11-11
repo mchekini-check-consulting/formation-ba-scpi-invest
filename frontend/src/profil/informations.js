@@ -77,6 +77,17 @@ export function erreursBloc(bloc, valeurs, aujourdhui = new Date()) {
   return erreurs;
 }
 
+// Erreurs du formulaire d'un bloc : champs, justificatif et mot de passe quand ils sont
+// demandés (undefined : non demandé ; null ou '' : manquant)
+export function erreursFormulaire(bloc, valeurs, { fichier, motDePasse } = {}) {
+  const erreurs = erreursBloc(bloc, valeurs);
+  if (fichier !== undefined) {
+    erreurs.justificatif = fichier ? erreurJustificatif(fichier) : MESSAGE_JUSTIFICATIF;
+  }
+  if (motDePasse !== undefined && !motDePasse) erreurs.motDePasse = MESSAGE_MOT_DE_PASSE;
+  return erreurs;
+}
+
 export function champsAffiches(bloc, valeurs) {
   return champsVisibles({ champs: BLOCS[bloc].champs }, valeurs);
 }

@@ -12,6 +12,7 @@ const {
   deposerJustificatif,
   erreurJustificatif,
   erreursBloc,
+  erreursFormulaire,
   libelleHistorique,
   lireInformations,
   modifierInformations,
@@ -48,6 +49,26 @@ describe('informations personnelles (US-06)', () => {
       'Merci de saisir une adresse e-mail valide.',
     );
     expect(erreursBloc('coordonnees', { ...coordonnees, email: 'a@b.fr' })).toEqual({});
+  });
+
+  it('erreursFormulaire : justificatif et mot de passe seulement quand ils sont demandés', () => {
+    const adresse = { pays: 'France', adresse: '8 rue', codePostal: '75019', ville: 'Paris' };
+    expect(erreursFormulaire('adresse', adresse)).toEqual({});
+    expect(erreursFormulaire('adresse', adresse, { fichier: null }).justificatif).toBe(
+      'Cette pièce est obligatoire : déposez un fichier.',
+    );
+    const pdf = { name: 'a.pdf', type: 'application/pdf', size: 10 };
+    expect(erreursFormulaire('adresse', adresse, { fichier: pdf }).justificatif).toBeNull();
+    const coordonnees = {
+      telephone: '0612345678',
+      indicatif: 'France',
+      pays: 'France',
+      email: 'a@b.fr',
+    };
+    expect(erreursFormulaire('coordonnees', coordonnees, { motDePasse: '' }).motDePasse).toBe(
+      'Merci de saisir votre mot de passe.',
+    );
+    expect(erreursFormulaire('coordonnees', coordonnees, { motDePasse: 'x' })).toEqual({});
   });
 
   it('erreurJustificatif : PDF, JPG, PNG de 10 Mo maximum', () => {

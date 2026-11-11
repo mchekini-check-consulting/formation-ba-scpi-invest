@@ -11,12 +11,11 @@ import {
   ESSAIS_MOT_DE_PASSE,
   MESSAGE_ECHEC,
   MESSAGE_JUSTIFICATIF,
-  MESSAGE_MOT_DE_PASSE,
   champsAffiches,
   dateHeure,
   demandeBloc,
   erreurJustificatif,
-  erreursBloc,
+  erreursFormulaire,
   libelleHistorique,
 } from './informations.js';
 
@@ -214,16 +213,26 @@ export function BlocModifiable({
     setErreurs((e) => ({ ...e, justificatif: erreurJustificatif(choisi) }));
   }
 
+  // Mot de passe refusé : tentatives restantes, puis annulation au 3e essai
+  function motDePasseRefuse() {
+    const faits = essais + 1;
+    setEssais(faits);
+    setMotDePasse('');
+    if (faits >= ESSAIS_MOT_DE_PASSE) {
+      annuler();
+      return;
+    }
+    const reste = ESSAIS_MOT_DE_PASSE - faits;
+    setErreurs({ motDePasse: `Mot de passe incorrect. Il vous reste ${reste} tentative(s).` });
+  }
+
   async function envoyer(event) {
     event.preventDefault();
-    const trouvees = erreursBloc(bloc, valeurs);
     const exige = config.justificatif?.exige(valeurs, initiales) ?? false;
-    if (exige && !fichier) trouvees.justificatif = MESSAGE_JUSTIFICATIF;
-    else if (exige) {
-      const erreur = erreurJustificatif(fichier);
-      if (erreur) trouvees.justificatif = erreur;
-    }
-    if (config.motDePasse && !motDePasse) trouvees.motDePasse = MESSAGE_MOT_DE_PASSE;
+    const trouvees = erreursFormulaire(bloc, valeurs, {
+      fichier: exige ? fichier : undefined,
+      motDePasse: config.motDePasse ? motDePasse : undefined,
+    });
     setErreurs(trouvees);
     if (Object.values(trouvees).some(Boolean)) return;
 
@@ -233,19 +242,8 @@ export function BlocModifiable({
       const justificatif = exige ? (await deposer(fichier)).id : undefined;
       await enregistrer(bloc, demandeBloc(bloc, valeurs, { justificatif, motDePasse }));
     } catch (err) {
-      if (err?.status === 403) {
-        const faits = essais + 1;
-        setEssais(faits);
-        setMotDePasse('');
-        if (faits >= ESSAIS_MOT_DE_PASSE) {
-          annuler();
-          return;
-        }
-        const reste = ESSAIS_MOT_DE_PASSE - faits;
-        setErreurs({ motDePasse: `Mot de passe incorrect. Il vous reste ${reste} tentative(s).` });
-      } else {
-        setAlerte(messageErreur(err));
-      }
+      if (err?.status === 403) motDePasseRefuse();
+      else setAlerte(messageErreur(err));
     } finally {
       setEnvoi(false);
     }
