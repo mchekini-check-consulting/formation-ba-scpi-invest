@@ -105,6 +105,19 @@ export function fournisseurBetterAuth(auth: Auth): FournisseurIdentite {
       const { internalAdapter } = await auth.$context;
       return (await internalAdapter.findUserByEmail(email))?.user.id ?? null;
     },
+    // Compte « credential » (email + mot de passe haché) de l'utilisateur
+    async verifierMotDePasse(utilisateurId, motDePasse) {
+      const { internalAdapter, password } = await auth.$context;
+      const comptes = await internalAdapter.findAccounts(utilisateurId);
+      const hache = comptes.find((c) => c.providerId === 'credential')?.password;
+      return hache ? password.verify({ hash: hache, password: motDePasse }) : false;
+    },
+    async changerEmail(utilisateurId, email) {
+      const { internalAdapter } = await auth.$context;
+      const existant = await internalAdapter.findUserByEmail(email);
+      if (existant && existant.user.id !== utilisateurId) throw new EmailDejaUtilise();
+      await internalAdapter.updateUser(utilisateurId, { email, emailVerified: false });
+    },
   };
 }
 

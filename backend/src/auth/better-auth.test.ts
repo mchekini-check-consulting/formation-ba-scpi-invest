@@ -159,6 +159,53 @@ describe('fournisseurBetterAuth', () => {
     expect(findUserByEmail).toHaveBeenCalledWith('jean@exemple.fr');
     expect(await fournisseur.identifiantDe('inconnu@exemple.fr')).toBeNull();
   });
+
+  it('verifierMotDePasse (US-06) : mot de passe du compte « credential »', async () => {
+    const findAccounts = vi
+      .fn()
+      .mockResolvedValueOnce([
+        { providerId: 'google', password: null },
+        { providerId: 'credential', password: 'hache' },
+      ])
+      .mockResolvedValueOnce([]);
+    const verify = vi.fn().mockResolvedValue(true);
+    const auth = {
+      api: {},
+      $context: Promise.resolve({ internalAdapter: { findAccounts }, password: { verify } }),
+    } as unknown as Auth;
+    const fournisseur = fournisseurBetterAuth(auth);
+
+    expect(await fournisseur.verifierMotDePasse('u1', EXEMPLE)).toBe(true);
+    expect(verify).toHaveBeenCalledWith({ hash: 'hache', password: EXEMPLE });
+    // Pas de compte à mot de passe : refusé
+    expect(await fournisseur.verifierMotDePasse('u2', EXEMPLE)).toBe(false);
+  });
+
+  it('changerEmail (US-06) : nouvel e-mail ; déjà pris par un autre compte -> EmailDejaUtilise', async () => {
+    const findUserByEmail = vi
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ user: { id: 'u1' } })
+      .mockResolvedValueOnce({ user: { id: 'u2' } });
+    const updateUser = vi.fn().mockResolvedValue({});
+    const auth = {
+      api: {},
+      $context: Promise.resolve({ internalAdapter: { findUserByEmail, updateUser } }),
+    } as unknown as Auth;
+    const fournisseur = fournisseurBetterAuth(auth);
+
+    await fournisseur.changerEmail('u1', 'nouveau@exemple.fr');
+    expect(updateUser).toHaveBeenCalledWith('u1', {
+      email: 'nouveau@exemple.fr',
+      emailVerified: false,
+    });
+    // Même compte : accepté
+    await fournisseur.changerEmail('u1', 'nouveau@exemple.fr');
+    await expect(fournisseur.changerEmail('u1', 'pris@exemple.fr')).rejects.toBeInstanceOf(
+      EmailDejaUtilise,
+    );
+    expect(updateUser).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('originesDeConfiance', () => {

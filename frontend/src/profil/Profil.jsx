@@ -1,10 +1,14 @@
-// Page Profil (maquette C), en lecture seule : ouverte par les initiales de la sidebar.
+// Page Profil (maquette C) : ouverte par les initiales de la sidebar.
 // À gauche, la carte d'identité : initiales, nom, email, profil investisseur sur une
 // jauge Prudent -> Dynamique et état du dossier (KYC, profil, pièces). À droite, le
 // détail des réponses du KYC et des pièces justificatives.
+// US-06 : blocs Coordonnées, Adresse, Situation et Pièce d'identité modifiables, un à la
+// fois, appliqués dès l'enregistrement (BlocsInformations.jsx) ; RIB bientôt modifiable ;
+// historique des modifications en bas de page.
 // Réservée aux utilisateurs connectés au KYC validé (Routeur.jsx, ExigerKycComplete).
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { deconnecter } from '../auth.js';
+import { suggererAdresses, suggererCommunes } from '../kyc/api.js';
 import { LienInterne } from '../MiseEnPage.jsx';
 import { CHEMIN_MISE_A_JOUR } from '../navigation/rappel.js';
 import PageApplication from '../navigation/PageApplication.jsx';
@@ -20,7 +24,34 @@ import {
   rubriques,
 } from './donnees.js';
 import { PROFILS } from '../investisseur/profils.js';
+import { BlocIdentite, BlocModifiable, BlocRib, Historique } from './BlocsInformations.jsx';
+import {
+  MESSAGE_ANNULEE,
+  deposerJustificatif,
+  modifierInformations,
+  valeursBloc,
+} from './informations.js';
 import './profil.css';
+
+// Message affiché sous un bloc après l'enregistrement
+const SUCCES = {
+  coordonnees: 'Vos coordonnées sont enregistrées.',
+  adresse:
+    'Votre nouvelle adresse est enregistrée. Votre justificatif sera contrôlé par nos équipes.',
+  situation: 'Votre situation est enregistrée.',
+  identite: 'Votre nouvelle pièce d’identité est enregistrée. Elle sera contrôlée par nos équipes.',
+};
+
+function MessageSucces({ bloc }) {
+  if (bloc !== 'situation') return SUCCES[bloc];
+  return (
+    <>
+      {SUCCES.situation} Votre situation a changé : pensez à mettre à jour votre profil
+      investisseur.{' '}
+      <LienInterne to={CHEMIN_MISE_A_JOUR}>Mettre à jour mon profil investisseur</LienInterne>
+    </>
+  );
+}
 
 const ERREUR_CHARGEMENT = 'Votre profil n’a pas pu être chargé. Veuillez réessayer plus tard.';
 
@@ -182,15 +213,25 @@ function Pieces({ pieces }) {
   );
 }
 
-// charger, seDeconnecter, allerA, chargerIdentite : remplacés dans les tests
+// charger, seDeconnecter, allerA, chargerIdentite, enregistrer, deposer, chercherAdresses,
+// chercherCommunes :
+// remplacés dans les tests
 export default function Profil({
   charger = chargerProfil,
   seDeconnecter = deconnecter,
   allerA = naviguer,
   chargerIdentite,
+  enregistrer = modifierInformations,
+  deposer = deposerJustificatif,
+  chercherAdresses = suggererAdresses,
+  chercherCommunes = suggererCommunes,
 }) {
   const [donnees, setDonnees] = useState(null);
   const [alerte, setAlerte] = useState('');
+  // US-06 : bloc ouvert (un seul à la fois), bloc tout juste enregistré, annulation
+  const [enEdition, setEnEdition] = useState(null);
+  const [enregistre, setEnregistre] = useState(null);
+  const [annulation, setAnnulation] = useState('');
 
   useEffect(() => {
     let actif = true;
@@ -214,8 +255,46 @@ export default function Profil({
     allerA('/');
   }
 
+  // Modification appliquée : informations à jour tout de suite, puis tout est relu
+  // (statut des pièces) ; une relecture en échec garde l'affichage déjà à jour
+  const appliquer = useCallback(
+    async (bloc, demande) => {
+      const informations = await enregistrer(bloc, demande);
+      setDonnees((d) => ({
+        ...d,
+        kyc: { ...d.kyc, reponses: informations.reponses },
+        utilisateur: { ...d.utilisateur, email: informations.email },
+        informations,
+      }));
+      setEnEdition(null);
+      setEnregistre(bloc);
+      charger()
+        .then((resultat) => setDonnees(resultat))
+        .catch(() => {});
+    },
+    [enregistrer, charger],
+  );
+
   const reponses = donnees?.kyc?.reponses ?? {};
   const pieces = donnees?.pieces ? piecesAffichees(reponses, donnees.pieces) : null;
+  const informations = donnees?.informations;
+  const email = informations?.email ?? donnees?.utilisateur?.email ?? '';
+  const parId = Object.fromEntries(rubriques(reponses).map((r) => [r.id, r]));
+  // Blocs modifiables seulement si le backend des informations a répondu
+  const modifiable = Boolean(informations);
+  const proprietesBloc = (bloc) => ({
+    ouvert: enEdition === bloc,
+    verrouille: enEdition !== null,
+    succes: enregistre === bloc ? <MessageSucces bloc={bloc} /> : null,
+    ouvrir: () => {
+      setEnEdition(bloc);
+      setEnregistre(null);
+      setAnnulation('');
+    },
+    fermer: () => setEnEdition(null),
+    enregistrer: modifiable ? appliquer : undefined,
+    deposer,
+  });
 
   return (
     <PageApplication
@@ -225,22 +304,44 @@ export default function Profil({
       chargerIdentite={chargerIdentite}
     >
       <p className="profil__sous-titre">
-        Les informations transmises à l’ouverture de votre compte. Seul votre profil investisseur
-        peut être mis à jour pour le moment.
+        Vos informations personnelles. Modifiez un bloc à la fois : la modification est prise en
+        compte dès l’enregistrement.
       </p>
       {alerte && (
         <p className="compte__alerte" role="alert">
           {alerte}
         </p>
       )}
+      {annulation && (
+        <p className="compte__alerte" role="alert">
+          {annulation}
+        </p>
+      )}
       {donnees ? (
         <div className="profil__colonnes">
           <CarteIdentite donnees={donnees} pieces={pieces} />
           <div className="profil__details">
-            {rubriques(reponses).map((rubrique) => (
-              <Rubrique key={rubrique.id} {...rubrique} />
+            {parId.identite && <Rubrique {...parId.identite} />}
+            {['coordonnees', 'adresse', 'situation'].map((bloc) => (
+              <BlocModifiable
+                key={`${bloc}-${enEdition === bloc}`}
+                bloc={bloc}
+                initiales={valeursBloc(bloc, reponses, email)}
+                reponses={reponses}
+                chercherAdresses={chercherAdresses}
+                chercherCommunes={chercherCommunes}
+                annuler={() => {
+                  setEnEdition(null);
+                  setAnnulation(MESSAGE_ANNULEE);
+                }}
+                {...proprietesBloc(bloc)}
+              />
             ))}
+            {parId.declarations && <Rubrique {...parId.declarations} />}
+            <BlocRib piece={donnees.pieces?.find((p) => p.type === 'rib')} />
+            <BlocIdentite pieces={donnees.pieces} {...proprietesBloc('identite')} />
             <Pieces pieces={pieces} />
+            <Historique lignes={informations?.historique} />
           </div>
         </div>
       ) : (

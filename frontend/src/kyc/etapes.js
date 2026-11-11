@@ -76,7 +76,13 @@ export const ETAPES = [
         type: 'codePostal',
         autoComplete: 'postal-code',
       },
-      { nom: 'ville', libelle: 'Ville', type: 'texte', autoComplete: 'address-level2' },
+      {
+        nom: 'ville',
+        libelle: 'Ville',
+        type: 'ville',
+        autoComplete: 'address-level2',
+        aide: 'En France, la ville est proposée d’après le code postal.',
+      },
       {
         nom: 'telephone',
         libelle: 'Téléphone',

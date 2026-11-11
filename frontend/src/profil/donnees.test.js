@@ -29,6 +29,7 @@ describe('chargerProfil', () => {
     lireLeKyc: vi.fn().mockResolvedValue({ reponses: REPONSES }),
     lirePieces: vi.fn().mockResolvedValue([]),
     lireLeProfil: vi.fn().mockResolvedValue({ profil: 'prudent' }),
+    lireLesInformations: vi.fn().mockResolvedValue({ email: 'm@x.fr', historique: [] }),
     ...autres,
   });
 
@@ -38,6 +39,7 @@ describe('chargerProfil', () => {
       kyc: { reponses: REPONSES },
       pieces: [],
       profil: { profil: 'prudent' },
+      informations: { email: 'm@x.fr', historique: [] },
     });
   });
 
@@ -47,9 +49,12 @@ describe('chargerProfil', () => {
         lirePieces: vi.fn().mockRejectedValue(new ErreurApi(500, 'x')),
         lireLeProfil: vi.fn().mockRejectedValue(new ErreurApi(409, 'x')),
         lireUtilisateur: vi.fn().mockRejectedValue(new Error('réseau')),
+        lireLesInformations: vi.fn().mockRejectedValue(new ErreurApi(409, 'x')),
       }),
     );
-    expect([resultat.pieces, resultat.profil, resultat.utilisateur]).toEqual([null, null, null]);
+    expect([resultat.pieces, resultat.profil, resultat.utilisateur, resultat.informations]).toEqual(
+      [null, null, null, null],
+    );
   });
 
   it('KYC indisponible ou session expirée : erreur remontée', async () => {

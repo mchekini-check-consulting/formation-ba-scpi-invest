@@ -69,3 +69,39 @@ describe('suggestions d’adresses', () => {
     await expect(service.rechercher('12 rue des lilas')).rejects.toThrow('réponse 500');
   });
 });
+
+describe('communes d’un code postal', () => {
+  it('interroge le découpage administratif, noms sans doublon triés', async () => {
+    const chercher = vi
+      .fn()
+      .mockResolvedValue(
+        reponse([{ nom: 'Soulgé-sur-Ouette' }, { nom: 'Argentré' }, { nom: 'Argentré' }, {}]),
+      );
+    const service = creerAdressesService(chercher, 'https://geo.test', 'https://communes.test');
+    expect(await service.communes(' 53210 ')).toEqual(['Argentré', 'Soulgé-sur-Ouette']);
+    const url = new URL(chercher.mock.calls[0][0]);
+    expect(url.origin + url.pathname).toBe('https://communes.test/communes');
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      codePostal: '53210',
+      fields: 'nom',
+      format: 'json',
+    });
+  });
+
+  it('code postal pas à 5 chiffres : pas d’appel, liste vide', async () => {
+    const chercher = vi.fn();
+    const service = creerAdressesService(chercher);
+    for (const code of ['6900', '690033', 'abcde', undefined]) {
+      expect(await service.communes(code)).toEqual([]);
+    }
+    expect(chercher).not.toHaveBeenCalled();
+  });
+
+  it('service en erreur ou réponse illisible : liste vide', async () => {
+    const enPanne = creerAdressesService(vi.fn().mockResolvedValue(reponse({}, 500)));
+    expect(await enPanne.communes('69003')).toEqual([]);
+    await expect(enPanne.rechercherCommunes('69003')).rejects.toThrow('réponse 500');
+    const illisible = creerAdressesService(vi.fn().mockResolvedValue(reponse({ pas: 'liste' })));
+    expect(await illisible.communes('69003')).toEqual([]);
+  });
+});

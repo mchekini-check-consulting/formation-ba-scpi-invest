@@ -2,6 +2,7 @@
 //   GET /connaissance-client -> { statut: 'en_cours' | 'complete', etape (1 à 6), reponses, valideLe }
 // Suggestions d'adresses (étape « Coordonnées », France) :
 //   GET /adresses?recherche=… -> { adresses: [{ libelle, adresse, codePostal, ville }] }
+//   GET /adresses/communes?codePostal=… -> { communes: ['Lyon'] }
 // Pièces justificatives (US-04c) :
 //   GET /connaissance-client/pieces -> [{ type, nomFichier, format, taille, statut, deposeLe }]
 import { appelConnecte, envoyerFichierConnecte } from '../auth.js';
@@ -19,6 +20,13 @@ export function enregistrerKyc(etape, reponses) {
 
 export function validerKyc() {
   return appelConnecte('/connaissance-client/validation', { methode: 'POST', corps: {} });
+}
+
+// Communes d'un code postal (France) ; liste vide si le service ne répond pas
+export async function suggererCommunes(codePostal) {
+  const parametres = new URLSearchParams({ codePostal });
+  const { communes } = await appelConnecte(`/adresses/communes?${parametres}`);
+  return communes;
 }
 
 // Liste vide si le service des adresses ne répond pas : la saisie reste libre
