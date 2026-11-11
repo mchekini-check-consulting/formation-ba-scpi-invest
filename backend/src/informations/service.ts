@@ -12,13 +12,15 @@ import {
   type TypePiece,
 } from '../kyc/pieces.js';
 import type { FichierRecu, StockagePieces } from '../kyc/pieces-service.js';
+import { PAYS_RESIDENCE } from '../kyc/champs.js';
 
 // US-06 (SCPI-235), variante « prise en compte directe » : l'investisseur modifie ses
 // informations personnelles depuis la page Mon profil, un bloc à la fois. Pas de code par
 // SMS ni e-mail : la modification est appliquée dès l'enregistrement ; les justificatifs
 // restent obligatoires (contrôle a posteriori) et chaque champ modifié est historisé.
 //   coordonnees : téléphone, e-mail (identifiant de connexion) ; mot de passe exigé
-//   adresse     : adresse, code postal, ville, pays ; justificatif de domicile exigé
+//   adresse     : adresse, code postal, ville ; pays toujours France (résidents en France
+//                 uniquement) ; justificatif de domicile exigé
 //   situation   : nom, situation familiale, profession, catégorie, secteur ; pièce d'état
 //                 civil exigée si le nom change
 //   identite    : nouvelle pièce d'identité ; verso facultatif (comme au KYC : recto et
@@ -93,7 +95,7 @@ export const MESSAGE_EMAIL_UTILISE = 'Cette adresse e-mail est déjà utilisée.
 export const MESSAGE_TELEPHONE = 'Merci de saisir un numéro de téléphone valide.';
 
 const LONGUEUR_MAX = 300;
-const CHAMPS_ADRESSE = ['adresse', 'codePostal', 'ville', 'pays'];
+const CHAMPS_ADRESSE = ['adresse', 'codePostal', 'ville'];
 const CHAMPS_SITUATION = ['nom', 'situationFamiliale', 'profession', 'categorie', 'secteur'];
 
 function objet(valeur: unknown): Record<string, unknown> {
@@ -206,7 +208,8 @@ export function creerInformationsService(
   async function modifierAdresse(utilisateurId: string, email: string, demande: unknown) {
     const avant = await kycValide(utilisateurId);
     const corps = objet(demande);
-    const apres = champsRemplis(corps, CHAMPS_ADRESSE);
+    // Pays imposé : un autre pays envoyé est ignoré
+    const apres = { ...champsRemplis(corps, CHAMPS_ADRESSE), pays: PAYS_RESIDENCE };
     const justificatif = await justificatifExige(utilisateurId, corps.justificatif);
     return enregistrer(utilisateurId, email, {
       reponses: apres,

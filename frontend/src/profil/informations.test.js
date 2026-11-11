@@ -22,8 +22,8 @@ const {
 afterEach(() => vi.clearAllMocks());
 
 describe('informations personnelles (US-06)', () => {
-  it('valeursBloc : champs du bloc, e-mail du compte, pays pour les contrôles', () => {
-    const reponses = { telephone: '0612', indicatif: 'France', pays: 'France', ville: 'Lyon' };
+  it('valeursBloc : champs du bloc, e-mail du compte, pays toujours France', () => {
+    const reponses = { telephone: '0612', indicatif: 'France', pays: 'Belgique', ville: 'Lyon' };
     expect(valeursBloc('coordonnees', reponses, 'm@x.fr')).toEqual({
       telephone: '0612',
       email: 'm@x.fr',
@@ -31,12 +31,12 @@ describe('informations personnelles (US-06)', () => {
       pays: 'France',
     });
     expect(valeursBloc('adresse', {})).toEqual({
-      pays: '',
+      pays: 'France',
       adresse: '',
       codePostal: '',
       ville: '',
     });
-    expect(valeursBloc('coordonnees')).toMatchObject({ telephone: '', email: '', pays: '' });
+    expect(valeursBloc('coordonnees')).toMatchObject({ telephone: '', email: '', pays: 'France' });
   });
 
   it('erreursBloc : champs obligatoires et e-mail', () => {

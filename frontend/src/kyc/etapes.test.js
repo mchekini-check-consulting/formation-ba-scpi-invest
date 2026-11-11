@@ -5,6 +5,8 @@ import {
   MESSAGE_MAJEUR,
   MESSAGE_OBLIGATOIRE,
   MESSAGE_PAYS,
+  MESSAGE_RESIDENCE,
+  PAYS_RESIDENCE,
   MESSAGE_TELEPHONE,
   age,
   champsVisibles,
@@ -39,13 +41,7 @@ describe('Contenu du KYC (US-04a)', () => {
     ]);
     expect(noms(coordonnees)).toContain('email');
     expect(noms(situation)).toEqual(['situationFamiliale', 'profession', 'categorie', 'secteur']);
-    expect(noms(declarations)).toEqual([
-      'origineFonds',
-      'ppe',
-      'residenceFiscale',
-      'paysResidenceFiscale',
-      'usPerson',
-    ]);
+    expect(noms(declarations)).toEqual(['origineFonds', 'ppe', 'residenceFiscale', 'usPerson']);
   });
 
   it('propose le secteur « Informatique », juste après « Information, communication »', () => {
@@ -108,18 +104,15 @@ describe('Règles de saisie', () => {
     );
   });
 
-  it('coordonnées : pays de la liste, code postal selon le pays', () => {
+  it('coordonnées : pays fixé à France, non modifiable ; code postal français', () => {
+    const pays = coordonnees.champs.find((c) => c.nom === 'pays');
+    expect(pays.lectureSeule).toBe(true);
+    expect(PAYS_RESIDENCE).toBe('France');
     const erreurs = (reponses) => erreursEtape(coordonnees, reponses, AUJOURDHUI);
-    expect(erreurs({ pays: 'Fance' }).pays).toBe(MESSAGE_PAYS);
     expect(erreurs({ pays: 'France', codePostal: '6900' }).codePostal).toBe(
       'Code postal invalide : 5 chiffres attendus pour ce pays.',
     );
     expect(erreurs({ pays: 'France', codePostal: '69003' }).codePostal).toBeUndefined();
-    expect(erreurs({ pays: 'Royaume-Uni', codePostal: 'SW1A 1AA' }).codePostal).toBeUndefined();
-    expect(
-      erreursEtape(declarations, { residenceFiscale: 'Autre pays', paysResidenceFiscale: 'Belgiq' })
-        .paysResidenceFiscale,
-    ).toBe(MESSAGE_PAYS);
   });
 
   it('nationalité : un pays de la liste (US-04c)', () => {
@@ -132,16 +125,14 @@ describe('Règles de saisie', () => {
     expect(erreursEtape(declarations, { origineFonds: ['Donation'] }).origineFonds).toBeUndefined();
   });
 
-  it('pays de résidence fiscale demandé seulement pour une résidence hors de France', () => {
-    const noms = (reponses) => champsVisibles(declarations, reponses).map((c) => c.nom);
-    expect(noms({ residenceFiscale: 'France' })).not.toContain('paysResidenceFiscale');
-    expect(noms({ residenceFiscale: 'Autre pays' })).toContain('paysResidenceFiscale');
-    expect(erreursEtape(declarations, { residenceFiscale: 'France' })).not.toHaveProperty(
-      'paysResidenceFiscale',
-    );
-    expect(
-      erreursEtape(declarations, { residenceFiscale: 'Autre pays' }).paysResidenceFiscale,
-    ).toBe(MESSAGE_OBLIGATOIRE);
+  it('résidence fiscale hors de France refusée : résidents en France uniquement', () => {
+    const erreur = (residenceFiscale) =>
+      erreursEtape(declarations, { residenceFiscale }).residenceFiscale;
+    expect(erreur('France')).toBeUndefined();
+    expect(erreur('Autre pays')).toBe(MESSAGE_RESIDENCE);
+    expect(erreur('')).toBe(MESSAGE_OBLIGATOIRE);
+    const noms = champsVisibles(declarations, { residenceFiscale: 'Autre pays' }).map((c) => c.nom);
+    expect(noms).not.toContain('paysResidenceFiscale');
   });
 });
 
@@ -155,9 +146,6 @@ describe('Réponses enregistrées et récapitulatif (US-04b)', () => {
       inconnu: 'x',
     };
     expect(reponsesAEnregistrer(reponses)).toEqual({ nom: 'Martin', residenceFiscale: 'France' });
-    expect(
-      reponsesAEnregistrer({ residenceFiscale: 'Autre pays', paysResidenceFiscale: 'Belgique' }),
-    ).toEqual({ residenceFiscale: 'Autre pays', paysResidenceFiscale: 'Belgique' });
   });
 
   it('réponses lisibles : date, choix multiples, champ vide', () => {

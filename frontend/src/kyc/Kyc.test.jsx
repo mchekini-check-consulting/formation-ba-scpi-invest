@@ -64,6 +64,7 @@ describe('Écran /connaissance-client (après la création de compte ou la conne
       profession: 'Ingénieure',
       categorie: 'Employé',
       secteur: 'Commerce',
+      pays: 'France',
     });
   });
 

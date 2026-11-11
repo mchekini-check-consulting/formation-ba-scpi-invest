@@ -2,7 +2,11 @@ import type { ReponsesKyc } from '../db/schema.js';
 
 // Champs du formulaire KYC (US-04a), même liste que frontend/src/kyc/etapes.js.
 // L'email n'en fait pas partie : c'est celui du compte, déjà connu.
-type Champ = { nom: string; multiple?: boolean; facultatif?: boolean; siAutrePays?: boolean };
+type Champ = { nom: string; multiple?: boolean; facultatif?: boolean };
+
+// Seuls les résidents en France peuvent investir : pays de l'adresse et résidence fiscale
+// doivent être la France (même règle à l'écran, frontend/src/kyc/etapes.js)
+export const PAYS_RESIDENCE = 'France';
 
 export const CHAMPS_KYC: Champ[] = [
   // 1. Identité
@@ -31,7 +35,6 @@ export const CHAMPS_KYC: Champ[] = [
   { nom: 'origineFonds', multiple: true },
   { nom: 'ppe' },
   { nom: 'residenceFiscale' },
-  { nom: 'paysResidenceFiscale', siAutrePays: true },
   { nom: 'usPerson' },
 ];
 
@@ -68,6 +71,11 @@ function rempli(valeur: string | string[] | undefined): boolean {
   return (valeur ?? '').trim() !== '';
 }
 
+// Vrai si l'adresse et la résidence fiscale sont en France
+export function residentFrance(reponses: ReponsesKyc): boolean {
+  return reponses.pays === PAYS_RESIDENCE && reponses.residenceFiscale === PAYS_RESIDENCE;
+}
+
 // Âge révolu à une date donnée, depuis une date « AAAA-MM-JJ »
 export function age(dateIso: string, le: Date): number {
   const [annee, mois, jour] = dateIso.split('-').map(Number);
@@ -82,7 +90,6 @@ export function champsIncomplets(reponses: ReponsesKyc, le: Date): string[] {
   const manquants: string[] = [];
   for (const champ of CHAMPS_KYC) {
     if (champ.facultatif) continue;
-    if (champ.siAutrePays && reponses.residenceFiscale !== 'Autre pays') continue;
     if (!rempli(reponses[champ.nom])) manquants.push(champ.nom);
   }
   const naissance = reponses.dateNaissance;
