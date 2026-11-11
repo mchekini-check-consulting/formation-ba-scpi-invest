@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ErreurApi } from '../auth.js';
 import Inscription from './Inscription.jsx';
@@ -29,7 +29,9 @@ describe('Inscription', () => {
     expect(screen.getByLabelText('Adresse e-mail')).toBeDefined();
     expect(screen.getByLabelText('Mot de passe').getAttribute('type')).toBe('password');
     expect(screen.getByLabelText('Confirmation du mot de passe')).toBeDefined();
-    expect(screen.getByRole('link', { name: 'CGU' }).getAttribute('href')).toBe('/cgu');
+    expect(
+      within(screen.getByRole('main')).getByRole('link', { name: 'CGU' }).getAttribute('href'),
+    ).toBe('/cgu');
     expect(
       screen.getByRole('link', { name: 'politique de confidentialité' }).getAttribute('href'),
     ).toBe('/confidentialite');

@@ -8,7 +8,9 @@ import MentionsLegales from './MentionsLegales.jsx';
 afterEach(cleanup);
 
 const titresSections = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
-const lien = (nom) => screen.getByRole('link', { name: nom }).getAttribute('href');
+// Liens du contenu de la page (le pied de page a aussi ses liens légaux)
+const lien = (nom) =>
+  within(screen.getByRole('main')).getByRole('link', { name: nom }).getAttribute('href');
 
 describe('Pages légales (US-01b)', () => {
   it('Mentions légales : 10 sections, titre d’onglet et date de mise à jour', () => {

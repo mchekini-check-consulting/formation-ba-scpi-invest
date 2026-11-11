@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { THEMES, filtrerIndicateurs } from './contenus/indicateurs';
 import './Indicateurs.css';
 import { EnTete, LienCompte } from './MiseEnPage.jsx';
+import LiensLegaux from './legal/LiensLegaux.jsx';
 
 const FILTRES = [{ id: 'tous', titre: 'Tous' }, ...THEMES];
 const TOTAL = THEMES.reduce((n, t) => n + t.indicateurs.length, 0);
@@ -119,6 +120,7 @@ function Indicateurs() {
       </main>
 
       <footer className="pied">
+        <LiensLegaux compact />
         <p className="pied__mention">
           Investir en SCPI comporte des risques de perte en capital. Les performances passées ne
           préjugent pas des performances futures.

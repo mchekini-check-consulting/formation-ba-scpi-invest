@@ -28,7 +28,8 @@ describe('Écran /connaissance-client (après la création de compte ou la conne
     afficher();
     expect(await screen.findByRole('heading', { level: 2, name: 'Identité' })).toBeDefined();
     expect(screen.getByText('Étape 1/5')).toBeDefined();
-    expect(screen.queryByRole('navigation')).toBeNull();
+    // Sans sidebar : seuls les liens légaux du pied de page forment une navigation
+    expect(screen.queryByRole('navigation', { name: 'Menu de l’application' })).toBeNull();
     expect(screen.queryByRole('complementary')).toBeNull();
     expect(screen.getByText('jean@exemple.fr')).toBeDefined();
     expect(document.title).toBe('SCPI Invest+ · Formulaire KYC');
