@@ -252,7 +252,12 @@ describe('Identité de la sidebar', () => {
         Promise.resolve({ profil: 'prudent' }),
       ),
     );
-    expect(identite).toEqual({ nomComplet: 'Marie Curie', email: 'm@x.fr', profil: 'prudent' });
+    expect(identite).toEqual({
+      nomComplet: 'Marie Curie',
+      email: 'm@x.fr',
+      profil: 'prudent',
+      aMettreAJour: false,
+    });
   });
 
   it('services indisponibles ou réponses incomplètes : valeurs vides', async () => {
@@ -265,7 +270,7 @@ describe('Identité de la sidebar', () => {
         Promise.resolve({ profil: 'x' }),
       ),
     );
-    expect(identite).toEqual({ nomComplet: '', email: '', profil: null });
+    expect(identite).toEqual({ nomComplet: '', email: '', profil: null, aMettreAJour: false });
   });
 
   it('initiales : prénom et nom, nom composé, email, rien', () => {

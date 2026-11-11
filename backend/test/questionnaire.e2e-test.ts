@@ -123,6 +123,7 @@ describe('formulaire investisseur (e2e)', () => {
       profil: 'equilibre',
       avertissements: [],
       valideLe: null,
+      aMettreAJour: false,
     });
 
     // certification obligatoire, puis validation
@@ -147,5 +148,30 @@ describe('formulaire investisseur (e2e)', () => {
     expect((await appel('get').expect(200)).body.valide).toBe(true);
     await appel('put', '/etapes/1').send(REPONSES_EXEMPLE[1]).expect(409);
     await appel('post', '/validation').send({ certification: true }).expect(409);
+
+    // US-05d : mise à jour. L'aperçu n'enregistre rien ; la validation ajoute un profil
+    // (l'ancien reste archivé) et devient le profil actif
+    const nouvelles = {
+      ...REPONSES_EXEMPLE,
+      4: { ...REPONSES_EXEMPLE[4], horizon: '<3' },
+    };
+    await appel('post', '/mise-a-jour/apercu')
+      .send({ reponses: nouvelles })
+      .expect(200, { profil: 'prudent', avertissements: ['horizon'] });
+    expect((await pool.query('select id from profil_investisseur')).rows).toHaveLength(1);
+
+    await appel('post', '/mise-a-jour/validation').send({ reponses: nouvelles }).expect(400);
+    await appel('post', '/mise-a-jour/validation')
+      .send({ reponses: nouvelles, certification: true })
+      .expect(201, { profil: 'prudent', avertissements: ['horizon'] });
+
+    const historique = await pool.query(
+      'select profil, valide_le from profil_investisseur order by id',
+    );
+    expect(historique.rows.map((ligne) => ligne.profil)).toEqual(['equilibre', 'prudent']);
+    const actif = (await appel('get', '/profil').expect(200)).body;
+    expect(actif).toMatchObject({ profil: 'prudent', aMettreAJour: false });
+    expect(actif.valideLe).toBe(new Date(historique.rows[1].valide_le).toISOString());
+    expect((await appel('get').expect(200)).body.reponses['4'].horizon).toBe('<3');
   });
 });

@@ -229,8 +229,11 @@
   color: var(--bleu);
 }
 
+/* Couleur fixée : la page Profil (profil.css) éclaircit .profil__explication pour sa
+   carte sombre */
 .compte__carte .profil__explication {
   margin: 0;
+  color: var(--encre-douce);
   line-height: 1.5;
 }
 
@@ -242,4 +245,48 @@
   background: #fff7ed;
   font-size: 14px;
   line-height: 1.5;
+}
+
+/* US-05d : mise à jour du profil, dans l'application (sidebar visible) */
+.mise-a-jour__avis {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  max-width: 860px;
+  margin: 0 0 20px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: var(--bleu-ciel);
+  color: var(--bleu);
+}
+
+.mise-a-jour__avis p {
+  flex: 1 1 300px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.mise-a-jour__abandon {
+  min-height: 40px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--bleu);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.mise-a-jour__abandon:focus-visible {
+  outline: 3px solid var(--bleu-pied);
+  outline-offset: 2px;
+}
+
+.compte__carte.mise-a-jour {
+  box-shadow: none;
 }

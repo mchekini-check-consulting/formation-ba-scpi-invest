@@ -142,6 +142,13 @@ describe('deconnecter', () => {
     expect(sessionStorage.getItem('scpi-invest.catalogue.filtres')).toBeNull();
   });
 
+  it('oublie aussi le rappel de mise à jour du profil fermé (US-05d)', async () => {
+    sessionStorage.setItem('scpi-invest.rappel-profil.ferme', '1');
+    fetchMock.mockResolvedValue(reponse(200, { success: true }));
+    await deconnecter('/api');
+    expect(sessionStorage.getItem('scpi-invest.rappel-profil.ferme')).toBeNull();
+  });
+
   it('serveur injoignable : jeton oublié quand même, sans erreur (l’écran peut quitter)', async () => {
     sessionStorage.setItem('scpi-invest.session', 'jeton-1');
     fetchMock.mockRejectedValue(new TypeError('réseau'));

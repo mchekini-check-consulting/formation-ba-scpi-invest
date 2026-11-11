@@ -2,12 +2,20 @@ import { describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../logging/http-error.js';
 import { REPONSES_EXEMPLE as REPONSES } from './reponses-exemple.js';
 import { VERSION_QUESTIONNAIRE } from './questionnaire.js';
-import { type Avancement, creerQuestionnaireService } from './service.js';
+import {
+  type Avancement,
+  type DerniereValidation,
+  aMettreAJour,
+  creerQuestionnaireService,
+} from './service.js';
+
+// Horloge des tests : 10 novembre 2026
+const MAINTENANT = new Date('2026-11-10T10:00:00.000Z');
 
 function preparer(
   existant: Avancement | null = null,
   valide = false,
-  derniereValidation: Date | null = null,
+  derniereValidation: DerniereValidation | null = null,
 ) {
   const depot = {
     lire: vi.fn().mockResolvedValue(existant),
@@ -18,7 +26,11 @@ function preparer(
     derniereValidation: vi.fn().mockResolvedValue(derniereValidation),
     enregistrer: vi.fn().mockResolvedValue(undefined),
   };
-  return { service: creerQuestionnaireService(depot, profils), depot, profils };
+  return {
+    service: creerQuestionnaireService(depot, profils, () => MAINTENANT),
+    depot,
+    profils,
+  };
 }
 
 // Questionnaire aux 5 étapes complétées (réponses d’exemple : score 4, Équilibré)
@@ -131,13 +143,20 @@ describe('QuestionnaireService (US-05b)', () => {
       profil: 'equilibre',
       avertissements: [],
       valideLe: null,
+      aMettreAJour: false,
     });
   });
 
-  it('profil : date de la dernière validation (page Profil)', async () => {
-    const date = new Date('2026-11-04T09:30:00.000Z');
-    const { service, profils } = preparer(TERMINE, true, date);
-    expect((await service.profil('u1')).valideLe).toBe('2026-11-04T09:30:00.000Z');
+  it('profil : date de la dernière validation (page Profil), profil récent', async () => {
+    const derniere = {
+      valideLe: new Date('2026-11-04T09:30:00.000Z'),
+      versionQuestionnaire: VERSION_QUESTIONNAIRE,
+    };
+    const { service, profils } = preparer(TERMINE, true, derniere);
+    expect(await service.profil('u1')).toMatchObject({
+      valideLe: '2026-11-04T09:30:00.000Z',
+      aMettreAJour: false,
+    });
     expect(profils.derniereValidation).toHaveBeenCalledWith('u1');
   });
 
@@ -192,5 +211,106 @@ describe('QuestionnaireService (US-05b)', () => {
     const { service, depot } = preparer(TERMINE, true);
     expect((await erreurDe(service.enregistrerEtape('u1', 1, REPONSES[1]))).status).toBe(409);
     expect(depot.enregistrer).not.toHaveBeenCalled();
+  });
+});
+
+describe('QuestionnaireService (US-05d)', () => {
+  const valide = (valideLe: string, versionQuestionnaire = VERSION_QUESTIONNAIRE) => ({
+    valideLe: new Date(valideLe),
+    versionQuestionnaire,
+  });
+
+  it('aMettreAJour : 24 mois ou plus, ou questionnaire modifié (scénarios 5 à 7)', () => {
+    expect(aMettreAJour(null, MAINTENANT)).toBe(false);
+    expect(aMettreAJour(valide('2024-11-11T10:00:00.000Z'), MAINTENANT)).toBe(false);
+    expect(aMettreAJour(valide('2024-11-10T10:00:00.000Z'), MAINTENANT)).toBe(true);
+    expect(aMettreAJour(valide('2023-01-01T00:00:00.000Z'), MAINTENANT)).toBe(true);
+    expect(aMettreAJour(valide('2026-11-01T00:00:00.000Z', '0.9'), MAINTENANT)).toBe(true);
+  });
+
+  it('profil : rappel signalé pour un profil de plus de 24 mois', async () => {
+    const { service } = preparer(TERMINE, true, valide('2024-10-01T08:00:00.000Z'));
+    expect((await service.profil('u1')).aMettreAJour).toBe(true);
+  });
+
+  it('apercuMiseAJour : nouveau profil calculé, rien enregistré', async () => {
+    const { service, depot, profils } = preparer(TERMINE, true);
+    const reponses = { ...REPONSES, 4: { ...REPONSES[4], horizon: '<3' } };
+    expect(await service.apercuMiseAJour('u1', { reponses })).toEqual({
+      profil: 'prudent',
+      avertissements: ['horizon'],
+    });
+    expect(depot.enregistrer).not.toHaveBeenCalled();
+    expect(profils.enregistrer).not.toHaveBeenCalled();
+  });
+
+  it('apercuMiseAJour : réponses manquantes ou invalides -> 400', async () => {
+    const { service } = preparer(TERMINE, true);
+    const incompletes = { 1: REPONSES[1], 2: REPONSES[2] };
+    const invalides = { ...REPONSES, 3: { objectifs: [] } };
+    for (const demande of [
+      {},
+      null,
+      { reponses: [] },
+      { reponses: incompletes },
+      { reponses: invalides },
+    ]) {
+      const err = await erreurDe(service.apercuMiseAJour('u1', demande));
+      expect([err.status, err.message]).toEqual([
+        400,
+        'Merci de répondre à toutes les questions des 5 étapes.',
+      ]);
+    }
+  });
+
+  it('apercuMiseAJour : aucun profil validé -> 409', async () => {
+    const err = await erreurDe(
+      preparer(TERMINE).service.apercuMiseAJour('u1', { reponses: REPONSES }),
+    );
+    expect([err.status, err.message]).toEqual([
+      409,
+      'Votre profil investisseur n’est pas encore validé.',
+    ]);
+  });
+
+  it('validerMiseAJour : nouveau profil ajouté (ancien gardé), réponses du questionnaire mises à jour', async () => {
+    const { service, depot, profils } = preparer(TERMINE, true);
+    const reponses = { ...REPONSES, 4: { ...REPONSES[4], horizon: '<3' } };
+    expect(await service.validerMiseAJour('u1', { reponses, certification: true })).toEqual({
+      profil: 'prudent',
+      avertissements: ['horizon'],
+    });
+    expect(profils.enregistrer).toHaveBeenCalledWith(
+      'u1',
+      expect.objectContaining({
+        profil: 'prudent',
+        reponses,
+        avertissements: ['horizon'],
+        versionQuestionnaire: VERSION_QUESTIONNAIRE,
+      }),
+    );
+    expect(depot.enregistrer).toHaveBeenCalledWith(
+      'u1',
+      { etapeCourante: 6, reponses },
+      VERSION_QUESTIONNAIRE,
+    );
+  });
+
+  it('validerMiseAJour : sans certification -> 400, rien enregistré', async () => {
+    const { service, depot, profils } = preparer(TERMINE, true);
+    const err = await erreurDe(service.validerMiseAJour('u1', { reponses: REPONSES }));
+    expect([err.status, err.message]).toEqual([
+      400,
+      'Merci de certifier l’exactitude de vos réponses.',
+    ]);
+    expect(profils.enregistrer).not.toHaveBeenCalled();
+    expect(depot.enregistrer).not.toHaveBeenCalled();
+  });
+
+  it('validerMiseAJour : aucun profil validé -> 409, rien enregistré', async () => {
+    const { service, profils } = preparer(TERMINE);
+    const demande = { reponses: REPONSES, certification: true };
+    expect((await erreurDe(service.validerMiseAJour('u1', demande))).status).toBe(409);
+    expect(profils.enregistrer).not.toHaveBeenCalled();
   });
 });

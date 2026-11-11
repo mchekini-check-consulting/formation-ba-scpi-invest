@@ -77,6 +77,30 @@ describe('Page Profil', () => {
     expect(c.getByText('✓ 3 / 3 déposées')).toBeTruthy();
   });
 
+  it('US-05d : bouton « Mettre à jour mon profil » sous le profil validé', async () => {
+    await afficher();
+    const lien = within(carte()).getByRole('link', { name: 'Mettre à jour mon profil' });
+    expect(lien.getAttribute('href')).toBe('/profil-investisseur/mise-a-jour');
+    expect(lien.className).toBe('profil__mise-a-jour');
+    expect(carte().querySelector('.profil__rappel')).toBeNull();
+  });
+
+  it('US-05d : profil à mettre à jour -> rappel dans la carte, bouton bleu, statut', async () => {
+    const profil = { ...DONNEES.profil, aMettreAJour: true };
+    await afficher({ charger: vi.fn().mockResolvedValue({ ...DONNEES, profil }) });
+    expect(carte().querySelector('.profil__rappel').textContent).toContain(
+      'Mettez-le à jour pour qu’il reflète votre situation actuelle.',
+    );
+    const lien = within(carte()).getByRole('link', { name: 'Mettre à jour mon profil' });
+    expect(lien.className).toContain('profil__mise-a-jour--rappel');
+    expect(within(carte()).getByText('À mettre à jour · validé le 4 novembre 2026')).toBeTruthy();
+  });
+
+  it('US-05d : pas de bouton tant que le profil n’est pas validé', async () => {
+    await afficher({ charger: vi.fn().mockResolvedValue({ ...DONNEES, profil: null }) });
+    expect(within(carte()).queryByRole('link', { name: 'Mettre à jour mon profil' })).toBeNull();
+  });
+
   it('détail : rubriques du KYC et pièces justificatives', async () => {
     await afficher();
     const identite = screen.getByRole('region', { name: 'Identité' });

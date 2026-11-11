@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  apercuMiseAJour,
   enregistrerEtape,
   lireProfil,
   lireQuestionnaire,
   reinitialiserEtape,
+  validerMiseAJour,
   validerProfil,
 } from './api.js';
 
@@ -64,6 +66,25 @@ describe('API du formulaire investisseur', () => {
     expect(url).toBe('/api/formulaire-investisseur/validation');
     expect(options.method).toBe('POST');
     expect(JSON.parse(options.body)).toEqual({ certification: true });
+  });
+
+  it('apercuMiseAJour : POST des réponses des 5 étapes (US-05d)', async () => {
+    await apercuMiseAJour({ 1: { revenus: '>200k' } }, '/api');
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/formulaire-investisseur/mise-a-jour/apercu');
+    expect(options.method).toBe('POST');
+    expect(JSON.parse(options.body)).toEqual({ reponses: { 1: { revenus: '>200k' } } });
+  });
+
+  it('validerMiseAJour : POST des réponses avec la certification (US-05d)', async () => {
+    await validerMiseAJour({ 3: { objectifs: ['retraite'] } }, '/api');
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/formulaire-investisseur/mise-a-jour/validation');
+    expect(options.method).toBe('POST');
+    expect(JSON.parse(options.body)).toEqual({
+      reponses: { 3: { objectifs: ['retraite'] } },
+      certification: true,
+    });
   });
 
   it('session absente ou expirée : erreur 401', async () => {

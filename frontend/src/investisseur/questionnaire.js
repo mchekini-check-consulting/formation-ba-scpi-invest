@@ -228,3 +228,14 @@ export function basculer(question, selection = [], valeur) {
   }
   return valeur === question.exclusive ? [valeur] : [...selection, valeur];
 }
+
+// Les montants sont saisis comme du texte : ceux reçus du backend repassent en texte
+export function pourSaisie(reponses) {
+  const resultat = {};
+  for (const [etape, valeurs] of Object.entries(reponses ?? {})) {
+    resultat[etape] = Object.fromEntries(
+      Object.entries(valeurs).map(([cle, v]) => [cle, typeof v === 'number' ? String(v) : v]),
+    );
+  }
+  return resultat;
+}

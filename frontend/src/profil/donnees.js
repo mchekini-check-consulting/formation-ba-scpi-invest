@@ -70,6 +70,8 @@ export function profilInvestisseur(profil) {
     code: profil.profil,
     position: ORDRE_PROFILS.indexOf(profil.profil),
     valideLe: dateLongue(profil.valideLe),
+    // US-05d : profil de plus de 24 mois ou questionnaire modifié
+    aMettreAJour: profil.aMettreAJour === true,
     ...PROFILS[profil.profil],
   };
 }

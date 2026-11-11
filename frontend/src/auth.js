@@ -1,5 +1,6 @@
 import { apiBase } from './api.js';
 import { oublierFiltres } from './catalogue/filtres.js';
+import { oublierRappelFerme } from './navigation/rappel.js';
 
 // Seul fichier du frontend qui connaît le fournisseur d'identité (Better-Auth via le
 // backend aujourd'hui). La session est un jeton envoyé dans l'en-tête
@@ -176,6 +177,7 @@ export async function deconnecter(base = apiBase(), delaiMs = DELAI_DECONNEXION_
     memoriser(null);
     // Filtres du Catalogue gardés jusqu'à la déconnexion (US-10a)
     oublierFiltres();
+    oublierRappelFerme();
   }
 }
 

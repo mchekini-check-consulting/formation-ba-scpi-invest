@@ -119,6 +119,45 @@ describe('routes du questionnaire investisseur', () => {
     expect(valider).toHaveBeenCalledWith('u1', {});
   });
 
+  it('POST mise-a-jour/apercu : nouveau profil, sans réponse dans les logs (US-05d)', async () => {
+    const apercuMiseAJour = vi.fn().mockResolvedValue({ profil: 'prudent', avertissements: [] });
+    const { app, lignes } = application({ apercuMiseAJour });
+    const reponses = { 3: { objectifs: ['retraite'] } };
+    await request(app)
+      .post('/formulaire-investisseur/mise-a-jour/apercu')
+      .set('Authorization', 'Bearer jeton')
+      .send({ reponses })
+      .expect(200, { profil: 'prudent', avertissements: [] });
+    expect(apercuMiseAJour).toHaveBeenCalledWith('u1', { reponses });
+    expect(JSON.stringify(lignes)).not.toContain('retraite');
+  });
+
+  it('POST mise-a-jour/validation : 201, demande vide transmise sans corps (US-05d)', async () => {
+    const validerMiseAJour = vi.fn().mockResolvedValue({ profil: 'dynamique', avertissements: [] });
+    const { app } = application({ validerMiseAJour });
+    await request(app)
+      .post('/formulaire-investisseur/mise-a-jour/validation')
+      .set('Authorization', 'Bearer jeton')
+      .send({ reponses: {}, certification: true })
+      .expect(201, { profil: 'dynamique', avertissements: [] });
+    expect(validerMiseAJour).toHaveBeenCalledWith('u1', { reponses: {}, certification: true });
+    await request(app)
+      .post('/formulaire-investisseur/mise-a-jour/validation')
+      .set('Authorization', 'Bearer jeton')
+      .expect(201);
+    expect(validerMiseAJour).toHaveBeenLastCalledWith('u1', {});
+  });
+
+  it('POST mise-a-jour sans corps : demande vide transmise au service', async () => {
+    const apercuMiseAJour = vi.fn().mockResolvedValue({ profil: 'prudent', avertissements: [] });
+    const { app } = application({ apercuMiseAJour });
+    await request(app)
+      .post('/formulaire-investisseur/mise-a-jour/apercu')
+      .set('Authorization', 'Bearer jeton')
+      .expect(200);
+    expect(apercuMiseAJour).toHaveBeenCalledWith('u1', {});
+  });
+
   it('anciennes adresses (/questionnaire-investisseur, /questionnaire) : 404', async () => {
     const lire = vi.fn();
     const { app } = application({ lire });
@@ -134,6 +173,8 @@ describe('routes du questionnaire investisseur', () => {
     await request(app).put('/formulaire-investisseur/etapes/1').expect(401);
     await request(app).get('/formulaire-investisseur/profil').expect(401);
     await request(app).post('/formulaire-investisseur/validation').expect(401);
+    await request(app).post('/formulaire-investisseur/mise-a-jour/apercu').expect(401);
+    await request(app).post('/formulaire-investisseur/mise-a-jour/validation').expect(401);
     expect(lire).not.toHaveBeenCalled();
   });
 });
