@@ -71,6 +71,13 @@
       "when": 1794248529312,
       "tag": "0009_tentative_connexion",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794401112951,
+      "tag": "0010_informations_personnelles",
+      "breakpoints": true
     }
   ]
 }

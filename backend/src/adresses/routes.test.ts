@@ -47,4 +47,21 @@ describe('routes des adresses', () => {
     await request(app).get('/adresses').query({ recherche: '12 rue' }).expect(401);
     expect(suggestions).not.toHaveBeenCalled();
   });
+
+  it('GET /adresses/communes : communes du code postal pour l’utilisateur connecté', async () => {
+    const communes = vi.fn().mockResolvedValue(['Lyon']);
+    const fournisseur = {
+      utilisateurConnecte: vi.fn().mockResolvedValue({ id: 'u1', email: 'jean@exemple.fr' }),
+    } as unknown as FournisseurIdentite;
+    const service = { communes } as unknown as AdressesService;
+    const app = createApp(vi.fn(), captureLogs().log, {
+      routeurs: [routesAdresses(service, fournisseur)],
+    });
+    await request(app)
+      .get('/adresses/communes')
+      .query({ codePostal: '69003' })
+      .set('Authorization', 'Bearer jeton')
+      .expect(200, { communes: ['Lyon'] });
+    expect(communes).toHaveBeenCalledWith('69003');
+  });
 });

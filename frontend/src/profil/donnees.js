@@ -2,6 +2,7 @@
 //   GET /connaissance-client          -> réponses du KYC et date de validation
 //   GET /connaissance-client/pieces   -> pièces justificatives déposées
 //   GET /formulaire-investisseur/profil -> profil investisseur et date de validation
+//   GET /informations-personnelles     -> e-mail du compte et historique des modifications (US-06)
 // Le KYC est indispensable (la page est réservée aux KYC validés, ExigerKycComplete) ;
 // les pièces et le profil investisseur sont facultatifs : leur absence n'empêche pas
 // l'affichage du reste.
@@ -9,6 +10,7 @@ import { utilisateurConnecte } from '../auth.js';
 import { lireProfil } from '../investisseur/api.js';
 import { PROFILS } from '../investisseur/profils.js';
 import { listerPieces, lireKyc } from '../kyc/api.js';
+import { lireInformations } from './informations.js';
 import { ETAPES, champsVisibles, reponseLisible } from '../kyc/etapes.js';
 import { STATUTS, piecesAttendues } from '../kyc/pieces.js';
 
@@ -20,6 +22,7 @@ export async function chargerProfil({
   lireLeKyc = lireKyc,
   lirePieces = listerPieces,
   lireLeProfil = lireProfil,
+  lireLesInformations = lireInformations,
 } = {}) {
   // Session expirée (401) : remontée telle quelle, l'écran renvoie vers la connexion
   const facultatif = (promesse) =>
@@ -27,13 +30,15 @@ export async function chargerProfil({
       if (err?.status === 401) throw err;
       return null;
     });
-  const [utilisateur, kyc, pieces, profil] = await Promise.all([
+  const [utilisateur, kyc, pieces, profil, informations] = await Promise.all([
     facultatif(lireUtilisateur()),
     lireLeKyc(),
     facultatif(lirePieces()),
     facultatif(lireLeProfil()),
+    // US-06 : e-mail du compte et historique ; absent, les blocs restent en lecture seule
+    facultatif(lireLesInformations()),
   ]);
-  return { utilisateur, kyc, pieces, profil };
+  return { utilisateur, kyc, pieces, profil, informations };
 }
 
 const DATE_LONGUE = new Intl.DateTimeFormat('fr-FR', {

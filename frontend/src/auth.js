@@ -193,14 +193,14 @@ export function appelConnecte(chemin, { methode = 'GET', corps } = {}, base = ap
 export function envoyerFichierConnecte(
   chemin,
   fichier,
-  { progression = () => {} } = {},
+  { progression = () => {}, methode = 'PUT' } = {},
   base = apiBase(),
 ) {
   const entetes = enTetes();
   entetes['Content-Type'] = fichier.type || 'application/octet-stream';
   return new Promise((resoudre, rejeter) => {
     const requete = new XMLHttpRequest();
-    requete.open('PUT', `${base}${chemin}`);
+    requete.open(methode, `${base}${chemin}`);
     for (const [nom, valeur] of Object.entries(entetes)) requete.setRequestHeader(nom, valeur);
     requete.upload.onprogress = (e) => {
       if (e.lengthComputable && e.total > 0) progression(e.loaded / e.total);

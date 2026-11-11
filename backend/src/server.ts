@@ -21,6 +21,7 @@ import {
   depotAcceptationsCgu,
   depotTentativesConnexion,
   depotCatalogue,
+  depotInformations,
   depotKyc,
   depotOutilsImport,
   depotPieces,
@@ -29,6 +30,8 @@ import {
   secretDesSessions,
 } from './db/depots.js';
 import { createDb, createPool } from './db/index.js';
+import { routesInformations } from './informations/routes.js';
+import { creerInformationsService } from './informations/service.js';
 import { routesQuestionnaire } from './investisseur/routes.js';
 import { creerQuestionnaireService } from './investisseur/service.js';
 import { routesPiecesKyc } from './kyc/pieces-routes.js';
@@ -62,6 +65,8 @@ const adresses = creerAdressesService();
 const catalogue = creerCatalogueService(depotCatalogue(db));
 // US-04c : fichiers des pièces dans R2 (dépôt indisponible, 503, sans les variables R2)
 const pieces = creerPiecesService(depotKyc(db), depotPieces(db), stockagePieces());
+// US-06 : mise à jour des informations personnelles (justificatifs dans R2, comme les pièces)
+const informations = creerInformationsService(depotInformations(db), stockagePieces(), fournisseur);
 
 // US-07a : import du catalogue au démarrage puis chaque nuit à 2h (désactivé sans les variables R2)
 const tacheImport = demarrerImportNocturne(pool, db);
@@ -95,6 +100,7 @@ createApp(() => db.execute(sql`select 1`), logger, {
     routesAdresses(adresses, fournisseur),
     routesPiecesKyc(pieces, fournisseur),
     routesQuestionnaire(questionnaires, fournisseur),
+    routesInformations(informations, fournisseur),
     routesCatalogue(catalogue, fournisseur),
     routesOutilsImport(outilsImport),
   ],

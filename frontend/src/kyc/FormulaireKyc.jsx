@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import ChampAdresse from './ChampAdresse.jsx';
 import ChampDate from './ChampDate.jsx';
+import ChampVille from './ChampVille.jsx';
 import ChoixPays from './ChoixPays.jsx';
 import { chiffresCodePostal, filtrerCodePostal, filtrerTelephone } from './coordonnees.js';
 import EtapePieces from './EtapePieces.jsx';
@@ -26,6 +27,7 @@ import './kyc.css';
 
 const idChamp = (nom) => `kyc-${nom}`;
 const AUCUNE_ADRESSE = async () => [];
+const AUCUNE_COMMUNE = async () => [];
 const CHAMPS_LIES = { pays: ['codePostal', 'telephone'], indicatif: ['telephone'] };
 const idErreur = (nom) => `kyc-${nom}-erreur`;
 
@@ -133,7 +135,16 @@ function ChampTelephone({ champ, commun, indicatif, changerIndicatif, changerNum
 
 // Zone de saisie selon le type du champ. Code postal et téléphone : caractères non
 // acceptés retirés dès la frappe (coordonnees.js). Adresse : suggestions si pays = France.
-function Saisie({ champ, commun, reponses, erreur, changer, aujourdhui, chercherAdresses }) {
+function Saisie({
+  champ,
+  commun,
+  reponses,
+  erreur,
+  changer,
+  aujourdhui,
+  chercherAdresses,
+  chercherCommunes,
+}) {
   const valeur = reponses[champ.nom];
   const changerValeur = (v) => changer(champ.nom, v);
   switch (champ.type) {
@@ -160,6 +171,20 @@ function Saisie({ champ, commun, reponses, erreur, changer, aujourdhui, chercher
           }}
           actif={paysParNom(reponses.pays)?.code === 'fr'}
           chercher={chercherAdresses}
+          invalide={Boolean(erreur)}
+          decritPar={commun['aria-describedby']}
+          autoComplete={champ.autoComplete}
+        />
+      );
+    case 'ville':
+      return (
+        <ChampVille
+          id={commun.id}
+          valeur={valeur}
+          changer={changerValeur}
+          codePostal={reponses.codePostal}
+          actif={paysParNom(reponses.pays)?.code === 'fr'}
+          chercher={chercherCommunes}
           invalide={Boolean(erreur)}
           decritPar={commun['aria-describedby']}
           autoComplete={champ.autoComplete}
@@ -210,7 +235,15 @@ function Saisie({ champ, commun, reponses, erreur, changer, aujourdhui, chercher
   }
 }
 
-function Champ({ champ, reponses, erreur, changer, aujourdhui, chercherAdresses }) {
+export function Champ({
+  champ,
+  reponses,
+  erreur,
+  changer,
+  aujourdhui,
+  chercherAdresses,
+  chercherCommunes = AUCUNE_COMMUNE,
+}) {
   const valeur = reponses[champ.nom];
   if (champ.type === 'choix' || champ.type === 'cases') {
     return (
@@ -242,6 +275,7 @@ function Champ({ champ, reponses, erreur, changer, aujourdhui, chercherAdresses 
         changer={changer}
         aujourdhui={aujourdhui}
         chercherAdresses={chercherAdresses}
+        chercherCommunes={chercherCommunes}
       />
       <Aide champ={champ} />
       <Erreur nom={champ.nom} message={erreur} />
@@ -307,6 +341,7 @@ export default function FormulaireKyc({
   supprimerPiece = async () => {},
   apresValidation = () => {},
   chercherAdresses = AUCUNE_ADRESSE,
+  chercherCommunes = AUCUNE_COMMUNE,
 }) {
   const recap = ETAPES.length; // index du récapitulatif
   const [index, setIndex] = useState(Math.min(Math.max(etapeInitiale, 1), recap + 1) - 1);
@@ -464,6 +499,7 @@ export default function FormulaireKyc({
                 changer={changer}
                 aujourdhui={aujourdhui}
                 chercherAdresses={chercherAdresses}
+                chercherCommunes={chercherCommunes}
               />
             ))}
           </div>

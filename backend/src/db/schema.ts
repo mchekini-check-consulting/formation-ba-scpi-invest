@@ -216,6 +216,41 @@ export const kycPiece = pgTable(
   (t) => [unique('kyc_piece_utilisateur_type_unique').on(t.utilisateurId, t.type)],
 );
 
+// US-06 : justificatifs déposés pour une mise à jour des informations personnelles
+// (justificatif de domicile, pièce d'état civil, nouvelle pièce d'identité). Fichier dans
+// R2 sous la clé `cle` (informations/<utilisateur>/<identifiant aléatoire>), jamais en base ;
+// conservé même après une nouvelle modification (contrôle a posteriori par la conformité).
+export const justificatif = pgTable(
+  'justificatif',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+    utilisateurId: text('utilisateur_id').notNull(),
+    nomFichier: text('nom_fichier').notNull(),
+    format: text('format').notNull(), // application/pdf, image/jpeg ou image/png
+    taille: integer('taille').notNull(), // en octets
+    cle: text('cle').notNull(),
+    deposeLe: horodatage('depose_le').notNull().defaultNow(),
+  },
+  (t) => [index('justificatif_utilisateur_id_idx').on(t.utilisateurId)],
+);
+
+// US-06 : historique des modifications des informations personnelles, une ligne par champ
+// modifié (ancienne et nouvelle valeur, date et heure), avec le justificatif fourni
+export const historiqueInformation = pgTable(
+  'historique_information',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+    utilisateurId: text('utilisateur_id').notNull(),
+    bloc: text('bloc').notNull(), // coordonnees, adresse, situation, identite
+    champ: text('champ').notNull(),
+    ancienneValeur: text('ancienne_valeur'),
+    nouvelleValeur: text('nouvelle_valeur'),
+    justificatifId: bigint('justificatif_id', { mode: 'number' }).references(() => justificatif.id),
+    modifieLe: horodatage('modifie_le').notNull().defaultNow(),
+  },
+  (t) => [index('historique_information_utilisateur_id_idx').on(t.utilisateurId)],
+);
+
 // ---- Catalogue SCPI (import CSV, src/csv/)
 
 export const frequence = pgEnum('frequence', [
