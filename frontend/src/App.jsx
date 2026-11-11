@@ -4,6 +4,7 @@
 import './App.css';
 import { jeton } from './auth.js';
 import { ESPACE, EnTete, Fleche, LienCompte, LienInterne, Logo } from './MiseEnPage.jsx';
+import LiensLegaux from './legal/LiensLegaux.jsx';
 import LienOutilsPied from './outils/LienOutilsPied.jsx';
 
 // « Comment ça marche » décrit le parcours ; « Pourquoi choisir » ne garde que ce qui
@@ -102,13 +103,6 @@ const FAQ = [
     q: 'Comment s’assurer que la plateforme est neutre ?',
     r: 'Toutes les SCPI sont présentées et comparées sur les mêmes indicateurs, avec les mêmes définitions, consultables par tous. Nous percevons la même commission sur chaque SCPI partenaire, et elle est affichée : elle n’influence donc pas le classement, qui dépend uniquement des critères que vous choisissez.',
   },
-];
-
-const LIENS_LEGAUX = [
-  { href: '/mentions-legales', texte: 'Mentions légales' },
-  { href: '/confidentialite', texte: 'Politique de confidentialité' },
-  { href: '/cgu', texte: 'CGU' },
-  { href: '/contact', texte: 'Contact' },
 ];
 
 const MENU = [
@@ -377,15 +371,7 @@ function App() {
           <span className="logo">
             <Logo clair />
           </span>
-          <nav aria-label="Liens légaux">
-            <ul className="pied__liens">
-              {LIENS_LEGAUX.map((l) => (
-                <li key={l.href}>
-                  <a href={l.href}>{l.texte}</a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <LiensLegaux />
           {/* Outil de test de l'import du catalogue : dev et poste uniquement */}
           <LienOutilsPied />
         </div>

@@ -14,6 +14,7 @@ import './navigation.css';
 import BandeauRappel from './BandeauRappel.jsx';
 import { lireIdentite, useIdentite } from './identite.js';
 import Sidebar from './Sidebar.jsx';
+import LiensLegaux from '../legal/LiensLegaux.jsx';
 
 export default function PageApplication({
   titre,
@@ -47,6 +48,7 @@ export default function PageApplication({
           {children}
         </main>
         <footer className="pied compte__pied">
+          <LiensLegaux compact />
           <p className="pied__mention">
             Investir en SCPI comporte des risques de perte en capital. Les performances passées ne
             préjugent pas des performances futures.

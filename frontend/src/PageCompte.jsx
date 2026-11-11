@@ -3,6 +3,7 @@
 // sur un panneau sable, pied de page avec la mention de risque
 import './compte.css';
 import { EnTete, TitreCompte } from './MiseEnPage.jsx';
+import LiensLegaux from './legal/LiensLegaux.jsx';
 
 // origine : bouton cliqué pour arriver ici (Routeur.jsx) ; son texte glisse jusqu'au titre.
 // seDeconnecter : écrans connectés, bouton « Se déconnecter » dans l'en-tête
@@ -22,6 +23,7 @@ export default function PageCompte({ titre, large = false, origine, seDeconnecte
         </section>
       </main>
       <footer className="pied compte__pied">
+        <LiensLegaux compact />
         <p className="pied__mention">
           Investir en SCPI comporte des risques de perte en capital. Les performances passées ne
           préjugent pas des performances futures.
