@@ -258,3 +258,62 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* US-05d : « Mettre à jour mon profil », bouton clair sous le profil (maquette A) ;
+   en bleu quand un rappel est affiché (profil de plus de 24 mois ou questionnaire modifié) */
+.compte .profil__identite a.profil__mise-a-jour {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 18px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--nuit);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.compte .profil__identite a.profil__mise-a-jour:hover {
+  background: var(--bleu-ciel);
+}
+
+.compte .profil__identite a.profil__mise-a-jour:focus-visible {
+  outline: 3px solid var(--bleu-pied);
+  outline-offset: 3px;
+}
+
+.compte .profil__identite a.profil__mise-a-jour--rappel {
+  background: var(--bleu-vif);
+  color: #fff;
+}
+
+.compte .profil__identite a.profil__mise-a-jour--rappel:hover {
+  background: var(--bleu);
+}
+
+.profil__mise-a-jour svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.profil__rappel {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgb(246 197 140 / 45%);
+  border-radius: 12px;
+  background: rgb(246 197 140 / 14%);
+  color: #fde7c9;
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-align: left;
+}

@@ -9,10 +9,16 @@ import type { QuestionnaireService } from './service.js';
 //   DELETE /formulaire-investisseur/etapes/:n   « Réinitialiser » : efface les réponses
 //                                               de l'étape n -> { etapeCourante, reponses }
 //   GET    /formulaire-investisseur/profil      -> { profil, avertissements,     (US-05b)
-//                                                    valideLe } (date ISO ou null : page Profil)
+//                                                    valideLe, aMettreAJour } (date ISO ou
+//                                                    null ; aMettreAJour : rappel US-05d)
 //                                               409 si les 5 étapes ne sont pas complétées
 //   POST   /formulaire-investisseur/validation  { certification: true }        (US-05b)
 //                                               -> { profil, avertissements }
+//   POST   /formulaire-investisseur/mise-a-jour/apercu      { reponses: { 1..5 } } (US-05d)
+//                                               -> { profil, avertissements }, rien enregistré
+//   POST   /formulaire-investisseur/mise-a-jour/validation  { reponses, certification: true }
+//                                               -> 201 { profil, avertissements } : nouveau
+//                                               profil actif, l'ancien archivé ; 409 sans profil
 export function routesQuestionnaire(
   service: QuestionnaireService,
   fournisseur: FournisseurIdentite,
@@ -42,10 +48,19 @@ export function routesQuestionnaire(
     res.status(201).json(await service.valider(res.locals.utilisateur.id, req.body ?? {}));
   };
 
+  const apercuMiseAJour: RequestHandler = async (req, res) => {
+    res.json(await service.apercuMiseAJour(res.locals.utilisateur.id, req.body ?? {}));
+  };
+  const validerMiseAJour: RequestHandler = async (req, res) => {
+    res.status(201).json(await service.validerMiseAJour(res.locals.utilisateur.id, req.body ?? {}));
+  };
+
   routeur.get('/formulaire-investisseur', connecte, lireQuestionnaire);
   routeur.put('/formulaire-investisseur/etapes/:etape', connecte, enregistrerEtape);
   routeur.delete('/formulaire-investisseur/etapes/:etape', connecte, reinitialiserEtape);
   routeur.get('/formulaire-investisseur/profil', connecte, lireProfil);
   routeur.post('/formulaire-investisseur/validation', connecte, validerProfil);
+  routeur.post('/formulaire-investisseur/mise-a-jour/apercu', connecte, apercuMiseAJour);
+  routeur.post('/formulaire-investisseur/mise-a-jour/validation', connecte, validerMiseAJour);
   return routeur;
 }

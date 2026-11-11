@@ -442,3 +442,73 @@
     padding: 28px var(--marge-x);
   }
 }
+
+/* US-05d : rappel de mise à jour du profil investisseur, en haut de chaque écran */
+.rappel-profil {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 0 0 20px;
+  padding: 12px 12px 12px 18px;
+  border: 1px solid var(--ocre);
+  border-radius: 16px;
+  background: #fff3e2;
+  color: var(--encre);
+}
+
+.rappel-profil__texte {
+  flex: 1 1 280px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.compte .rappel-profil a.rappel-profil__action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--bleu-vif);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.compte .rappel-profil a.rappel-profil__action:hover {
+  background: var(--bleu);
+}
+
+.rappel-profil__fermer {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--encre-douce);
+  cursor: pointer;
+}
+
+.rappel-profil__fermer:hover {
+  background: rgb(14 26 51 / 8%);
+}
+
+.rappel-profil__fermer svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.rappel-profil a:focus-visible,
+.rappel-profil button:focus-visible {
+  outline: 3px solid var(--bleu-pied);
+  outline-offset: 2px;
+}

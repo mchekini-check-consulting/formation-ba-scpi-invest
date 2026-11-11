@@ -10,6 +10,7 @@ import Connexion from './connexion/Connexion.jsx';
 import { memoriserPage } from './connexion/destination.js';
 import Indicateurs from './Indicateurs.jsx';
 import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
+import MiseAJourProfil from './investisseur/MiseAJourProfil.jsx';
 import Inscription from './inscription/Inscription.jsx';
 import ExigerKycComplete from './kyc/ExigerKycComplete.jsx';
 import Kyc from './kyc/Kyc.jsx';
@@ -18,6 +19,7 @@ import Confidentialite from './legal/Confidentialite.jsx';
 import Contact from './legal/Contact.jsx';
 import MentionsLegales from './legal/MentionsLegales.jsx';
 import { CHEMINS_INACTIFS } from './navigation/entrees.js';
+import { CHEMIN_MISE_A_JOUR } from './navigation/rappel.js';
 import { CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
 import { formulairesPassables } from './outils/passerFormulaires.js';
 import ImportCatalogue from './outils/ImportCatalogue.jsx';
@@ -100,6 +102,15 @@ export default function Routeur({ passer = formulairesPassables() }) {
           element={
             <ExigerKycComplete>
               <Profil />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Mise à jour du profil investisseur (US-05d), non bloquante */}
+        <Route
+          path={CHEMIN_MISE_A_JOUR}
+          element={
+            <ExigerKycComplete>
+              <MiseAJourProfil />
             </ExigerKycComplete>
           }
         />

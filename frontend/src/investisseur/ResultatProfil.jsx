@@ -4,7 +4,13 @@
 import { useEffect, useState } from 'react';
 import { AVERTISSEMENTS, CERTIFICATION, ECHEC_VALIDATION, PROFILS } from './profils.js';
 
-export default function ResultatProfil({ lireProfil, valider, modifier, apresValidation }) {
+export default function ResultatProfil({
+  lireProfil,
+  valider,
+  modifier,
+  apresValidation,
+  intro = 'Votre profil investisseur',
+}) {
   const [resultat, setResultat] = useState(null);
   const [erreurChargement, setErreurChargement] = useState('');
   const [certifie, setCertifie] = useState(false);
@@ -49,7 +55,7 @@ export default function ResultatProfil({ lireProfil, valider, modifier, apresVal
   return (
     <form className="compte__form" aria-label="Validation du profil" onSubmit={envoyer} noValidate>
       <section className="profil" aria-labelledby="profil-nom">
-        <p className="profil__intro">Votre profil investisseur</p>
+        <p className="profil__intro">{intro}</p>
         <p id="profil-nom" className="profil__nom">
           {nom}
         </p>

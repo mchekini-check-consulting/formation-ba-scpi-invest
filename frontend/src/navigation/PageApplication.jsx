@@ -6,18 +6,25 @@
 // sans sidebar.
 // entete (facultatif) : contenu ajouté sous le titre ; titre et entete restent alors figés
 // en haut de l'écran quand on fait défiler la page.
+// Rappel de mise à jour du profil investisseur (US-05d, BandeauRappel.jsx) : affiché en
+// haut de chaque écran quand le profil a plus de 24 mois ou que le questionnaire a changé ;
+// sansRappel : écran de la mise à jour elle-même.
 import '../compte.css';
 import './navigation.css';
+import BandeauRappel from './BandeauRappel.jsx';
+import { lireIdentite, useIdentite } from './identite.js';
 import Sidebar from './Sidebar.jsx';
 
 export default function PageApplication({
   titre,
   actif,
   seDeconnecter,
-  chargerIdentite,
+  chargerIdentite = lireIdentite,
   entete,
+  sansRappel = false,
   children,
 }) {
+  const identite = useIdentite(chargerIdentite);
   const titrePage = (
     <h1 id="titre-page" className="application__titre">
       {titre}
@@ -25,9 +32,10 @@ export default function PageApplication({
   );
   return (
     <div className="compte application">
-      <Sidebar actif={actif} seDeconnecter={seDeconnecter} chargerIdentite={chargerIdentite} />
+      <Sidebar actif={actif} seDeconnecter={seDeconnecter} identite={identite} />
       <div className="application__zone">
         <main className="panneau application__contenu" aria-labelledby="titre-page">
+          {!sansRappel && identite?.aMettreAJour && <BandeauRappel />}
           {entete ? (
             <header className="application__entete">
               {titrePage}

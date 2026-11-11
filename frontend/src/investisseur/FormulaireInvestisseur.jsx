@@ -19,6 +19,7 @@ import {
   NOMBRE_ETAPES,
   basculer,
   erreursEtape,
+  pourSaisie,
   questionsVisibles,
   reponsesAEnvoyer,
 } from './questionnaire.js';
@@ -29,20 +30,9 @@ function naviguer(url) {
   window.location.assign(url);
 }
 
-// Les montants sont saisis comme du texte : ceux reçus du backend repassent en texte
-function pourSaisie(reponses) {
-  const resultat = {};
-  for (const [etape, valeurs] of Object.entries(reponses ?? {})) {
-    resultat[etape] = Object.fromEntries(
-      Object.entries(valeurs).map(([cle, v]) => [cle, typeof v === 'number' ? String(v) : v]),
-    );
-  }
-  return resultat;
-}
-
 // Progression en pastilles numérotées reliées : ✓ pour les étapes faites, étape courante
 // entourée. Sur mobile, les libellés laissent place au texte « Étape n/5 — titre ».
-function Progression({ etape }) {
+export function Progression({ etape }) {
   return (
     <nav className="investisseur-progression" aria-label="Progression du formulaire">
       <p className="investisseur-progression__texte">
@@ -75,7 +65,7 @@ function Progression({ etape }) {
   );
 }
 
-function Question({ question, valeur, erreur, changer }) {
+export function Question({ question, valeur, erreur, changer }) {
   const idErreur = `${question.cle}-erreur`;
   const messageErreur = (
     <p id={idErreur} className="champ__erreur" role="alert">

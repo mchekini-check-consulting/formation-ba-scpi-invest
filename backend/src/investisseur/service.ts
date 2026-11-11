@@ -14,8 +14,12 @@ export type Etat = Avancement & { valide: boolean };
 // Profil affiché à l'écran : jamais le score (US-05b, règle 5)
 export type ProfilAffiche = { profil: Profil; avertissements: Avertissement[] };
 
-// Page Profil : date et heure de la dernière validation (ISO), null si pas encore validé
-export type ProfilConsulte = ProfilAffiche & { valideLe: string | null };
+// Page Profil : date et heure de la dernière validation (ISO), null si pas encore validé ;
+// aMettreAJour : rappel de l'US-05d (profil de plus de 24 mois ou questionnaire modifié)
+export type ProfilConsulte = ProfilAffiche & { valideLe: string | null; aMettreAJour: boolean };
+
+// Dernière validation d'un utilisateur : date et version du questionnaire alors en vigueur
+export type DerniereValidation = { valideLe: Date; versionQuestionnaire: string };
 
 export type ProfilValide = ProfilAffiche & {
   score: number;
@@ -30,8 +34,8 @@ export type DepotQuestionnaires = {
 
 export type DepotProfils = {
   existe(utilisateurId: string): Promise<boolean>;
-  // Date de la dernière validation (US-05d : une mise à jour ajoute une ligne), null si aucune
-  derniereValidation(utilisateurId: string): Promise<Date | null>;
+  // Dernière validation (US-05d : une mise à jour ajoute une ligne), null si aucune
+  derniereValidation(utilisateurId: string): Promise<DerniereValidation | null>;
   enregistrer(utilisateurId: string, profil: ProfilValide): Promise<void>;
 };
 
@@ -40,10 +44,51 @@ const DEBUT: Avancement = { etapeCourante: 1, reponses: {} };
 const DEJA_VALIDE = 'Votre profil investisseur est déjà validé.';
 const NON_TERMINE = 'Merci de répondre aux 5 étapes du questionnaire.';
 const SANS_CERTIFICATION = 'Merci de certifier l’exactitude de vos réponses.';
+const PAS_ENCORE_VALIDE = 'Votre profil investisseur n’est pas encore validé.';
+const REPONSES_INCOMPLETES = 'Merci de répondre à toutes les questions des 5 étapes.';
+
+// US-05d : rappel de mise à jour quand le profil a été validé il y a 24 mois ou plus
+export const DUREE_VALIDITE_MOIS = 24;
+
+// Profil à mettre à jour : validé il y a au moins 24 mois, ou avec une autre version du
+// questionnaire que celle en vigueur
+export function aMettreAJour(derniere: DerniereValidation | null, maintenant: Date): boolean {
+  if (!derniere) return false;
+  const limite = new Date(derniere.valideLe);
+  limite.setMonth(limite.getMonth() + DUREE_VALIDITE_MOIS);
+  return limite <= maintenant || derniere.versionQuestionnaire !== VERSION_QUESTIONNAIRE;
+}
+
+function objet(valeur: unknown): valeur is Record<string, unknown> {
+  return typeof valeur === 'object' && valeur !== null && !Array.isArray(valeur);
+}
+
+// Réponses des 5 étapes envoyées d'un coup (mise à jour, US-05d), nettoyées comme à
+// l'enregistrement d'une étape ; null si une étape manque ou est invalide
+function toutesLesReponses(brutes: unknown): ReponsesQuestionnaire | null {
+  if (!objet(brutes)) return null;
+  const resultat: ReponsesQuestionnaire = {};
+  for (let etape = 1; etape <= NOMBRE_ETAPES; etape += 1) {
+    const reponses = brutes[etape];
+    const valides = objet(reponses) ? reponsesValides(etape, reponses) : null;
+    if (!valides) return null;
+    resultat[etape] = valides;
+  }
+  return resultat;
+}
+
+function certifiee(demande: unknown): boolean {
+  return objet(demande) && demande.certification === true;
+}
 
 // Couche service du formulaire investisseur : reprise et enregistrement étape par étape
-// (US-05a), calcul du profil, certification et validation (US-05b)
-export function creerQuestionnaireService(depot: DepotQuestionnaires, profils: DepotProfils) {
+// (US-05a), calcul du profil, certification et validation (US-05b), mise à jour du
+// profil après validation (US-05d). maintenant : horloge, remplacée dans les tests.
+export function creerQuestionnaireService(
+  depot: DepotQuestionnaires,
+  profils: DepotProfils,
+  maintenant: () => Date = () => new Date(),
+) {
   async function avancement(utilisateurId: string): Promise<Avancement> {
     return (await depot.lire(utilisateurId)) ?? DEBUT;
   }
@@ -123,21 +168,22 @@ export function creerQuestionnaireService(depot: DepotQuestionnaires, profils: D
   }
 
   async function profil(utilisateurId: string): Promise<ProfilConsulte> {
-    const [{ profil: nom, avertissements }, valideLe] = await Promise.all([
+    const [{ profil: nom, avertissements }, derniere] = await Promise.all([
       calculer(utilisateurId),
       profils.derniereValidation(utilisateurId),
     ]);
-    return { profil: nom, avertissements, valideLe: valideLe?.toISOString() ?? null };
+    return {
+      profil: nom,
+      avertissements,
+      valideLe: derniere?.valideLe.toISOString() ?? null,
+      aMettreAJour: aMettreAJour(derniere, maintenant()),
+    };
   }
 
   // Certification obligatoire ; enregistre profil, score, réponses, avertissements,
   // date et heure (par la base) et version du questionnaire
   async function valider(utilisateurId: string, demande: unknown): Promise<ProfilAffiche> {
-    const certifie =
-      typeof demande === 'object' &&
-      demande !== null &&
-      (demande as { certification?: unknown }).certification === true;
-    if (!certifie) {
+    if (!certifiee(demande)) {
       throw new HttpError(400, SANS_CERTIFICATION);
     }
     if (await profils.existe(utilisateurId)) {
@@ -151,12 +197,58 @@ export function creerQuestionnaireService(depot: DepotQuestionnaires, profils: D
     return { profil: calcule.profil, avertissements: calcule.avertissements };
   }
 
+  // US-05d : mise à jour d'un profil déjà validé. Les réponses en cours restent dans
+  // l'écran (rien n'est enregistré avant la validation : un abandon ne laisse aucune
+  // trace) ; le nouveau profil est calculé sur les 5 étapes envoyées d'un coup.
+  async function reponsesDeMiseAJour(utilisateurId: string, demande: unknown) {
+    if (!(await profils.existe(utilisateurId))) {
+      throw new HttpError(409, PAS_ENCORE_VALIDE);
+    }
+    const reponses = toutesLesReponses(objet(demande) ? demande.reponses : undefined);
+    if (!reponses) {
+      throw new HttpError(400, REPONSES_INCOMPLETES);
+    }
+    return reponses;
+  }
+
+  // Nouveau profil calculé, sans rien enregistrer (écran de fin de la mise à jour)
+  async function apercuMiseAJour(utilisateurId: string, demande: unknown): Promise<ProfilAffiche> {
+    const { profil: nom, avertissements } = calculerProfil(
+      await reponsesDeMiseAJour(utilisateurId, demande),
+    );
+    return { profil: nom, avertissements };
+  }
+
+  // Certification obligatoire ; le nouveau profil est ajouté (l'ancien reste archivé avec
+  // ses réponses et sa date, jamais écrasé) et ses réponses deviennent celles du
+  // questionnaire (pré-remplissage de la prochaine mise à jour)
+  async function validerMiseAJour(utilisateurId: string, demande: unknown): Promise<ProfilAffiche> {
+    if (!certifiee(demande)) {
+      throw new HttpError(400, SANS_CERTIFICATION);
+    }
+    const reponses = await reponsesDeMiseAJour(utilisateurId, demande);
+    const calcule = calculerProfil(reponses);
+    await profils.enregistrer(utilisateurId, {
+      ...calcule,
+      reponses,
+      versionQuestionnaire: VERSION_QUESTIONNAIRE,
+    });
+    await depot.enregistrer(
+      utilisateurId,
+      { etapeCourante: NOMBRE_ETAPES + 1, reponses },
+      VERSION_QUESTIONNAIRE,
+    );
+    return { profil: calcule.profil, avertissements: calcule.avertissements };
+  }
+
   return loggable('QuestionnaireService', {
     lire,
     enregistrerEtape,
     reinitialiserEtape,
     profil,
     valider,
+    apercuMiseAJour,
+    validerMiseAJour,
   });
 }
 

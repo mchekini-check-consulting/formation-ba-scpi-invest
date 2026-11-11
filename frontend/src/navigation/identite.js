@@ -1,6 +1,7 @@
 // Carte d'identité de la sidebar (US-06) : nom de l'investisseur (réponses du KYC) et
 // profil investisseur (US-05b). Une information absente ou indisponible n'empêche pas
 // l'affichage : la carte se contente de ce qui est connu.
+import { useEffect, useState } from 'react';
 import { utilisateurConnecte } from '../auth.js';
 import { lireProfil } from '../investisseur/api.js';
 import { PROFILS } from '../investisseur/profils.js';
@@ -23,6 +24,8 @@ export async function lireIdentite({
     nomComplet: [prenom, nom].filter(Boolean).join(' '),
     email: utilisateur?.email ?? '',
     profil: PROFILS[profil?.profil] ? profil.profil : null,
+    // US-05d : profil de plus de 24 mois ou questionnaire modifié
+    aMettreAJour: profil?.aMettreAJour === true,
   };
 }
 
@@ -33,4 +36,21 @@ export function initiales({ nomComplet, email }) {
     return (mots[0][0] + (mots.length > 1 ? mots[mots.length - 1][0] : '')).toUpperCase();
   }
   return email ? email[0].toUpperCase() : '';
+}
+
+// Identité de l'investisseur (pastille du bas, rappel de mise à jour du profil) ; rien
+// tant qu'elle n'est pas connue. charger absent : rien n'est lu.
+export function useIdentite(charger) {
+  const [identite, setIdentite] = useState(null);
+  useEffect(() => {
+    if (!charger) return undefined;
+    let actif = true;
+    charger()
+      .then((resultat) => actif && setIdentite(resultat))
+      .catch(() => {});
+    return () => {
+      actif = false;
+    };
+  }, [charger]);
+  return identite;
 }

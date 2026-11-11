@@ -9,13 +9,13 @@
 // - en bas : la pastille aux initiales de l'investisseur (lien vers la page Profil,
 //   entourée quand elle est affichée) et le bouton « Se déconnecter »,
 //   qui demande confirmation (« Oui » / « Non ») avant de déconnecter.
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import LogoIcone from '../LogoIcone.jsx';
 import ConfirmationDeconnexion from './ConfirmationDeconnexion.jsx';
 import { LienInterne } from '../MiseEnPage.jsx';
 import { PROFILS } from '../investisseur/profils.js';
 import { ENTREES } from './entrees.js';
-import { initiales, lireIdentite } from './identite.js';
+import { initiales, lireIdentite, useIdentite } from './identite.js';
 import './navigation.css';
 
 const ICONES = {
@@ -61,21 +61,6 @@ function Icone({ id }) {
   );
 }
 
-// Identité de l'investisseur pour la pastille du bas ; rien tant qu'elle n'est pas connue
-function useIdentite(charger) {
-  const [identite, setIdentite] = useState(null);
-  useEffect(() => {
-    let actif = true;
-    charger()
-      .then((resultat) => actif && setIdentite(resultat))
-      .catch(() => {});
-    return () => {
-      actif = false;
-    };
-  }, [charger]);
-  return identite;
-}
-
 // Lien vers la page Profil (lecture seule), marqué sélectionné quand elle est affichée
 function Profil({ identite, actif }) {
   const lettres = identite ? initiales(identite) : '';
@@ -104,11 +89,18 @@ function Profil({ identite, actif }) {
 // actif : identifiant de l'écran affiché (ex. « catalogue »), entrée marquée sélectionnée
 // seDeconnecter : action du bouton du bas (absent : pas de bouton)
 // chargerIdentite : lecture du nom et du profil (remplacée dans les tests)
-export default function Sidebar({ actif, seDeconnecter, chargerIdentite = lireIdentite }) {
+// identite : déjà lue par la page (PageApplication) ; absente, la sidebar la lit elle-même
+export default function Sidebar({
+  actif,
+  seDeconnecter,
+  chargerIdentite = lireIdentite,
+  identite: fournie,
+}) {
   const [deplie, setDeplie] = useState(false);
   const [confirmer, setConfirmer] = useState(false);
   const boutonDeconnexion = useRef(null);
-  const identite = useIdentite(chargerIdentite);
+  const chargee = useIdentite(fournie === undefined ? chargerIdentite : null);
+  const identite = fournie === undefined ? chargee : fournie;
 
   return (
     <nav

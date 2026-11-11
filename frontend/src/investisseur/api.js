@@ -32,3 +32,20 @@ export function validerProfil(base = apiBase()) {
     corps: { certification: true },
   });
 }
+
+// US-05d : mise à jour d'un profil déjà validé. Les réponses des 5 étapes sont envoyées
+// d'un coup : nouveau profil calculé sans rien enregistrer, puis validation (le nouveau
+// profil devient actif, l'ancien est archivé)
+export function apercuMiseAJour(reponses, base = apiBase()) {
+  return appelAuthentifie(`${base}/formulaire-investisseur/mise-a-jour/apercu`, {
+    method: 'POST',
+    corps: { reponses },
+  });
+}
+
+export function validerMiseAJour(reponses, base = apiBase()) {
+  return appelAuthentifie(`${base}/formulaire-investisseur/mise-a-jour/validation`, {
+    method: 'POST',
+    corps: { reponses, certification: true },
+  });
+}

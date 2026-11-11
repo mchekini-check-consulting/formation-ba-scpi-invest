@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import { LienInterne } from '../MiseEnPage.jsx';
+import { CHEMIN_MISE_A_JOUR } from '../navigation/rappel.js';
 import PageApplication from '../navigation/PageApplication.jsx';
 import { initiales } from '../navigation/identite.js';
 import {
@@ -45,6 +46,12 @@ function Jauge({ position }) {
   );
 }
 
+function statutProfil(profil) {
+  if (!profil) return 'À compléter';
+  if (profil.aMettreAJour) return `À mettre à jour · validé le ${profil.valideLe}`;
+  return `Validé le ${profil.valideLe}`;
+}
+
 function Statut({ libelle, valeur, ok }) {
   return (
     <div className="profil__statut">
@@ -75,6 +82,25 @@ function CarteIdentite({ donnees, pieces }) {
           <p className="profil__type">{profil.nom}</p>
           <Jauge position={profil.position} />
           <p className="profil__explication">{profil.explication}</p>
+          {profil.aMettreAJour && (
+            <p className="profil__rappel">
+              Votre profil date de plus de 2 ans ou le questionnaire a évolué. Mettez-le à jour pour
+              qu’il reflète votre situation actuelle.
+            </p>
+          )}
+          <LienInterne
+            to={CHEMIN_MISE_A_JOUR}
+            className={
+              profil.aMettreAJour
+                ? 'profil__mise-a-jour profil__mise-a-jour--rappel'
+                : 'profil__mise-a-jour'
+            }
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M3 12a9 9 0 0 1 15.5-6.3L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.3L3 16M3 21v-5h5" />
+            </svg>
+            Mettre à jour mon profil
+          </LienInterne>
         </>
       ) : (
         <p className="profil__a-completer">
@@ -91,8 +117,8 @@ function CarteIdentite({ donnees, pieces }) {
         />
         <Statut
           libelle="Profil investisseur"
-          ok={Boolean(profil)}
-          valeur={profil ? `Validé le ${profil.valideLe}` : 'À compléter'}
+          ok={Boolean(profil) && !profil.aMettreAJour}
+          valeur={statutProfil(profil)}
         />
         {pieces && (
           <Statut
@@ -199,8 +225,8 @@ export default function Profil({
       chargerIdentite={chargerIdentite}
     >
       <p className="profil__sous-titre">
-        Les informations transmises à l’ouverture de votre compte. Elles ne sont pas modifiables
-        pour le moment.
+        Les informations transmises à l’ouverture de votre compte. Seul votre profil investisseur
+        peut être mis à jour pour le moment.
       </p>
       {alerte && (
         <p className="compte__alerte" role="alert">

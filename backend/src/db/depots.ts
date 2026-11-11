@@ -85,12 +85,15 @@ export function depotProfils(db: Db): DepotProfils {
     },
     async derniereValidation(utilisateurId) {
       const [ligne] = await db
-        .select({ valideLe: profilInvestisseur.valideLe })
+        .select({
+          valideLe: profilInvestisseur.valideLe,
+          versionQuestionnaire: profilInvestisseur.versionQuestionnaire,
+        })
         .from(profilInvestisseur)
         .where(eq(profilInvestisseur.utilisateurId, utilisateurId))
-        .orderBy(desc(profilInvestisseur.valideLe))
+        .orderBy(desc(profilInvestisseur.valideLe), desc(profilInvestisseur.id))
         .limit(1);
-      return ligne?.valideLe ?? null;
+      return ligne ?? null;
     },
     async enregistrer(utilisateurId, p) {
       await db.insert(profilInvestisseur).values({
