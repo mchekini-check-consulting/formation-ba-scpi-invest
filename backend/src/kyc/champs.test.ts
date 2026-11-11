@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { age, champsIncomplets, nettoyer, residentFrance } from './champs.js';
+import { age, champsIncomplets, nettoyer, residentFrance, usPerson } from './champs.js';
 import { KYC_COMPLET } from './exemple.js';
 
 const LE = new Date(2026, 10, 4);
@@ -64,6 +64,12 @@ describe('champs incomplets avant validation', () => {
     expect(residentFrance({ ...KYC_COMPLET, residenceFiscale: 'Autre pays' })).toBe(false);
     expect(residentFrance({ ...KYC_COMPLET, pays: 'Belgique' })).toBe(false);
     expect(residentFrance({})).toBe(false);
+  });
+
+  it('US Person : réponse « Oui » seulement', () => {
+    expect(usPerson(KYC_COMPLET)).toBe(false);
+    expect(usPerson({ ...KYC_COMPLET, usPerson: 'Oui' })).toBe(true);
+    expect(usPerson({})).toBe(false);
   });
 
   it('date de naissance : majeur et au format AAAA-MM-JJ', () => {

@@ -1,7 +1,13 @@
 import type { ReponsesKyc } from '../db/schema.js';
 import { HttpError } from '../logging/http-error.js';
 import { loggable } from '../logging/service.js';
-import { ETAPE_RECAPITULATIF, champsIncomplets, nettoyer, residentFrance } from './champs.js';
+import {
+  ETAPE_RECAPITULATIF,
+  champsIncomplets,
+  nettoyer,
+  residentFrance,
+  usPerson,
+} from './champs.js';
 import { piecesManquantes } from './pieces.js';
 
 export type StatutKyc = 'en_cours' | 'complete';
@@ -36,6 +42,8 @@ export const KYC_INCOMPLET =
   'Le formulaire KYC est incomplet : complétez toutes les étapes avant de le valider.';
 export const KYC_NON_RESIDENT =
   'Seuls les résidents fiscaux en France peuvent investir sur notre plateforme.';
+export const KYC_US_PERSON =
+  'Les « US Persons » au sens de la réglementation FATCA ne peuvent pas investir sur notre plateforme.';
 export const PIECES_MANQUANTES =
   'Des pièces justificatives obligatoires n’ont pas été déposées : ajoutez-les avant de valider votre KYC.';
 
@@ -88,6 +96,9 @@ export function creerKycService(depot: DepotKyc, maintenant: () => Date = () => 
     }
     if (!residentFrance(etat.reponses)) {
       throw new HttpError(400, KYC_NON_RESIDENT);
+    }
+    if (usPerson(etat.reponses)) {
+      throw new HttpError(400, KYC_US_PERSON);
     }
     const deposees = await depot.typesPiecesDeposees(utilisateurId);
     if (piecesManquantes(etat.reponses, deposees).length > 0) {
