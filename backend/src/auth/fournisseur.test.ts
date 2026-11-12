@@ -11,6 +11,8 @@ function appTest(utilisateur: { id: string; email: string } | null) {
     connecter: vi.fn(),
     utilisateurConnecte: vi.fn().mockResolvedValue(utilisateur),
     identifiantDe: vi.fn(),
+    verifierMotDePasse: vi.fn(),
+    changerEmail: vi.fn(),
   };
   const { log, lignes } = captureLogs();
   const app = express();
