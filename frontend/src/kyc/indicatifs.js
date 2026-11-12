@@ -1,7 +1,7 @@
 // Indicatifs téléphoniques internationaux du KYC (étape « Coordonnées »), par code ISO du
 // pays (en minuscules, comme dans pays.js). Le pays est désigné par son nom en français,
 // comme dans les réponses du KYC (« France » -> « 33 »).
-import { PAYS, paysParNom } from './pays.js';
+import { paysParNom } from './pays.js';
 
 // prettier-ignore
 const INDICATIFS = {
@@ -54,8 +54,3 @@ const INDICATIFS = {
 export function indicatifDe(nomPays) {
   return INDICATIFS[paysParNom(nomPays)?.code] ?? '';
 }
-
-// Liste du menu des indicatifs : France en tête, puis ordre alphabétique
-export const PAYS_INDICATIFS = PAYS.filter((p) => INDICATIFS[p.code])
-  .map((p) => ({ nom: p.nom, indicatif: INDICATIFS[p.code] }))
-  .sort((a, b) => (a.nom === 'France' ? -1 : Number(b.nom === 'France')));

@@ -90,7 +90,7 @@ export function rubriques(reponses = {}) {
     lignes: champsVisibles(etape, reponses).map((champ) => ({
       cle: champ.nom,
       libelle: champ.libelle,
-      valeur: reponseLisible(champ, reponses[champ.nom], reponses),
+      valeur: reponseLisible(champ, reponses[champ.nom]),
     })),
   }));
 }
