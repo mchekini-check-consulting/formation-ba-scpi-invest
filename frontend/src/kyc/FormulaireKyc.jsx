@@ -16,11 +16,11 @@ import {
   ETAPES,
   champsVisibles,
   erreursEtape,
-  indicatifChoisi,
+  PAYS_INDICATIF,
   PAYS_RESIDENCE,
   reponsesAEnregistrer,
 } from './etapes.js';
-import { PAYS_INDICATIFS } from './indicatifs.js';
+import { indicatifDe } from './indicatifs.js';
 import { paysParNom } from './pays.js';
 import { idPiece, piecesManquantes } from './pieces.js';
 import Recapitulatif from './Recapitulatif.jsx';
@@ -29,7 +29,7 @@ import './kyc.css';
 const idChamp = (nom) => `kyc-${nom}`;
 const AUCUNE_ADRESSE = async () => [];
 const AUCUNE_COMMUNE = async () => [];
-const CHAMPS_LIES = { pays: ['codePostal', 'telephone'], indicatif: ['telephone'] };
+const CHAMPS_LIES = { pays: ['codePostal', 'telephone'] };
 const idErreur = (nom) => `kyc-${nom}-erreur`;
 
 function descriptions(champ, erreur) {
@@ -107,22 +107,18 @@ function Groupe({ champ, valeur, erreur, changer }) {
   );
 }
 
-// Téléphone : menu des indicatifs (« France (+33) »), puis le numéro en chiffres
-function ChampTelephone({ champ, commun, indicatif, changerIndicatif, changerNumero }) {
+// Téléphone : indicatif de la France (+33) en lecture seule, puis le numéro en chiffres
+function ChampTelephone({ champ, commun, changerNumero }) {
   return (
     <div className="kyc-telephone">
-      <select
-        aria-label="Indicatif du pays"
-        value={indicatif}
-        onChange={(e) => changerIndicatif(e.target.value)}
+      <input
+        type="text"
+        aria-label="Indicatif du téléphone"
+        value={`+${indicatifDe(PAYS_INDICATIF)}`}
+        readOnly
+        tabIndex={-1}
         className="kyc-telephone__indicatif"
-      >
-        {PAYS_INDICATIFS.map((p) => (
-          <option key={p.nom} value={p.nom}>
-            {p.nom} (+{p.indicatif})
-          </option>
-        ))}
-      </select>
+      />
       <input
         {...commun}
         type="tel"
@@ -206,8 +202,6 @@ function Saisie({
         <ChampTelephone
           champ={champ}
           commun={commun}
-          indicatif={indicatifChoisi(reponses)}
-          changerIndicatif={(nom) => changer(champ.indicatif, nom)}
           changerNumero={(v) => changerValeur(filtrerTelephone(v))}
         />
       );

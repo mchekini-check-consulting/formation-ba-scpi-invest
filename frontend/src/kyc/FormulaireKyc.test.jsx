@@ -359,28 +359,24 @@ describe('Coordonnées : pays, adresse avec suggestions, code postal et téléph
     expect(screen.getByLabelText('Code postal').getAttribute('inputmode')).toBe('numeric');
   });
 
-  it('téléphone : indicatif France par défaut, autre indicatif possible, chiffres seuls', async () => {
+  it('téléphone : indicatif +33 non modifiable, chiffres seuls', async () => {
     const { enregistrer } = afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE });
-    const indicatif = () => screen.getByLabelText('Indicatif du pays');
-    expect(indicatif().value).toBe('France');
-    expect(indicatif().options[0].textContent).toBe('France (+33)');
+    const indicatif = screen.getByLabelText('Indicatif du téléphone');
+    expect(indicatif.value).toBe('+33');
+    expect(indicatif.readOnly).toBe(true);
+    expect(screen.queryByRole('combobox', { name: /indicatif/i })).toBeNull();
     saisir('Téléphone', '06.12.34.ab56.78');
     expect(screen.getByLabelText('Téléphone').value).toBe('0612345678');
-    // résident en France avec un numéro belge
-    fireEvent.change(indicatif(), { target: { value: 'Belgique' } });
     saisir('Adresse postale', '12 rue des Lilas');
     saisir('Code postal', '69003');
     saisir('Ville', 'Lyon');
-    // fixe belge à 8 chiffres : refusé avec l'indicatif français (9 chiffres)
+    // fixe belge à 8 chiffres : refusé (un numéro français a 9 chiffres après le 0)
     saisir('Téléphone', '02 123 45 67');
-    fireEvent.change(indicatif(), { target: { value: 'France' } });
     await cliquer('Suivant');
     expect(document.getElementById('kyc-telephone-erreur').textContent).toContain(
       'Numéro de téléphone invalide',
     );
-    // retour à l'indicatif belge : l'erreur s'efface, le numéro est accepté
-    fireEvent.change(indicatif(), { target: { value: 'Belgique' } });
-    expect(document.getElementById('kyc-telephone-erreur')).toBeNull();
+    saisir('Téléphone', '06 12 34 56 78');
     await cliquer('Suivant');
     expect(enregistrer).toHaveBeenCalledWith(3, {
       ...IDENTITE,
@@ -388,8 +384,8 @@ describe('Coordonnées : pays, adresse avec suggestions, code postal et téléph
       adresse: '12 rue des Lilas',
       codePostal: '69003',
       ville: 'Lyon',
-      telephone: '02 123 45 67',
-      indicatif: 'Belgique',
+      telephone: '06 12 34 56 78',
+      indicatif: 'France',
     });
   });
 });

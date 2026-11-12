@@ -12,7 +12,6 @@ import {
   age,
   champsVisibles,
   erreursEtape,
-  indicatifChoisi,
   reponseLisible,
   reponsesAEnregistrer,
 } from './etapes.js';
@@ -84,25 +83,19 @@ describe('Règles de saisie', () => {
     expect(erreur('04/11/1980')).toBe(MESSAGE_DATE);
   });
 
-  it('téléphone : contrôlé selon l’indicatif choisi, sinon le pays de l’adresse', () => {
+  it('téléphone : toujours contrôlé comme un numéro français (+33)', () => {
     const erreur = (reponses) => erreursEtape(coordonnees, reponses, AUJOURDHUI).telephone;
-    expect(indicatifChoisi({})).toBe('France');
-    expect(indicatifChoisi({ pays: 'Belgique' })).toBe('Belgique');
-    expect(indicatifChoisi({ pays: 'Belgique', indicatif: 'Maroc' })).toBe('Maroc');
-    expect(indicatifChoisi({ pays: 'Belgique', indicatif: 'Inconnu' })).toBe('Belgique');
     expect(erreur({ telephone: '06 12 34 56 78' })).toBeUndefined();
     expect(erreur({ telephone: '0612' })).toBe(MESSAGE_TELEPHONE);
-    expect(erreur({ telephone: '0470 12 34 56', pays: 'Belgique' })).toBeUndefined();
-    expect(erreur({ telephone: '0470 12 34 56', indicatif: 'États-Unis' })).toBe(MESSAGE_TELEPHONE);
+    // numéro belge à 8 chiffres : refusé, même avec un ancien indicatif belge enregistré
+    expect(erreur({ telephone: '02 123 45 67', indicatif: 'Belgique' })).toBe(MESSAGE_TELEPHONE);
   });
 
   it('téléphone : indicatif enregistré avec le numéro, affiché au récapitulatif', () => {
     const tel = coordonnees.champs.find((c) => c.nom === 'telephone');
     expect(reponsesAEnregistrer({ telephone: '06 12 34 56 78' }).indicatif).toBe('France');
     expect(reponsesAEnregistrer({ nom: 'Martin' })).not.toHaveProperty('indicatif');
-    expect(reponseLisible(tel, '0470 12 34 56', { indicatif: 'Belgique' })).toBe(
-      '+32 0470 12 34 56',
-    );
+    expect(reponseLisible(tel, '06 12 34 56 78')).toBe('+33 06 12 34 56 78');
   });
 
   it('coordonnées : pays fixé à France, non modifiable ; code postal français', () => {

@@ -13,13 +13,6 @@ import { paysParNom } from './pays.js';
 
 export { telephoneValide } from './coordonnees.js';
 
-// Pays de l'indicatif du téléphone : celui choisi dans le menu, sinon le pays de l'adresse,
-// sinon la France
-export function indicatifChoisi(reponses) {
-  if (indicatifDe(reponses.indicatif)) return reponses.indicatif;
-  return indicatifDe(reponses.pays) ? reponses.pays : 'France';
-}
-
 export const MESSAGE_OBLIGATOIRE = 'Ce champ est obligatoire.';
 export const MESSAGE_MAJEUR = 'Vous devez être majeur pour ouvrir un compte.';
 export const MESSAGE_DATE = 'Merci de saisir une date de naissance valide.';
@@ -27,6 +20,8 @@ export const MESSAGE_PAYS = 'Merci de choisir un pays dans la liste.';
 // Seuls les résidents en France peuvent investir : pays de l'adresse fixé, et résidence
 // fiscale « Autre pays » refusée (même règle côté backend, backend/src/kyc/champs.ts)
 export const PAYS_RESIDENCE = 'France';
+// Indicatif du téléphone : toujours celui de la France (+33), affiché en lecture seule
+export const PAYS_INDICATIF = PAYS_RESIDENCE;
 export const MESSAGE_RESIDENCE =
   'Seuls les résidents fiscaux en France peuvent investir sur notre plateforme.';
 // Les US Persons (FATCA) ne peuvent pas investir, même résidentes en France : réponse
@@ -100,7 +95,7 @@ export const ETAPES = [
         type: 'tel',
         autoComplete: 'tel-national',
         indicatif: 'indicatif',
-        aide: 'Choisissez l’indicatif du pays, puis tapez votre numéro (chiffres uniquement), par exemple : 06 12 34 56 78.',
+        aide: 'Tapez votre numéro (chiffres uniquement), par exemple : 06 12 34 56 78.',
       },
       {
         nom: 'email',
@@ -260,7 +255,7 @@ export function reponsesAEnregistrer(reponses) {
         aGarder[champ.nom] = reponses[champ.nom];
       }
       if (champ.indicatif && reponses[champ.nom] !== undefined) {
-        aGarder[champ.indicatif] = indicatifChoisi(reponses);
+        aGarder[champ.indicatif] = PAYS_INDICATIF;
       }
     }
   }
@@ -269,22 +264,21 @@ export function reponsesAEnregistrer(reponses) {
 
 // Libellé d'une réponse pour le récapitulatif : date en JJ/MM/AAAA, choix multiples
 // séparés par des virgules, téléphone précédé de son indicatif, « Non renseigné » si vide
-export function reponseLisible(champ, valeur, reponses = {}) {
+export function reponseLisible(champ, valeur) {
   if (Array.isArray(valeur)) return valeur.length ? valeur.join(', ') : 'Non renseigné';
   if (!valeur || valeur.toString().trim() === '') return 'Non renseigné';
   if (champ.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(valeur)) {
     const [annee, mois, jour] = valeur.split('-');
     return `${jour}/${mois}/${annee}`;
   }
-  if (champ.type === 'tel') return `+${indicatifDe(indicatifChoisi(reponses))} ${valeur}`;
+  if (champ.type === 'tel') return `+${indicatifDe(PAYS_INDICATIF)} ${valeur}`;
   return valeur;
 }
 
 // Contrôle de format d'un champ rempli, selon son type ; null si la valeur est correcte
 const FORMATS = {
   date: (valeur, _reponses, aujourdhui) => erreurDateNaissance(valeur, aujourdhui),
-  tel: (valeur, reponses) =>
-    telephoneValide(valeur, indicatifChoisi(reponses)) ? null : MESSAGE_TELEPHONE,
+  tel: (valeur) => (telephoneValide(valeur, PAYS_INDICATIF) ? null : MESSAGE_TELEPHONE),
   pays: (valeur) => (paysParNom(valeur) ? null : MESSAGE_PAYS),
   codePostal: (valeur, reponses) =>
     codePostalValide(valeur, reponses.pays) ? null : messageCodePostal(reponses.pays),
