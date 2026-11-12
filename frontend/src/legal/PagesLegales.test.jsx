@@ -59,9 +59,21 @@ describe('Pages légales (US-01b)', () => {
     render(<Confidentialite />);
     expect(titresSections()).toHaveLength(8);
     const [finalites, durees] = screen.getAllByRole('table');
-    expect(within(finalites).getAllByRole('row')).toHaveLength(11);
-    expect(within(durees).getAllByRole('row')).toHaveLength(8);
+    expect(within(finalites).getAllByRole('row')).toHaveLength(10);
+    expect(within(durees).getAllByRole('row')).toHaveLength(7);
     expect(within(durees).getByText('13 mois maximum')).toBeTruthy();
+  });
+
+  it('Politique de confidentialité : données du KYC, RIB transmis à la SCPI, pas de premium', () => {
+    render(<Confidentialite />);
+    const donnees = document.getElementById('donnees-collectees').textContent;
+    expect(donnees).toContain('qualité de « US Person » (FATCA)');
+    expect(donnees).toContain('politiquement exposée (PPE)');
+    expect(donnees).toContain('tentatives de connexion échouées');
+    expect(donnees).toContain('date et version des conditions générales acceptées');
+    expect(donnees).toContain('RIB (transmis à la SCPI pour le versement des revenus');
+    expect(document.getElementById('destinataires').textContent).toContain('y compris votre RIB');
+    expect(document.body.textContent).not.toMatch(/premium|carte bancaire|données de carte/i);
   });
 
   it('Contact : 2 sections, sans formulaire, contacts cliquables', () => {

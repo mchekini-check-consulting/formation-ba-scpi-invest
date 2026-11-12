@@ -34,8 +34,25 @@ const SECTIONS = [
             numéro de téléphone.
           </li>
           <li>
-            <strong>Identité et conformité (KYC) :</strong> date et lieu de naissance, nationalité,
-            adresse, pièce d’identité, justificatif de domicile, résidence fiscale.
+            <strong>Identité et conformité (KYC) :</strong> civilité, nom de naissance, date et lieu
+            de naissance, nationalité, adresse, situation familiale, profession, catégorie
+            socioprofessionnelle et secteur d’activité, origine des fonds, qualité de personne
+            politiquement exposée (PPE), résidence fiscale, qualité de « US Person » (FATCA).
+          </li>
+          <li>
+            <strong>Pièces justificatives :</strong> pièce d’identité (recto et verso), titre de
+            séjour le cas échéant, justificatif de domicile, RIB (transmis à la SCPI pour le
+            versement des revenus et les prélèvements programmés), justificatif d’origine des fonds
+            et toute pièce complémentaire que vous déposez.
+          </li>
+          <li>
+            <strong>Historique du compte :</strong> modifications de vos informations personnelles
+            (ancienne et nouvelle valeur, date, justificatif fourni), date et version des conditions
+            générales acceptées.
+          </li>
+          <li>
+            <strong>Sécurité du compte :</strong> adresse IP et navigateur de chaque connexion,
+            tentatives de connexion échouées, pour protéger votre compte.
           </li>
           <li>
             <strong>Profil investisseur :</strong> situation professionnelle, tranche de revenus et
@@ -54,11 +71,6 @@ const SECTIONS = [
             consultées, avec votre accord pour la mesure d’audience.
           </li>
         </ul>
-        <p>
-          <strong>Aucune donnée bancaire n’est conservée par la plateforme :</strong> aucun fonds ne
-          transite par la plateforme, vous réglez directement la SCPI. L’abonnement premium est payé
-          via notre prestataire de paiement, qui seul traite vos données de carte.
-        </p>
       </>
     ),
   },
@@ -73,12 +85,12 @@ const SECTIONS = [
           lignes={[
             [
               'Créer et gérer votre compte',
-              'Compte',
+              'Compte, historique du compte',
               'Exécution du contrat (conditions générales)',
             ],
             [
               'Vérifier votre identité et lutter contre le blanchiment',
-              'Identité et conformité',
+              'Identité et conformité, pièces justificatives',
               'Obligation légale',
             ],
             [
@@ -88,7 +100,7 @@ const SECTIONS = [
             ],
             [
               'Préparer et transmettre vos dossiers de souscription',
-              'Compte, identité, profil, souscriptions',
+              'Compte, identité, profil, souscriptions, RIB',
               'Exécution du contrat',
             ],
             [
@@ -101,12 +113,11 @@ const SECTIONS = [
               'Compte, portefeuille',
               'Exécution du contrat',
             ],
-            ['Gérer l’abonnement premium', 'Compte', 'Exécution du contrat'],
             ['Mesurer l’audience et améliorer la plateforme', 'Navigation', 'Consentement'],
             ['Vous envoyer notre lettre d’information', 'Compte (e-mail)', 'Consentement'],
             [
               'Sécuriser la plateforme et traiter vos réclamations',
-              'Compte, navigation',
+              'Compte, sécurité du compte, navigation',
               'Intérêt légitime',
             ],
           ]}
@@ -135,12 +146,12 @@ const SECTIONS = [
           </li>
           <li>
             <strong>La société de gestion de la SCPI</strong> que vous choisissez, uniquement pour
-            le dossier que vous lui envoyez.
+            le dossier que vous lui envoyez, y compris votre RIB pour le versement des revenus et
+            les prélèvements programmés.
           </li>
           <li>
             <strong>Nos prestataires techniques</strong>, qui agissent sur nos instructions :
-            hébergement (Nuagis Hébergement), vérification d’identité, paiement de l’abonnement
-            premium, envoi d’e-mails.
+            hébergement (Nuagis Hébergement), vérification d’identité, envoi d’e-mails.
           </li>
           <li>
             <strong>Les autorités</strong> (AMF, Tracfin, administration fiscale), lorsque la loi
@@ -175,7 +186,6 @@ const SECTIONS = [
               'Relevés PDF importés',
               'Supprimés dès leur lecture : seules les données extraites sont conservées',
             ],
-            ['Facturation de l’abonnement premium', '10 ans (obligation comptable)'],
             ['Cookies de mesure d’audience', '13 mois maximum'],
             ['Réclamations', '5 ans après leur clôture'],
           ]}
