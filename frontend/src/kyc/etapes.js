@@ -29,6 +29,10 @@ export const MESSAGE_PAYS = 'Merci de choisir un pays dans la liste.';
 export const PAYS_RESIDENCE = 'France';
 export const MESSAGE_RESIDENCE =
   'Seuls les résidents fiscaux en France peuvent investir sur notre plateforme.';
+// Les US Persons (FATCA) ne peuvent pas investir, même résidentes en France : réponse
+// « Oui » refusée (même règle côté backend, backend/src/kyc/champs.ts)
+export const MESSAGE_US_PERSON =
+  'Les « US Persons » au sens de la réglementation FATCA ne peuvent pas investir sur notre plateforme.';
 export const MESSAGE_TELEPHONE =
   'Numéro de téléphone invalide pour cet indicatif : vérifiez le nombre de chiffres.';
 
@@ -210,6 +214,7 @@ export const ETAPES = [
         type: 'choix',
         options: OUI_NON,
         aide: 'C’est le cas si vous avez la nationalité américaine, une carte verte, êtes né aux États-Unis ou y êtes résident fiscal.',
+        refus: { valeur: 'Oui', message: MESSAGE_US_PERSON },
       },
     ],
   },
@@ -285,7 +290,8 @@ const FORMATS = {
     codePostalValide(valeur, reponses.pays) ? null : messageCodePostal(reponses.pays),
 };
 
-// Réponse refusée par une règle métier (résidence fiscale hors de France), sinon format
+// Réponse refusée par une règle métier (résidence fiscale hors de France, US Person),
+// sinon format
 function erreurFormat(champ, valeur, reponses, aujourdhui) {
   if (champ.refus && valeur === champ.refus.valeur) return champ.refus.message;
   return FORMATS[champ.type]?.(valeur, reponses, aujourdhui) ?? null;

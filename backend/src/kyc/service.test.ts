@@ -5,6 +5,7 @@ import {
   KYC_DEJA_VALIDE,
   KYC_INCOMPLET,
   KYC_NON_RESIDENT,
+  KYC_US_PERSON,
   PIECES_MANQUANTES,
   creerKycService,
   type DepotKyc,
@@ -126,6 +127,17 @@ describe('KycService.valider', () => {
       expect(err.message).toBe(KYC_NON_RESIDENT);
       expect(depot.valider).not.toHaveBeenCalled();
     }
+  });
+
+  it('US Person, même résidente en France : 400, KYC non validé', async () => {
+    const { service, depot } = preparer({
+      ...EN_COURS,
+      reponses: { ...KYC_COMPLET, usPerson: 'Oui' },
+    });
+    const err = await erreurDe(service.valider('u1'));
+    expect(err.status).toBe(400);
+    expect(err.message).toBe(KYC_US_PERSON);
+    expect(depot.valider).not.toHaveBeenCalled();
   });
 
   it('pièce obligatoire manquante (US-04c) : 400, KYC non validé', async () => {

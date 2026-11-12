@@ -76,6 +76,12 @@ export function residentFrance(reponses: ReponsesKyc): boolean {
   return reponses.pays === PAYS_RESIDENCE && reponses.residenceFiscale === PAYS_RESIDENCE;
 }
 
+// Vrai si la personne s'est déclarée « US Person » (FATCA) : elle ne peut pas investir,
+// même résidente en France (même règle à l'écran, frontend/src/kyc/etapes.js)
+export function usPerson(reponses: ReponsesKyc): boolean {
+  return reponses.usPerson === 'Oui';
+}
+
 // Âge révolu à une date donnée, depuis une date « AAAA-MM-JJ »
 export function age(dateIso: string, le: Date): number {
   const [annee, mois, jour] = dateIso.split('-').map(Number);

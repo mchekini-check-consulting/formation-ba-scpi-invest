@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import FormulaireKyc, { MESSAGE_ENREGISTREMENT, MESSAGE_VALIDATION } from './FormulaireKyc.jsx';
-import { MESSAGE_RESIDENCE } from './etapes.js';
+import { MESSAGE_RESIDENCE, MESSAGE_US_PERSON } from './etapes.js';
 
 afterEach(cleanup);
 
@@ -191,6 +191,18 @@ describe('Formulaire KYC en 4 étapes (US-04a)', () => {
     cocher('Gains au jeu');
     cocher('Gains au jeu');
     expect(screen.getByLabelText('Gains au jeu').checked).toBe(false);
+  });
+
+  it('étape 4 : US Person refusée même résidente en France, on reste sur l’étape', async () => {
+    const { enregistrer } = afficher({ etapeInitiale: 4, reponsesInitiales: COMPLET });
+    choisir('usPerson', 'Oui');
+    await cliquer('Suivant');
+    expect(titreEtape()).toBe('Déclarations réglementaires');
+    expect(enregistrer).not.toHaveBeenCalled();
+    expect(document.getElementById('kyc-usPerson-erreur').textContent).toBe(MESSAGE_US_PERSON);
+    // « Non » : le message disparaît
+    choisir('usPerson', 'Non');
+    expect(document.getElementById('kyc-usPerson-erreur')).toBeNull();
   });
 });
 

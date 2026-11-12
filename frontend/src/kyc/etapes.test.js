@@ -6,6 +6,7 @@ import {
   MESSAGE_OBLIGATOIRE,
   MESSAGE_PAYS,
   MESSAGE_RESIDENCE,
+  MESSAGE_US_PERSON,
   PAYS_RESIDENCE,
   MESSAGE_TELEPHONE,
   age,
@@ -133,6 +134,14 @@ describe('Règles de saisie', () => {
     expect(erreur('')).toBe(MESSAGE_OBLIGATOIRE);
     const noms = champsVisibles(declarations, { residenceFiscale: 'Autre pays' }).map((c) => c.nom);
     expect(noms).not.toContain('paysResidenceFiscale');
+  });
+
+  it('US Person refusée, même résidente en France', () => {
+    const erreur = (usPerson) =>
+      erreursEtape(declarations, { residenceFiscale: 'France', usPerson }).usPerson;
+    expect(erreur('Non')).toBeUndefined();
+    expect(erreur('Oui')).toBe(MESSAGE_US_PERSON);
+    expect(erreur('')).toBe(MESSAGE_OBLIGATOIRE);
   });
 });
 
