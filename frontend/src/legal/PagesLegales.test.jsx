@@ -46,11 +46,12 @@ describe('Pages légales (US-01b)', () => {
     expect(document.body.textContent).toContain('5 € TTC par mois');
   });
 
-  it('CGU : comptes ouverts aux non-résidents, date de mise à jour du 4 novembre 2026', () => {
+  it('CGU : résidents fiscaux en France seulement, US Persons exclues, mise à jour du 4 novembre 2026', () => {
     render(<Cgu />);
     const article4 = document.getElementById('article-4').textContent;
-    expect(article4).toContain('résidentes fiscales en France ou à l’étranger');
-    expect(article4).toContain('contribuables américains (US Persons)');
+    expect(article4).toContain('personnes physiques majeures, résidentes fiscales en France.');
+    expect(article4).toContain('« US Person » au sens de la réglementation FATCA ne');
+    expect(article4).not.toMatch(/étranger|non-résident|Certaines SCPI/);
     expect(document.body.textContent).toContain('Dernière mise à jour : 4 novembre 2026');
   });
 
