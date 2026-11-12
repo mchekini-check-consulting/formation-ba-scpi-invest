@@ -32,7 +32,6 @@ const IDENTITE = () =>
 async function afficher({
   avancement = { etapeCourante: 6, reponses: REPONSES, valide: true },
   lire = vi.fn().mockResolvedValue(avancement),
-  calculer = vi.fn().mockResolvedValue({ profil: 'prudent', avertissements: ['horizon'] }),
   valider = vi.fn().mockResolvedValue({ profil: 'prudent', avertissements: ['horizon'] }),
   allerA = vi.fn(),
   seDeconnecter = vi.fn().mockResolvedValue(undefined),
@@ -41,7 +40,6 @@ async function afficher({
     render(
       <MiseAJourProfil
         lire={lire}
-        calculer={calculer}
         valider={valider}
         allerA={allerA}
         seDeconnecter={seDeconnecter}
@@ -49,7 +47,7 @@ async function afficher({
       />,
     );
   });
-  return { lire, calculer, valider, allerA, seDeconnecter };
+  return { lire, valider, allerA, seDeconnecter };
 }
 
 const texte = () => document.body.textContent;
@@ -89,31 +87,35 @@ describe('Mise à jour du profil investisseur (US-05d)', () => {
   });
 
   it('navigation : Suivant / Précédent sans rien enregistrer, réponses gardées', async () => {
-    const { calculer, valider } = await afficher();
+    const { valider } = await afficher();
     fireEvent.click(screen.getByRole('radio', { name: 'Plus de 200 k€' }));
     await cliquer('Suivant');
     expect(texte()).toContain('Étape 2/5');
     await cliquer('Précédent');
     expect(screen.getByRole('radio', { name: 'Plus de 200 k€' }).checked).toBe(true);
-    expect(calculer).not.toHaveBeenCalled();
     expect(valider).not.toHaveBeenCalled();
   });
 
-  it('scénario 2 : nouveau profil calculé puis validé, retour à la page Profil', async () => {
-    const { calculer, valider, allerA } = await afficher();
+  it('scénario 2 : récapitulatif, certification, validation, puis nouveau profil et page Profil', async () => {
+    const { valider, allerA } = await afficher();
     fireEvent.click(screen.getByRole('radio', { name: 'Plus de 200 k€' }));
     await allerALaFin();
-    const envoyees = { ...REPONSES, 1: { ...REPONSES[1], revenus: '>200k' } };
-    expect(calculer).toHaveBeenCalledWith(envoyees);
-    expect(texte()).toContain('Votre nouveau profil investisseur');
-    expect(texte()).toContain('Prudent');
-    expect(texte()).toContain('La durée de placement recommandée');
+    // Récapitulatif d'abord, sans profil
+    expect(screen.getByRole('region', { name: 'Situation financière' }).textContent).toContain(
+      'Plus de 200 k€',
+    );
+    expect(texte()).not.toContain('Votre nouveau profil investisseur');
 
     const bouton = screen.getByRole('button', { name: 'Valider' });
     expect(bouton.disabled).toBe(true);
     fireEvent.click(screen.getByRole('checkbox', { name: /Je certifie/ }));
     await cliquer('Valider');
+    const envoyees = { ...REPONSES, 1: { ...REPONSES[1], revenus: '>200k' } };
     expect(valider).toHaveBeenCalledWith(envoyees);
+    expect(texte()).toContain('Votre nouveau profil investisseur');
+    expect(texte()).toContain('Prudent');
+    expect(texte()).toContain('La durée de placement recommandée');
+    await cliquer('Continuer maintenant');
     expect(allerA).toHaveBeenCalledWith('/profil');
   });
 
@@ -125,7 +127,7 @@ describe('Mise à jour du profil investisseur (US-05d)', () => {
     expect(screen.getByRole('radio', { name: '30 à 60 k€' }).checked).toBe(true);
   });
 
-  it('échec de la validation : message, on reste sur le nouveau profil', async () => {
+  it('échec de la validation : message, on reste sur le récapitulatif', async () => {
     const valider = vi.fn().mockRejectedValue(new ErreurApi(503, 'Indisponible'));
     const { allerA } = await afficher({ valider });
     await allerALaFin();
@@ -136,11 +138,10 @@ describe('Mise à jour du profil investisseur (US-05d)', () => {
   });
 
   it('scénario 3 : abandon -> page Profil, rien n’est envoyé', async () => {
-    const { calculer, valider, allerA } = await afficher();
+    const { valider, allerA } = await afficher();
     await cliquer('Suivant');
     await cliquer('Abandonner la mise à jour');
     expect(allerA).toHaveBeenCalledWith('/profil');
-    expect(calculer).not.toHaveBeenCalled();
     expect(valider).not.toHaveBeenCalled();
   });
 

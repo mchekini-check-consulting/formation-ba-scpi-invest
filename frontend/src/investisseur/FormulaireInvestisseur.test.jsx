@@ -138,6 +138,14 @@ describe('FormulaireInvestisseur (US-05a)', () => {
     expect(epargne.value).toBe('15000');
   });
 
+  it('montant : 9 chiffres au plus (frappe ou collage)', async () => {
+    await afficher();
+    const epargne = screen.getByLabelText('Épargne disponible à investir');
+    expect(epargne.maxLength).toBe(9);
+    fireEvent.change(epargne, { target: { value: '12 345 678 901' } });
+    expect(epargne.value).toBe('123456789');
+  });
+
   it('scénario 5 : « Aucun » décoche et désactive les autres placements', async () => {
     await afficher({ avancement: { etapeCourante: 2, reponses: {} } });
     cocher('Livrets');
@@ -165,7 +173,7 @@ describe('FormulaireInvestisseur (US-05a)', () => {
 
     await cliquer('Suivant');
     expect(enregistrer).toHaveBeenCalledWith(5, { esg: 'non' });
-    expect(texte()).toContain('Votre profil investisseur');
+    expect(screen.getByRole('form', { name: 'Récapitulatif' })).toBeDefined();
   });
 
   it('scénario 7 : reprise à la première étape non complétée, réponses conservées', async () => {
@@ -228,17 +236,16 @@ describe('FormulaireInvestisseur (US-05a)', () => {
     expect(screen.getByRole('button', { name: 'Suivant' }).disabled).toBe(false);
   });
 
-  it('US-05b scénario 1 : les 5 étapes complétées -> profil affiché, sans score', async () => {
-    const { calculerProfil } = await afficher({
-      avancement: { etapeCourante: 6, reponses: { 1: ETAPE_1 } },
-    });
-    expect(calculerProfil).toHaveBeenCalled();
-    expect(texte()).toContain('Équilibré');
-    expect(texte()).toContain('compromis entre sécurité et rendement');
+  it('US-05b : les 5 étapes complétées -> récapitulatif des réponses, sans profil ni score', async () => {
+    await afficher({ avancement: { etapeCourante: 6, reponses: { 1: ETAPE_1 } } });
+    const situation = screen.getByRole('region', { name: 'Situation financière' });
+    expect(situation.textContent).toContain('30 à 60 k€');
+    expect(situation.textContent).toMatch(/15\s000\s€/);
+    expect(texte()).not.toContain('Équilibré');
     expect(texte()).not.toMatch(/score|\/8/i);
   });
 
-  it('US-05b scénario 7 : « Modifier mes réponses » -> étape 1, réponses conservées, profil recalculé', async () => {
+  it('US-05b scénario 7 : « Modifier mes réponses » -> étape 1, réponses conservées, récapitulatif à la fin', async () => {
     const toutes = {
       1: ETAPE_1,
       2: {
@@ -253,10 +260,9 @@ describe('FormulaireInvestisseur (US-05a)', () => {
       4: { horizon: '8-15', reactionBaisse: 'attendre', perteAcceptee: '<10' },
       5: { esg: 'non' },
     };
-    const { calculerProfil, enregistrer } = await afficher({
+    const { enregistrer } = await afficher({
       avancement: { etapeCourante: 6, reponses: toutes },
     });
-    expect(calculerProfil).toHaveBeenCalledTimes(1);
 
     await cliquer('Modifier mes réponses');
     expect(texte()).toContain('Étape 1/5');
@@ -268,17 +274,18 @@ describe('FormulaireInvestisseur (US-05a)', () => {
     }
     expect(enregistrer).toHaveBeenCalledTimes(5);
     expect(enregistrer).toHaveBeenCalledWith(1, ETAPE_1);
-    expect(calculerProfil).toHaveBeenCalledTimes(2);
-    expect(texte()).toContain('Votre profil investisseur');
+    expect(screen.getByRole('form', { name: 'Récapitulatif' })).toBeDefined();
   });
 
-  it('US-05b scénario 9 : validation -> redirection vers le Catalogue', async () => {
+  it('US-05b scénario 9 : validation -> profil affiché, puis Catalogue', async () => {
     const { valider, allerA } = await afficher({ avancement: { etapeCourante: 6, reponses: {} } });
     fireEvent.click(
       screen.getByRole('checkbox', { name: 'Je certifie l’exactitude de mes réponses' }),
     );
     await cliquer('Valider');
     expect(valider).toHaveBeenCalled();
+    expect(texte()).toContain('Équilibré');
+    await cliquer('Continuer maintenant');
     expect(allerA).toHaveBeenCalledWith('/catalogue');
   });
 

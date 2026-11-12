@@ -239,3 +239,30 @@ export function pourSaisie(reponses) {
   }
   return resultat;
 }
+
+const MONTANT = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
+
+// Réponse affichée telle que l'investisseur l'a choisie (libellés des options, montant en
+// euros) ; « Non renseigné » si la question facultative est restée sans réponse
+function reponseLisible(question, valeur) {
+  if (vide(valeur)) return 'Non renseigné';
+  if (question.type === 'montant') return `${MONTANT.format(Number(valeur))} €`;
+  const libelle = (v) => question.options.find((o) => o.valeur === v)?.libelle ?? v;
+  return Array.isArray(valeur) ? valeur.map(libelle).join(', ') : libelle(valeur);
+}
+
+// Récapitulatif avant validation : les réponses des 5 étapes, par étape, avec les
+// libellés des questions (questions visibles seulement)
+export function recapitulatif(reponses) {
+  return ETAPES.map((etape, i) => {
+    const valeurs = reponses?.[i + 1] ?? {};
+    return {
+      titre: etape.titre,
+      lignes: questionsVisibles(i + 1, valeurs).map((question) => ({
+        cle: question.cle,
+        libelle: question.libelle,
+        valeur: reponseLisible(question, valeurs[question.cle]),
+      })),
+    };
+  });
+}

@@ -48,7 +48,7 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
   align-self: flex-start;
   background: #fff;
   border-radius: var(--r-l);

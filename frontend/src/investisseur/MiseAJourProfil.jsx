@@ -1,14 +1,14 @@
 // Mise à jour du profil investisseur (US-05d) : ouverte par « Mettre à jour mon profil »
 // (page Profil) ou par le bandeau de rappel. Le formulaire en 5 étapes est pré-rempli avec
-// les réponses actuelles et suit les mêmes règles de saisie (US-05a) ; à la fin, le
-// nouveau profil est calculé, certifié et validé (US-05b).
+// les réponses actuelles et suit les mêmes règles de saisie (US-05a) ; à la fin,
+// récapitulatif, certification et validation, puis nouveau profil (FinQuestionnaire.jsx).
 // Non bloquant : la sidebar reste là. Les réponses en cours restent dans l'écran, rien
 // n'est enregistré avant la validation : abandonner (ou changer d'écran) laisse l'ancien
 // profil actif et inchangé.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import PageApplication from '../navigation/PageApplication.jsx';
-import { apercuMiseAJour, lireQuestionnaire, validerMiseAJour } from './api.js';
+import { lireQuestionnaire, validerMiseAJour } from './api.js';
 import { Progression, Question } from './FormulaireInvestisseur.jsx';
 import {
   ETAPES,
@@ -18,17 +18,16 @@ import {
   questionsVisibles,
   reponsesAEnvoyer,
 } from './questionnaire.js';
-import ResultatProfil from './ResultatProfil.jsx';
+import FinQuestionnaire from './FinQuestionnaire.jsx';
 import './investisseur.css';
 
 function naviguer(url) {
   window.location.assign(url);
 }
 
-// lire, calculer, valider, seDeconnecter, allerA, chargerIdentite : remplacés dans les tests
+// lire, valider, seDeconnecter, allerA, chargerIdentite : remplacés dans les tests
 export default function MiseAJourProfil({
   lire = lireQuestionnaire,
-  calculer = apercuMiseAJour,
   valider = validerMiseAJour,
   seDeconnecter = deconnecter,
   allerA = naviguer,
@@ -77,7 +76,6 @@ export default function MiseAJourProfil({
     }
     return resultat;
   }, [reponses]);
-  const lireNouveauProfil = useCallback(() => calculer(aEnvoyer), [calculer, aEnvoyer]);
   const validerNouveauProfil = useCallback(() => valider(aEnvoyer), [valider, aEnvoyer]);
 
   const reponsesEtape = reponses[etape] ?? {};
@@ -115,12 +113,14 @@ export default function MiseAJourProfil({
     );
   } else if (etape > NOMBRE_ETAPES) {
     contenu = (
-      <ResultatProfil
+      <FinQuestionnaire
         intro="Votre nouveau profil investisseur"
-        lireProfil={lireNouveauProfil}
+        reponses={reponses}
         valider={validerNouveauProfil}
         modifier={() => setEtape(1)}
-        apresValidation={() => allerA('/profil')}
+        destination="/profil"
+        libelleDestination="votre page Mon profil"
+        allerA={allerA}
       />
     );
   } else {
