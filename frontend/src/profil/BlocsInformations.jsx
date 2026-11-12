@@ -254,9 +254,7 @@ export function BlocModifiable({
       cle: c.nom,
       libelle: c.libelle,
       valeur:
-        c.nom === 'email'
-          ? initiales.email || 'Non renseigné'
-          : reponseLisible(c, reponses[c.nom], reponses),
+        c.nom === 'email' ? initiales.email || 'Non renseigné' : reponseLisible(c, reponses[c.nom]),
     }));
     return (
       <BlocLecture

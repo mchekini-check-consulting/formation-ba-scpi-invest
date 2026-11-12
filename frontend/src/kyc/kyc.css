@@ -463,17 +463,22 @@
   color: var(--texte-secondaire);
 }
 
-/* Téléphone : menu des indicatifs + numéro */
+/* Téléphone : indicatif +33 (lecture seule) collé au numéro, arrondis aux deux bouts seulement */
 .kyc-telephone {
   display: grid;
-  grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
 }
 
-@media (max-width: 640px) {
-  .kyc-telephone {
-    grid-template-columns: 1fr;
-  }
+.kyc .champ .kyc-telephone input.kyc-telephone__indicatif {
+  text-align: center;
+  cursor: default;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.kyc .champ .kyc-telephone input[type='tel'] {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 
 /* Date de naissance : saisie JJ/MM/AAAA + calendrier par années (ChampDate.jsx) */
