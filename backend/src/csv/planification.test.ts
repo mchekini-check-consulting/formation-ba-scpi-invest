@@ -118,7 +118,7 @@ describe('planifierImport', () => {
         class: 'PlanificationImport',
         method: 'declencher',
         issue: 'lance',
-        msg: 'import planifié du catalogue : lance',
+        msg: 'Import automatique du catalogue lancé',
       }),
     ]);
   });
@@ -135,7 +135,7 @@ describe('planifierImport', () => {
         layer: 'service',
         error: 'Error',
         errorMessage: 'base injoignable',
-        msg: 'import planifié du catalogue en échec',
+        msg: 'Import automatique du catalogue en échec',
       }),
     ]);
   });
@@ -201,7 +201,7 @@ describe('demarrerImportNocturne', () => {
       expect(lignes).toContainEqual(
         expect.objectContaining({
           issue: 'deja_fait',
-          msg: 'import planifié du catalogue : deja_fait',
+          msg: 'Import automatique du catalogue ignoré : déjà fait il y a moins d’une heure',
         }),
       ),
     );

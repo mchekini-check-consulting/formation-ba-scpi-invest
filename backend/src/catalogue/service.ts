@@ -1,5 +1,7 @@
 import { HttpError } from '../logging/http-error.js';
+import { detaillerAction } from '../logging/logger.js';
 import { loggable } from '../logging/service.js';
+import { borner, detailsCatalogue } from './details-log.js';
 import {
   type FiltresCatalogue,
   type Plage,
@@ -103,12 +105,14 @@ export function creerCatalogueService(depot: DepotCatalogue, maintenant = () => 
     }
     const filtres = lireFiltres(requete);
     const tri = lireTri(requete.tri);
+    detaillerAction({ page, ...detailsCatalogue(filtres, tri) });
     const anneeTaux = anneeN1();
     const [total, scpis, misAJourLe] = await Promise.all([
       depot.compter(anneeTaux, filtres),
       depot.lister(anneeTaux, TAILLE_PAGE, (page - 1) * TAILLE_PAGE, filtres, tri),
       depot.dateDernierImport(),
     ]);
+    detaillerAction({ resultats: total });
     return {
       scpis,
       total,
@@ -142,14 +146,15 @@ export function creerCatalogueService(depot: DepotCatalogue, maintenant = () => 
     const filtres = lireFiltres(requete);
     const tri = lireTri(requete.tri);
     const texte = q.trim();
+    detaillerAction({ recherche: borner(texte), ...detailsCatalogue(filtres, tri) });
     const anneeTaux = anneeN1();
     if (texte === '') {
+      detaillerAction({ resultats: 0 });
       return { scpis: [], anneeTaux };
     }
-    return {
-      scpis: await depot.rechercher(anneeTaux, texte, LIMITE_RECHERCHE, filtres, tri),
-      anneeTaux,
-    };
+    const scpis = await depot.rechercher(anneeTaux, texte, LIMITE_RECHERCHE, filtres, tri);
+    detaillerAction({ resultats: scpis.length });
+    return { scpis, anneeTaux };
   }
 
   return loggable('CatalogueService', { lister, filtres, rechercher });

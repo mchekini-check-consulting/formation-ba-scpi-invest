@@ -4,8 +4,8 @@ import { captureLogs } from './capture.js';
 import { HttpError } from './http-error.js';
 import { loggable } from './service.js';
 
-function serviceTest() {
-  const { log, lignes } = captureLogs();
+function serviceTest(niveau = 'debug') {
+  const { log, lignes } = captureLogs(niveau);
   const service = loggable(
     'ClientService',
     {
@@ -32,12 +32,12 @@ function serviceTest() {
 }
 
 describe('loggable (layer service)', () => {
-  it('fonction synchrone : résultat inchangé, log INFO sans arguments ni retour', () => {
+  it('fonction synchrone : résultat inchangé, log DEBUG sans arguments ni retour', () => {
     const { service, lignes } = serviceTest();
     expect(service.nommer(7)).toBe('client-7');
     expect(lignes).toHaveLength(1);
     expect(lignes[0]).toMatchObject({
-      level: 'INFO',
+      level: 'DEBUG',
       layer: 'service',
       class: 'ClientService',
       method: 'nommer',
@@ -50,7 +50,13 @@ describe('loggable (layer service)', () => {
   it('fonction asynchrone : log à la fin', async () => {
     const { service, lignes } = serviceTest();
     await expect(service.charger(3)).resolves.toEqual({ id: 3 });
-    expect(lignes[0]).toMatchObject({ level: 'INFO', method: 'charger' });
+    expect(lignes[0]).toMatchObject({ level: 'DEBUG', method: 'charger' });
+  });
+
+  it('succès absent au niveau info (la ligne de la requête suffit)', async () => {
+    const { service, lignes } = serviceTest('info');
+    await service.charger(3);
+    expect(lignes).toEqual([]);
   });
 
   it('HttpError 4xx : WARN (règle métier), erreur relancée', async () => {
@@ -58,7 +64,7 @@ describe('loggable (layer service)', () => {
     await expect(service.trouver()).rejects.toThrow('client introuvable');
     expect(lignes[0]).toMatchObject({
       level: 'WARN',
-      msg: 'ClientService.trouver en échec',
+      msg: 'Règle métier non respectée (ClientService.trouver) : client introuvable',
       error: 'HttpError',
       errorMessage: 'client introuvable',
     });
@@ -69,6 +75,7 @@ describe('loggable (layer service)', () => {
     expect(() => service.verifier()).toThrow('base indisponible');
     expect(lignes[0]).toMatchObject({
       level: 'ERROR',
+      msg: 'Erreur technique (ClientService.verifier) : Error',
       error: 'Error',
       errorMessage: 'base indisponible',
     });
