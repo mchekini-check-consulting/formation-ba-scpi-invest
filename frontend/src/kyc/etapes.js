@@ -2,8 +2,9 @@
 // saisie, puis l'étape des pièces justificatives (US-04c, SCPI-44, règles dans pieces.js).
 // Tous les champs sont obligatoires, sauf `facultatif: true`. Un champ avec `visible` n'est
 // affiché (et contrôlé) que si la condition est vraie. Type `pays` : liste de pays avec
-// recherche (ChoixPays.jsx, pays.js). Coordonnées : pays d'abord, adresse avec suggestions
-// en France (ChampAdresse.jsx), code postal et téléphone filtrés à la frappe (coordonnees.js).
+// recherche (ChoixPays.jsx, pays.js). Coordonnées : pays fixé à France (seuls les résidents
+// en France peuvent investir), adresse avec suggestions (ChampAdresse.jsx), code postal et
+// téléphone filtrés à la frappe (coordonnees.js).
 // L'enregistrement, la reprise et la validation relèvent de l'US-04b (SCPI-37).
 
 import { codePostalValide, messageCodePostal, telephoneValide } from './coordonnees.js';
@@ -23,6 +24,15 @@ export const MESSAGE_OBLIGATOIRE = 'Ce champ est obligatoire.';
 export const MESSAGE_MAJEUR = 'Vous devez être majeur pour ouvrir un compte.';
 export const MESSAGE_DATE = 'Merci de saisir une date de naissance valide.';
 export const MESSAGE_PAYS = 'Merci de choisir un pays dans la liste.';
+// Seuls les résidents en France peuvent investir : pays de l'adresse fixé, et résidence
+// fiscale « Autre pays » refusée (même règle côté backend, backend/src/kyc/champs.ts)
+export const PAYS_RESIDENCE = 'France';
+export const MESSAGE_RESIDENCE =
+  'Seuls les résidents fiscaux en France peuvent investir sur notre plateforme.';
+// Les US Persons (FATCA) ne peuvent pas investir, même résidentes en France : réponse
+// « Oui » refusée (même règle côté backend, backend/src/kyc/champs.ts)
+export const MESSAGE_US_PERSON =
+  'Les « US Persons » au sens de la réglementation FATCA ne peuvent pas investir sur notre plateforme.';
 export const MESSAGE_TELEPHONE =
   'Numéro de téléphone invalide pour cet indicatif : vérifiez le nombre de chiffres.';
 
@@ -62,13 +72,14 @@ export const ETAPES = [
     id: 'coordonnees',
     titre: 'Coordonnées',
     champs: [
-      { nom: 'pays', libelle: 'Pays', type: 'pays', aide: 'Tapez le nom du pays pour le trouver.' },
+      // Toujours France (PAYS_RESIDENCE), affiché sans pouvoir être modifié
+      { nom: 'pays', libelle: 'Pays', type: 'texte', lectureSeule: true },
       {
         nom: 'adresse',
         libelle: 'Adresse postale',
         type: 'adresse',
         autoComplete: 'street-address',
-        aide: 'Numéro et nom de la voie. En France, choisissez votre adresse dans les suggestions : code postal et ville se remplissent seuls.',
+        aide: 'Numéro et nom de la voie. Choisissez votre adresse dans les suggestions : code postal et ville se remplissent seuls.',
       },
       {
         nom: 'codePostal',
@@ -76,7 +87,13 @@ export const ETAPES = [
         type: 'codePostal',
         autoComplete: 'postal-code',
       },
-      { nom: 'ville', libelle: 'Ville', type: 'texte', autoComplete: 'address-level2' },
+      {
+        nom: 'ville',
+        libelle: 'Ville',
+        type: 'ville',
+        autoComplete: 'address-level2',
+        aide: 'La ville est proposée d’après le code postal.',
+      },
       {
         nom: 'telephone',
         libelle: 'Téléphone',
@@ -189,12 +206,7 @@ export const ETAPES = [
         libelle: 'Résidence fiscale',
         type: 'choix',
         options: ['France', 'Autre pays'],
-      },
-      {
-        nom: 'paysResidenceFiscale',
-        libelle: 'Pays de résidence fiscale',
-        type: 'pays',
-        visible: (reponses) => reponses.residenceFiscale === 'Autre pays',
+        refus: { valeur: 'Autre pays', message: MESSAGE_RESIDENCE },
       },
       {
         nom: 'usPerson',
@@ -202,6 +214,7 @@ export const ETAPES = [
         type: 'choix',
         options: OUI_NON,
         aide: 'C’est le cas si vous avez la nationalité américaine, une carte verte, êtes né aux États-Unis ou y êtes résident fiscal.',
+        refus: { valeur: 'Oui', message: MESSAGE_US_PERSON },
       },
     ],
   },
@@ -237,8 +250,8 @@ function erreurDateNaissance(valeur, aujourdhui) {
   return null;
 }
 
-// Réponses à enregistrer (US-04b) : seulement les champs affichés (un pays de résidence
-// fiscale saisi puis masqué n'est pas gardé), sans l'email, qui est celui du compte
+// Réponses à enregistrer (US-04b) : seulement les champs affichés (un champ saisi puis
+// masqué n'est pas gardé), sans l'email, qui est celui du compte
 export function reponsesAEnregistrer(reponses) {
   const aGarder = {};
   for (const etape of ETAPES) {
@@ -277,7 +290,10 @@ const FORMATS = {
     codePostalValide(valeur, reponses.pays) ? null : messageCodePostal(reponses.pays),
 };
 
+// Réponse refusée par une règle métier (résidence fiscale hors de France, US Person),
+// sinon format
 function erreurFormat(champ, valeur, reponses, aujourdhui) {
+  if (champ.refus && valeur === champ.refus.valeur) return champ.refus.message;
   return FORMATS[champ.type]?.(valeur, reponses, aujourdhui) ?? null;
 }
 

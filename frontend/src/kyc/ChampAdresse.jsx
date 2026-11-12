@@ -4,6 +4,8 @@
 // Modèle « combobox » des lecteurs d'écran : flèches haut et bas pour parcourir, Entrée
 // pour choisir, Échap pour fermer. Hors France, ou si le service ne répond pas : saisie libre.
 import { useEffect, useId, useState } from 'react';
+import { attributsCombobox } from './combobox.js';
+import ListeSuggestions from './ListeSuggestions.jsx';
 
 const LONGUEUR_MIN = 3;
 
@@ -47,7 +49,6 @@ export default function ChampAdresse({
   const [position, setPosition] = useState(0);
   const [ferme, setFerme] = useState(false);
   const ouvert = !ferme && suggestions.length > 0;
-  const idOption = (i) => `${idListe}-${i}`;
 
   function saisir(event) {
     changer(event.target.value);
@@ -83,14 +84,7 @@ export default function ChampAdresse({
     <div className="choix-pays">
       <input
         id={id}
-        type="text"
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded={ouvert}
-        aria-controls={idListe}
-        aria-activedescendant={ouvert ? idOption(position) : undefined}
-        aria-invalid={invalide ? true : undefined}
-        aria-describedby={decritPar}
+        {...attributsCombobox({ idListe, ouvert, position, invalide, decritPar })}
         autoComplete={actif ? 'off' : autoComplete}
         value={valeur ?? ''}
         onChange={saisir}
@@ -98,23 +92,16 @@ export default function ChampAdresse({
         onBlur={() => setFerme(true)}
       />
       {ouvert && (
-        <ul id={idListe} role="listbox" className="choix-pays__liste" aria-label="Adresses">
-          {suggestions.map((suggestion, i) => (
-            <li
-              key={suggestion.libelle}
-              id={idOption(i)}
-              role="option"
-              aria-selected={i === position}
-              data-actif={i === position}
-              className="choix-pays__option"
-              onMouseDown={(e) => e.preventDefault()} // garde le focus dans le champ
-              onClick={() => retenir(suggestion)}
-              onMouseEnter={() => setPosition(i)}
-            >
-              {suggestion.libelle}
-            </li>
-          ))}
-        </ul>
+        <ListeSuggestions
+          idListe={idListe}
+          libelle="Adresses"
+          elements={suggestions}
+          position={position}
+          cle={(s) => s.libelle}
+          texte={(s) => s.libelle}
+          choisir={retenir}
+          survoler={setPosition}
+        />
       )}
     </div>
   );

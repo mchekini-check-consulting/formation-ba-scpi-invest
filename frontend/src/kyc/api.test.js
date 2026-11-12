@@ -6,6 +6,7 @@ import {
   lireKyc,
   listerPieces,
   suggererAdresses,
+  suggererCommunes,
   supprimerPiece,
   validerKyc,
 } from './api.js';
@@ -33,6 +34,12 @@ describe('appels du KYC (US-04b)', () => {
     fetchMock.mockResolvedValue(reponse(200, { adresses: [lilas] }));
     expect(await suggererAdresses('12 rue des lilas')).toEqual([lilas]);
     expect(fetchMock.mock.calls[0][0]).toBe('/api/adresses?recherche=12+rue+des+lilas');
+  });
+
+  it('suggererCommunes : GET /adresses/communes avec le code postal', async () => {
+    fetchMock.mockResolvedValue(reponse(200, { communes: ['Lyon'] }));
+    expect(await suggererCommunes('69003')).toEqual(['Lyon']);
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/adresses/communes?codePostal=69003');
   });
 
   it('lireKyc : GET /connaissance-client avec la session', async () => {

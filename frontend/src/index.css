@@ -316,6 +316,18 @@ a {
   margin-top: 10px;
 }
 
+/* Liens légaux des pieds de page sans logo (legal/LiensLegaux.jsx) */
+.pied__nav {
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+  margin-bottom: 14px;
+}
+
+.pied__nav .pied__liens {
+  gap: 10px 24px;
+  font-size: 13.5px;
+}
+
 /* --- Transition vers la connexion / l'inscription ------------------------
    <ViewTransition> de React (MiseEnPage.jsx, PageCompte.jsx) : le texte du bouton
    cliqué glisse jusqu'au titre du formulaire (classe « titre-compte »), le logo

@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import FormulaireKyc, { MESSAGE_ENREGISTREMENT, MESSAGE_VALIDATION } from './FormulaireKyc.jsx';
+import { MESSAGE_RESIDENCE, MESSAGE_US_PERSON } from './etapes.js';
 
 afterEach(cleanup);
 
@@ -172,19 +173,36 @@ describe('Formulaire KYC en 4 étapes (US-04a)', () => {
     expect(screen.getByLabelText('Ville').value).toBe('Lyon');
   });
 
-  it('étape 4 : pays de résidence fiscale demandé seulement hors de France', async () => {
-    afficher({ etapeInitiale: 4, reponsesInitiales: COMPLET });
+  it('étape 4 : résidence fiscale hors de France refusée, on reste sur l’étape', async () => {
+    const { enregistrer } = afficher({ etapeInitiale: 4, reponsesInitiales: COMPLET });
     expect(titreEtape()).toBe('Déclarations réglementaires');
-    expect(screen.queryByLabelText('Pays de résidence fiscale')).toBeNull();
     cocher('Autre pays');
+    expect(screen.queryByLabelText('Pays de résidence fiscale')).toBeNull();
     await cliquer('Suivant');
-    expect(document.getElementById('kyc-paysResidenceFiscale-erreur').textContent).toBe(
-      'Ce champ est obligatoire.',
+    expect(titreEtape()).toBe('Déclarations réglementaires');
+    expect(enregistrer).not.toHaveBeenCalled();
+    expect(document.getElementById('kyc-residenceFiscale-erreur').textContent).toBe(
+      MESSAGE_RESIDENCE,
     );
+    // résidence fiscale en France : le message disparaît
+    cocher('France');
+    expect(document.getElementById('kyc-residenceFiscale-erreur')).toBeNull();
     // choix multiple : cocher puis décocher
     cocher('Gains au jeu');
     cocher('Gains au jeu');
     expect(screen.getByLabelText('Gains au jeu').checked).toBe(false);
+  });
+
+  it('étape 4 : US Person refusée même résidente en France, on reste sur l’étape', async () => {
+    const { enregistrer } = afficher({ etapeInitiale: 4, reponsesInitiales: COMPLET });
+    choisir('usPerson', 'Oui');
+    await cliquer('Suivant');
+    expect(titreEtape()).toBe('Déclarations réglementaires');
+    expect(enregistrer).not.toHaveBeenCalled();
+    expect(document.getElementById('kyc-usPerson-erreur').textContent).toBe(MESSAGE_US_PERSON);
+    // « Non » : le message disparaît
+    choisir('usPerson', 'Non');
+    expect(document.getElementById('kyc-usPerson-erreur')).toBeNull();
   });
 });
 
@@ -193,7 +211,7 @@ describe('Enregistrement à chaque étape (US-04b)', () => {
     const { enregistrer } = afficher();
     remplirIdentite();
     await cliquer('Suivant');
-    expect(enregistrer).toHaveBeenCalledWith(2, IDENTITE);
+    expect(enregistrer).toHaveBeenCalledWith(2, { ...IDENTITE, pays: 'France' });
   });
 
   it('scénario 1 : reprise à l’étape atteinte avec les réponses déjà saisies', () => {
@@ -215,7 +233,7 @@ describe('Enregistrement à chaque étape (US-04b)', () => {
     expect(screen.getByRole('button', { name: 'Suivant' }).disabled).toBe(false);
   });
 
-  it('pays de résidence fiscale saisi puis masqué : non enregistré', async () => {
+  it('ancien pays de résidence fiscale : jamais enregistré', async () => {
     const { enregistrer } = afficher({
       etapeInitiale: 4,
       reponsesInitiales: {
@@ -304,10 +322,6 @@ describe('Récapitulatif et validation (US-04b, scénario 3)', () => {
 });
 
 describe('Coordonnées : pays, adresse avec suggestions, code postal et téléphone', () => {
-  const choisirPays = (nom) => {
-    saisir('Pays', nom);
-    fireEvent.blur(screen.getByLabelText('Pays'));
-  };
   const LILAS = {
     libelle: '12 Rue des Lilas 69008 Lyon',
     adresse: '12 Rue des Lilas',
@@ -315,17 +329,18 @@ describe('Coordonnées : pays, adresse avec suggestions, code postal et téléph
     ville: 'Lyon',
   };
 
-  it('pays en premier, dans la liste avec recherche', () => {
-    afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE });
+  it('pays en premier, toujours France et non modifiable (résidents en France)', () => {
+    afficher({ etapeInitiale: 2, reponsesInitiales: { ...IDENTITE, pays: 'Belgique' } });
     const champs = [...document.querySelectorAll('.kyc__champs label')].map((l) => l.textContent);
     expect(champs[0]).toBe('Pays');
-    expect(screen.getByLabelText('Pays').getAttribute('role')).toBe('combobox');
+    const pays = screen.getByLabelText('Pays');
+    expect(pays.value).toBe('France');
+    expect(pays.readOnly).toBe(true);
   });
 
   it('France : une suggestion d’adresse remplit adresse, code postal et ville', async () => {
     const chercherAdresses = vi.fn().mockResolvedValue([LILAS]);
     afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE, chercherAdresses });
-    choisirPays('France');
     saisir('Adresse postale', '12 rue des li');
     await act(async () => {
       await new Promise((fin) => setTimeout(fin, 300));
@@ -337,31 +352,25 @@ describe('Coordonnées : pays, adresse avec suggestions, code postal et téléph
     expect(screen.getByLabelText('Ville').value).toBe('Lyon');
   });
 
-  it('code postal : chiffres seuls pour la France, lettres permises au Royaume-Uni', () => {
+  it('code postal : chiffres seuls (France)', () => {
     afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE });
-    choisirPays('France');
     saisir('Code postal', '69a0035');
     expect(screen.getByLabelText('Code postal').value).toBe('69003');
     expect(screen.getByLabelText('Code postal').getAttribute('inputmode')).toBe('numeric');
-    choisirPays('Royaume-Uni');
-    saisir('Code postal', 'sw1a 1aa');
-    expect(screen.getByLabelText('Code postal').value).toBe('SW1A 1AA');
-    expect(screen.getByLabelText('Code postal').getAttribute('inputmode')).toBe('text');
   });
 
-  it('téléphone : menu des indicatifs qui suit le pays, chiffres seuls à la frappe', async () => {
+  it('téléphone : indicatif France par défaut, autre indicatif possible, chiffres seuls', async () => {
     const { enregistrer } = afficher({ etapeInitiale: 2, reponsesInitiales: IDENTITE });
     const indicatif = () => screen.getByLabelText('Indicatif du pays');
     expect(indicatif().value).toBe('France');
     expect(indicatif().options[0].textContent).toBe('France (+33)');
     saisir('Téléphone', '06.12.34.ab56.78');
     expect(screen.getByLabelText('Téléphone').value).toBe('0612345678');
-    // Belgique : l'indicatif suit le pays de l'adresse
-    choisirPays('Belgique');
-    expect(indicatif().value).toBe('Belgique');
-    saisir('Adresse postale', 'Rue Neuve 1');
-    saisir('Code postal', '1000');
-    saisir('Ville', 'Bruxelles');
+    // résident en France avec un numéro belge
+    fireEvent.change(indicatif(), { target: { value: 'Belgique' } });
+    saisir('Adresse postale', '12 rue des Lilas');
+    saisir('Code postal', '69003');
+    saisir('Ville', 'Lyon');
     // fixe belge à 8 chiffres : refusé avec l'indicatif français (9 chiffres)
     saisir('Téléphone', '02 123 45 67');
     fireEvent.change(indicatif(), { target: { value: 'France' } });
@@ -375,10 +384,10 @@ describe('Coordonnées : pays, adresse avec suggestions, code postal et téléph
     await cliquer('Suivant');
     expect(enregistrer).toHaveBeenCalledWith(3, {
       ...IDENTITE,
-      pays: 'Belgique',
-      adresse: 'Rue Neuve 1',
-      codePostal: '1000',
-      ville: 'Bruxelles',
+      pays: 'France',
+      adresse: '12 rue des Lilas',
+      codePostal: '69003',
+      ville: 'Lyon',
       telephone: '02 123 45 67',
       indicatif: 'Belgique',
     });

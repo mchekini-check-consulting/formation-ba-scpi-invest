@@ -12,10 +12,13 @@ import type { DepotTentativesConnexion } from '../comptes/service.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
 import type { DepotKyc, EtatKyc } from '../kyc/service.js';
+import type { DepotInformations, Justificatif, LigneHistorique } from '../informations/service.js';
 import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.js';
 import type { DepotOutilsImport } from '../outils/service.js';
 import {
   acceptationCgu,
+  historiqueInformation,
+  justificatif,
   kyc,
   kycPiece,
   parametre,
@@ -271,6 +274,104 @@ export function depotPieces(db: Db): DepotPieces {
       await db
         .delete(kycPiece)
         .where(and(eq(kycPiece.utilisateurId, utilisateurId), eq(kycPiece.type, type)));
+    },
+  };
+}
+
+// US-06 : informations personnelles. Une modification met à jour ensemble les réponses du
+// KYC, l'historique et les pièces remplacées (statut « en cours de vérification ») ; les
+// anciens fichiers restent dans R2 (contrôle a posteriori).
+const colonnesJustificatif = {
+  id: justificatif.id,
+  nomFichier: justificatif.nomFichier,
+  format: justificatif.format,
+  taille: justificatif.taille,
+  cle: justificatif.cle,
+};
+
+export function depotInformations(db: Db): DepotInformations {
+  return {
+    async lireKyc(utilisateurId) {
+      const [ligne] = await db
+        .select({ statut: kyc.statut, reponses: kyc.reponses })
+        .from(kyc)
+        .where(eq(kyc.utilisateurId, utilisateurId));
+      return ligne ?? null;
+    },
+
+    async pieces(utilisateurId) {
+      return db
+        .select({ type: kycPiece.type, nomFichier: kycPiece.nomFichier })
+        .from(kycPiece)
+        .where(eq(kycPiece.utilisateurId, utilisateurId));
+    },
+
+    async enregistrerJustificatif(utilisateurId, piece, le) {
+      const [ligne] = await db
+        .insert(justificatif)
+        .values({ utilisateurId, ...piece, deposeLe: le })
+        .returning(colonnesJustificatif);
+      return ligne as Justificatif;
+    },
+
+    async lireJustificatif(utilisateurId, id) {
+      const [ligne] = await db
+        .select(colonnesJustificatif)
+        .from(justificatif)
+        .where(and(eq(justificatif.id, id), eq(justificatif.utilisateurId, utilisateurId)));
+      return (ligne as Justificatif | undefined) ?? null;
+    },
+
+    async appliquer(utilisateurId, modification, le) {
+      await db.transaction(async (tx) => {
+        if (Object.keys(modification.reponses).length > 0) {
+          await tx
+            .update(kyc)
+            .set({
+              reponses: sql`${kyc.reponses} || ${JSON.stringify(modification.reponses)}::jsonb`,
+              modifieLe: le,
+            })
+            .where(eq(kyc.utilisateurId, utilisateurId));
+        }
+        await tx.insert(historiqueInformation).values(
+          modification.historique.map((ligne) => ({
+            utilisateurId,
+            ...ligne,
+            justificatifId: modification.justificatifId,
+            modifieLe: le,
+          })),
+        );
+        for (const { type, justificatif: piece } of modification.pieces) {
+          const valeurs = {
+            nomFichier: piece.nomFichier,
+            format: piece.format,
+            taille: piece.taille,
+            cle: piece.cle,
+            statut: 'en_verification' as const,
+            deposeLe: le,
+            modifieLe: le,
+          };
+          await tx
+            .insert(kycPiece)
+            .values({ utilisateurId, type, ...valeurs })
+            .onConflictDoUpdate({ target: [kycPiece.utilisateurId, kycPiece.type], set: valeurs });
+        }
+      });
+    },
+
+    async historique(utilisateurId) {
+      const lignes = await db
+        .select({
+          bloc: historiqueInformation.bloc,
+          champ: historiqueInformation.champ,
+          ancienneValeur: historiqueInformation.ancienneValeur,
+          nouvelleValeur: historiqueInformation.nouvelleValeur,
+          modifieLe: historiqueInformation.modifieLe,
+        })
+        .from(historiqueInformation)
+        .where(eq(historiqueInformation.utilisateurId, utilisateurId))
+        .orderBy(desc(historiqueInformation.modifieLe), desc(historiqueInformation.id));
+      return lignes as LigneHistorique[];
     },
   };
 }

@@ -317,3 +317,140 @@
   line-height: 1.45;
   text-align: left;
 }
+
+/* US-06 : blocs modifiables (BlocsInformations.jsx) */
+.bloc-info__tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.bloc-info__tete h2 {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.bloc-info__modifier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--bleu);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bloc-info__modifier:hover:not(:disabled) {
+  border-color: var(--bleu-pied);
+}
+
+.bloc-info__modifier:disabled {
+  background: var(--papier);
+  color: var(--discret);
+  cursor: not-allowed;
+}
+
+.bloc-info__modifier:focus-visible {
+  outline: 3px solid var(--bleu-pied);
+  outline-offset: 2px;
+}
+
+.bloc-info__modifier svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bloc-info__badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e1f4ea;
+  color: #22603f;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bloc-info__badge--bientot {
+  background: var(--papier);
+  color: var(--encre-douce);
+}
+
+.bloc-info--ouvert {
+  border-color: var(--bleu-pied);
+  box-shadow: 0 0 0 1px var(--bleu-pied);
+}
+
+.bloc-info__form {
+  max-width: 640px;
+}
+
+.bloc-info__aide {
+  margin: 4px 0 0;
+  color: var(--encre-douce);
+  font-size: 13px;
+}
+
+.bloc-info__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.bloc-info__actions .compte__bouton {
+  width: auto;
+  min-width: 140px;
+}
+
+.bloc-info__message {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #e1f4ea;
+  color: #1d4f35;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.historique {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.historique__ligne {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 4px 16px;
+}
+
+.historique__date {
+  color: var(--discret);
+  font-size: 13px;
+}
+
+.historique__ancien {
+  color: var(--discret);
+}
+
+@media (max-width: 640px) {
+  .historique__ligne {
+    grid-template-columns: 1fr;
+  }
+}

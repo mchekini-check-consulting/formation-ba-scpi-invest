@@ -21,6 +21,10 @@ export interface FournisseurIdentite {
   utilisateurConnecte(headers: IncomingHttpHeaders): Promise<Utilisateur | null>;
   // Identifiant du compte de cet email, null s'il n'existe pas (logs métier sans email)
   identifiantDe(email: string): Promise<string | null>;
+  // US-06 : mot de passe du compte (confirmation d'une modification de coordonnées)
+  verifierMotDePasse(utilisateurId: string, motDePasse: string): Promise<boolean>;
+  // US-06 : nouvel e-mail de connexion ; EmailDejaUtilise s'il appartient à un autre compte
+  changerEmail(utilisateurId: string, email: string): Promise<void>;
 }
 
 export class EmailDejaUtilise extends Error {
