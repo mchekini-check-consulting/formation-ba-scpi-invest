@@ -112,7 +112,9 @@ describe('ImportService.executer', () => {
       layer: 'service',
       class: 'ImportService',
       method: 'executer',
-      msg: 'import du catalogue terminé',
+      msg:
+        'Import catalogue terminé (scpi_catalogue.csv) : 4 lignes lues, 1 ajoutées, ' +
+        '1 mises à jour, 1 inchangées, 1 supprimées, 0 rejetées',
       fichier: FICHIER,
       archive: ARCHIVE,
       ...COMPTEURS,
@@ -143,7 +145,10 @@ describe('ImportService.executer', () => {
       op: 'cloture',
       valeurs: { fin: FIN, statut: 'aucun_fichier' },
     });
-    expect(lignes[0]).toMatchObject({ level: 'WARN', msg: 'aucun fichier à importer' });
+    expect(lignes[0]).toMatchObject({
+      level: 'WARN',
+      msg: 'Import catalogue : aucun fichier trouvé',
+    });
   });
 
   it('archivage impossible : import conservé "reussi", motif dans le rapport et le log', async () => {

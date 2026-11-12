@@ -33,7 +33,7 @@ function stockage(surcharge: Partial<StockageCsv> = {}): StockageCsv {
 }
 
 function service(surcharge: Partial<OutilsImportDeps> = {}) {
-  const { log, lignes } = captureLogs();
+  const { log, lignes } = captureLogs('debug'); // succès d'un service : niveau debug
   const deps: OutilsImportDeps = {
     depot: {
       rapports: vi.fn().mockResolvedValue([RAPPORT]),

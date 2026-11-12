@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { captureLogs } from './capture.js';
 import { errorHandler, requestLogger } from './controller.js';
 import { HttpError } from './http-error.js';
+import { detaillerAction, identifierUtilisateur } from './logger.js';
 
 function appTest() {
   const { log, lignes } = captureLogs();
@@ -209,5 +210,75 @@ describe('requestId', () => {
     const { log, lignes } = captureLogs();
     log.info('démarrage');
     expect(lignes[0]).not.toHaveProperty('requestId');
+  });
+});
+
+describe('message lisible et identifiant de l’utilisateur', () => {
+  function appUtilisateur() {
+    const { log, lignes } = captureLogs();
+    const app = express();
+    app.use(requestLogger(log));
+    const deposerPiece: express.RequestHandler = (_req, res) => {
+      identifierUtilisateur({ userId: 'u-42', email: 'jean@exemple.fr' });
+      log.warn({ layer: 'service' }, 'dans le service');
+      res.status(204).end();
+    };
+    app.put('/connaissance-client/pieces/:typePiece', deposerPiece);
+    app.post('/comptes/connexion', (_req, res) => {
+      identifierUtilisateur({ email: 'inconnu@exemple.fr' });
+      res.status(401).end();
+    });
+    return { app, lignes };
+  }
+
+  it('route connue : message du dictionnaire, userId et email sur toutes les lignes', async () => {
+    const { app, lignes } = appUtilisateur();
+    await request(app).put('/connaissance-client/pieces/rib').expect(204);
+    const [service, controleur] = lignes;
+    expect(service).toMatchObject({ layer: 'service', userId: 'u-42', email: 'jean@exemple.fr' });
+    expect(controleur).toMatchObject({
+      layer: 'controller',
+      msg: 'Pièce KYC déposée (rib) — jean@exemple.fr',
+      route: '/connaissance-client/pieces/:typePiece',
+      userId: 'u-42',
+      email: 'jean@exemple.fr',
+    });
+  });
+
+  it('connexion refusée : email saisi, sans identifiant', async () => {
+    const { app, lignes } = appUtilisateur();
+    await request(app).post('/comptes/connexion').expect(401);
+    expect(lignes[0]).toMatchObject({
+      msg: 'Connexion refusée, identifiants incorrects — inconnu@exemple.fr',
+      email: 'inconnu@exemple.fr',
+    });
+    expect(lignes[0]).not.toHaveProperty('userId');
+  });
+
+  it('l’utilisateur ne passe pas d’une requête à l’autre', async () => {
+    const { app, lignes } = appUtilisateur();
+    await request(app).put('/connaissance-client/pieces/rib').expect(204);
+    await request(app).post('/comptes/connexion').expect(401);
+    expect(lignes.at(-1)).not.toHaveProperty('userId');
+    expect(lignes.at(-1)).toMatchObject({ email: 'inconnu@exemple.fr' });
+  });
+});
+
+describe('paramètres de l’action', () => {
+  it('dans le message et en champs, sans écraser les champs obligatoires', async () => {
+    const { log, lignes } = captureLogs();
+    const app = express();
+    app.use(requestLogger(log));
+    app.get('/scpis/recherche', (_req, res) => {
+      detaillerAction({ recherche: 'pierre', resultats: 2, status: 999 });
+      res.json([]);
+    });
+    await request(app).get('/scpis/recherche?q=pierre').expect(200);
+    expect(lignes[0]).toMatchObject({
+      msg: 'Recherche dans le catalogue (recherche : pierre ; resultats : 2 ; status : 999)',
+      recherche: 'pierre',
+      resultats: 2,
+      status: 200,
+    });
   });
 });

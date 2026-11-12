@@ -1,5 +1,6 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import type { RequestHandler } from 'express';
+import { identifierUtilisateur } from '../logging/logger.js';
 
 // Contrat entre l'application et le fournisseur d'identité. Le reste du backend ne
 // connaît que ce fichier : passer de Better-Auth à Keycloak (OIDC) revient à écrire une
@@ -34,6 +35,7 @@ export class EmailDejaUtilise extends Error {
 }
 
 // Routes réservées aux utilisateurs connectés : 401 sinon, l'utilisateur dans res.locals
+// et son identifiant et son email sur les logs de la requête
 export function exigerConnexion(fournisseur: FournisseurIdentite): RequestHandler {
   return async (req, res, next) => {
     const utilisateur = await fournisseur.utilisateurConnecte(req.headers);
@@ -42,6 +44,7 @@ export function exigerConnexion(fournisseur: FournisseurIdentite): RequestHandle
       return;
     }
     res.locals.utilisateur = utilisateur;
+    identifierUtilisateur({ userId: utilisateur.id, email: utilisateur.email });
     next();
   };
 }

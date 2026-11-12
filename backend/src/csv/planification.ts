@@ -17,6 +17,13 @@ const VERROU = 724002;
 
 export type Issue = 'lance' | 'deja_en_cours' | 'deja_fait';
 
+// Message du log métier de chaque déclenchement (au démarrage puis chaque nuit)
+const MESSAGES_ISSUE: Record<Issue, string> = {
+  lance: 'Import automatique du catalogue lancé',
+  deja_en_cours: 'Import automatique du catalogue ignoré : déjà en cours sur un autre serveur',
+  deja_fait: 'Import automatique du catalogue ignoré : déjà fait il y a moins d’une heure',
+};
+
 // Plusieurs réplicas (preprod, prod : 2) déclenchent tous à 2h : un seul importe.
 // - verrou pris par un autre réplica : "deja_en_cours" ;
 // - import déjà démarré dans l'heure (horloges décalées de quelques secondes) : "deja_fait".
@@ -65,9 +72,9 @@ export function planifierImport(
       // Logs métier (layer service) : un import de nuit bloqué se voit dans Grafana
       try {
         const issue = await lancerSurUnSeulReplica(pool, executer);
-        tracer('info', `import planifié du catalogue : ${issue}`, { issue });
+        tracer('info', MESSAGES_ISSUE[issue], { issue });
       } catch (err) {
-        tracer('error', 'import planifié du catalogue en échec', decrireErreur(err));
+        tracer('error', 'Import automatique du catalogue en échec', decrireErreur(err));
       }
     },
   );

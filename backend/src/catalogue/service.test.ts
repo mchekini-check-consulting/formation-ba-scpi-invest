@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { HttpError } from '../logging/http-error.js';
+import { avecContexte, type ContexteRequete } from '../logging/logger.js';
 import { AUCUN_FILTRE } from './filtres.js';
 import { type ScpiCatalogue, TAILLE_PAGE, creerCatalogueService } from './service.js';
 import { TRI_PAR_DEFAUT } from './tri.js';
@@ -216,5 +217,50 @@ describe('CatalogueService (US-08)', () => {
       expect(err.message).toBe('Recherche invalide');
       expect(depot.rechercher).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('paramètres sur la ligne de log de la requête', () => {
+  async function dansUneRequete(action: () => Promise<unknown>): Promise<ContexteRequete> {
+    const enCours: ContexteRequete = { requestId: 'req-1' };
+    await avecContexte(enCours, action).catch(() => undefined);
+    return enCours;
+  }
+
+  it('liste : page, filtres actifs, tri et nombre de résultats', async () => {
+    const { service } = preparer(30);
+    const enCours = await dansUneRequete(() =>
+      service.lister('2', { categorie: 'Santé', tauxMin: '4', tri: 'nom-asc' }),
+    );
+    expect(enCours.details).toEqual({
+      page: 2,
+      categories: 'Santé',
+      taux: '≥ 4',
+      tri: 'nom-asc',
+      resultats: 30,
+    });
+  });
+
+  it('recherche : texte, filtres, tri et nombre de résultats', async () => {
+    const { service } = preparer();
+    const enCours = await dansUneRequete(() => service.rechercher(' pierre ', { pays: 'France' }));
+    expect(enCours.details).toEqual({
+      recherche: 'pierre',
+      pays: 'France',
+      tri: 'taux-desc',
+      resultats: 1,
+    });
+  });
+
+  it('recherche vide : 0 résultat', async () => {
+    const { service } = preparer();
+    const enCours = await dansUneRequete(() => service.rechercher('  '));
+    expect(enCours.details).toMatchObject({ recherche: '', resultats: 0 });
+  });
+
+  it('paramètres invalides (400) : aucun détail', async () => {
+    const { service } = preparer();
+    const enCours = await dansUneRequete(() => service.rechercher('pierre', { tri: 'faux' }));
+    expect(enCours).not.toHaveProperty('details');
   });
 });

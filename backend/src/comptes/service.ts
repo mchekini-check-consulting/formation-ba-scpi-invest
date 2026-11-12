@@ -6,7 +6,7 @@ import {
   type FournisseurIdentite,
 } from '../auth/fournisseur.js';
 import { HttpError } from '../logging/http-error.js';
-import { businessLog, logger } from '../logging/logger.js';
+import { businessLog, identifierUtilisateur, logger } from '../logging/logger.js';
 import { loggable } from '../logging/service.js';
 import { emailValide, reglesNonRespectees } from './mot-de-passe.js';
 
@@ -34,6 +34,9 @@ export type DepotAcceptationsCgu = {
 export const ECHECS_AVANT_BLOCAGE = 5;
 export const DUREE_BLOCAGE_MS = 10 * 60_000;
 export const TROP_DE_TENTATIVES = 'Trop de tentatives : votre compte est bloqué.';
+
+// Longueur maximale d'une adresse email (RFC 5321) : borne l'email saisi dans les logs
+const LONGUEUR_MAX_EMAIL = 254;
 
 export type RegleBlocage = { echecsAvantBlocage: number; dureeMs: number };
 
@@ -71,6 +74,7 @@ export function creerCompteService(
     if (!emailValide(email)) {
       throw new HttpError(400, 'Format d’email invalide');
     }
+    identifierUtilisateur({ email });
     if (demande.cguAcceptees !== true) {
       throw new HttpError(
         400,
@@ -93,6 +97,7 @@ export function creerCompteService(
       }
       throw err;
     }
+    identifierUtilisateur({ userId: compte.utilisateur.id });
     await cgu.enregistrer(compte.utilisateur.id, VERSION_CGU, maintenant());
     return compte;
   }
@@ -108,6 +113,8 @@ export function creerCompteService(
     if (!email || !motDePasse) {
       throw new HttpError(401, IDENTIFIANTS_INCORRECTS);
     }
+    // Logs de la requête : l'email saisi, même sans compte (borné : valeur non vérifiée)
+    identifierUtilisateur({ email: email.slice(0, LONGUEUR_MAX_EMAIL) });
     const cle = empreinte(email);
     const regle = { echecsAvantBlocage: ECHECS_AVANT_BLOCAGE, dureeMs: DUREE_BLOCAGE_MS };
     const essaiRefuse = await tentatives.reserverEssai(cle, maintenant(), regle);
@@ -116,19 +123,24 @@ export function creerCompteService(
     }
     const compte = await fournisseur.connecter(email, motDePasse);
     if (compte) {
+      identifierUtilisateur({ userId: compte.utilisateur.id });
       await tentatives.effacer(cle);
       return compte;
     }
     const nouveauBlocage = await tentatives.enregistrerEchec(cle, maintenant(), regle);
     if (nouveauBlocage) {
       const userId = await fournisseur.identifiantDe(email);
+      if (userId) {
+        identifierUtilisateur({ userId });
+      }
       businessLog(
         log,
         'warn',
         'service',
         'CompteService',
         'connecter',
-        `compte bloqué après ${ECHECS_AVANT_BLOCAGE} échecs`,
+        `Connexion bloquée ${DUREE_BLOCAGE_MS / 60_000} min après ${ECHECS_AVANT_BLOCAGE} échecs`,
+        // userId : hors requête HTTP (tests, appel direct), le contexte ne le porte pas
         userId ? { userId } : { compteInconnu: true },
       );
       throw compteBloque(nouveauBlocage);

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { EmailDejaUtilise, type FournisseurIdentite } from '../auth/fournisseur.js';
 import { captureLogs } from '../logging/capture.js';
 import { HttpError } from '../logging/http-error.js';
+import { avecContexte, type ContexteRequete } from '../logging/logger.js';
 import {
   DUREE_BLOCAGE_MS,
   ECHECS_AVANT_BLOCAGE,
@@ -185,7 +186,7 @@ describe('CompteService.connecter : blocage après 5 échecs (US-03b)', () => {
       TROP_DE_TENTATIVES,
       { debloqueA: FIN.toISOString() },
     ]);
-    const blocage = lignes.find((l) => l.msg === 'compte bloqué après 5 échecs');
+    const blocage = lignes.find((l) => l.msg === 'Connexion bloquée 10 min après 5 échecs');
     expect(blocage).toMatchObject({ level: 'WARN', layer: 'service', userId: 'u1' });
     expect(JSON.stringify(lignes)).not.toContain('jean@exemple.fr');
   });
@@ -199,7 +200,7 @@ describe('CompteService.connecter : blocage après 5 échecs (US-03b)', () => {
     tentatives.enregistrerEchec.mockResolvedValue(FIN);
     const err = await erreurDe(service.connecter({ email: 'inconnu@exemple.fr', motDePasse: 'x' }));
     expect(err.status).toBe(429);
-    const blocage = lignes.find((l) => l.msg === 'compte bloqué après 5 échecs');
+    const blocage = lignes.find((l) => l.msg === 'Connexion bloquée 10 min après 5 échecs');
     expect(blocage).toMatchObject({ compteInconnu: true });
     expect(blocage?.userId).toBeUndefined();
   });
@@ -220,5 +221,64 @@ describe('CompteService.connecter : blocage après 5 échecs (US-03b)', () => {
     await erreurDe(service.connecter({ email: 'jean@exemple.fr', motDePasse: '' }));
     expect(tentatives.reserverEssai).not.toHaveBeenCalled();
     expect(tentatives.enregistrerEchec).not.toHaveBeenCalled();
+  });
+});
+
+describe('identifiant de l’utilisateur sur les logs de la requête', () => {
+  const compte = { utilisateur: { id: 'u1', email: 'jean@exemple.fr' }, jeton: 'jeton' };
+
+  async function dansUneRequete(action: () => Promise<unknown>): Promise<ContexteRequete> {
+    const enCours: ContexteRequete = { requestId: 'req-1' };
+    await avecContexte(enCours, action).catch(() => undefined);
+    return enCours;
+  }
+
+  it('connexion réussie : userId et email (normalisé)', async () => {
+    const { service } = preparer(vi.fn(), vi.fn().mockResolvedValue(compte));
+    const enCours = await dansUneRequete(() =>
+      service.connecter({ email: ' Jean@Exemple.fr ', motDePasse: 'x' }),
+    );
+    expect(enCours).toEqual({ requestId: 'req-1', userId: 'u1', email: 'jean@exemple.fr' });
+  });
+
+  it('connexion refusée : email saisi seulement', async () => {
+    const { service } = preparer(vi.fn(), vi.fn().mockResolvedValue(null));
+    const enCours = await dansUneRequete(() =>
+      service.connecter({ email: 'jean@exemple.fr', motDePasse: 'x' }),
+    );
+    expect(enCours).toEqual({ requestId: 'req-1', email: 'jean@exemple.fr' });
+  });
+
+  it('connexion : email saisi borné à 254 caractères', async () => {
+    const { service } = preparer(vi.fn(), vi.fn().mockResolvedValue(null));
+    const enCours = await dansUneRequete(() =>
+      service.connecter({ email: 'a'.repeat(300), motDePasse: 'x' }),
+    );
+    expect(enCours.email).toHaveLength(254);
+  });
+
+  it('création refusée (email déjà utilisé) : email', async () => {
+    const { service } = preparer(vi.fn().mockRejectedValue(new EmailDejaUtilise()));
+    const enCours = await dansUneRequete(() => service.creer(DEMANDE));
+    expect(enCours).toEqual({ requestId: 'req-1', email: 'jean@exemple.fr' });
+  });
+
+  it('blocage d’un compte existant : userId', async () => {
+    const { service, tentatives } = preparer(
+      vi.fn(),
+      vi.fn().mockResolvedValue(null),
+      vi.fn().mockResolvedValue('u1'),
+    );
+    tentatives.enregistrerEchec.mockResolvedValue(new Date('2026-11-02T10:10:00Z'));
+    const enCours = await dansUneRequete(() =>
+      service.connecter({ email: 'jean@exemple.fr', motDePasse: 'x' }),
+    );
+    expect(enCours).toMatchObject({ userId: 'u1' });
+  });
+
+  it('compte créé : userId et email', async () => {
+    const { service } = preparer(vi.fn().mockResolvedValue(compte));
+    const enCours = await dansUneRequete(() => service.creer(DEMANDE));
+    expect(enCours).toMatchObject({ userId: 'u1', email: 'jean@exemple.fr' });
   });
 });

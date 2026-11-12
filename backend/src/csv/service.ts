@@ -68,7 +68,7 @@ export function creerImportService(
       const lignes = await source.lire();
       if (!lignes) {
         await terminer(rapport.id, { statut: 'aucun_fichier' });
-        resumer('warn', 'aucun fichier à importer', debut, {});
+        resumer('warn', 'Import catalogue : aucun fichier trouvé', debut, {});
         return null;
       }
       bilan = await importer(db, lignes);
@@ -104,7 +104,7 @@ export function creerImportService(
     await terminer(rapport.id, { statut: 'reussi', ...bilan, erreur });
     // Le détail des rejets reste dans le rapport : seuls les compteurs vont dans les logs
     const { rejets: _rejets, ...compteurs } = bilan;
-    resumer(erreur || bilan.rejetees > 0 ? 'warn' : 'info', 'import du catalogue terminé', debut, {
+    resumer(erreur || bilan.rejetees > 0 ? 'warn' : 'info', messageBilan(fichier, bilan), debut, {
       archive,
       ...compteurs,
       ...(erreur && { erreur }),
@@ -113,6 +113,15 @@ export function creerImportService(
   }
 
   return { executer };
+}
+
+// Compteurs aussi dans les champs de la ligne : le message sert à la lecture
+function messageBilan(fichier: string, b: BilanImport): string {
+  return (
+    `Import catalogue terminé (${fichier}) : ${b.lues} lignes lues, ${b.ajoutees} ajoutées, ` +
+    `${b.mises_a_jour} mises à jour, ${b.inchangees} inchangées, ${b.supprimees} supprimées, ` +
+    `${b.rejetees} rejetées`
+  );
 }
 
 function message(err: unknown): string {

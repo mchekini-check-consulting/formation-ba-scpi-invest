@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { captureLogs } from './capture.js';
-import { businessLog, createLogger } from './logger.js';
+import {
+  type ContexteRequete,
+  avecContexte,
+  businessLog,
+  createLogger,
+  detaillerAction,
+  identifierUtilisateur,
+} from './logger.js';
 
 describe('logger', () => {
   it('une ligne JSON time/level/msg, sans pid ni hostname', () => {
@@ -30,6 +37,42 @@ describe('logger', () => {
       msg: 'échec',
       durationMs: 3,
     });
+  });
+
+  it('identifierUtilisateur : sans effet hors requête', () => {
+    const { log, lignes } = captureLogs();
+    identifierUtilisateur({ userId: 'u-1' });
+    log.info('import de nuit');
+    expect(lignes[0]).not.toHaveProperty('userId');
+  });
+
+  it('identifierUtilisateur : sur les lignes suivantes de la requête', () => {
+    const { log, lignes } = captureLogs();
+    avecContexte({ requestId: 'req-1' }, () => {
+      log.info('avant');
+      identifierUtilisateur({ userId: 'u-1' });
+      log.info('après');
+    });
+    expect(lignes[0]).toEqual(expect.not.objectContaining({ userId: expect.anything() }));
+    expect(lignes[1]).toMatchObject({ requestId: 'req-1', userId: 'u-1' });
+  });
+
+  it('detaillerAction : cumulé dans le contexte, absent des lignes des autres couches', () => {
+    const { log, lignes } = captureLogs();
+    const enCours: ContexteRequete = { requestId: 'req-1' };
+    avecContexte(enCours, () => {
+      detaillerAction({ recherche: 'pierre' });
+      detaillerAction({ resultats: 2 });
+      log.info({ layer: 'service' }, 'dans le service');
+    });
+    expect(enCours.details).toEqual({ recherche: 'pierre', resultats: 2 });
+    expect(lignes[0]).not.toHaveProperty('details');
+    expect(lignes[0]).not.toHaveProperty('recherche');
+    expect(lignes[0]).toMatchObject({ requestId: 'req-1' });
+  });
+
+  it('detaillerAction : sans effet hors requête', () => {
+    expect(() => detaillerAction({ page: 1 })).not.toThrow();
   });
 
   it('écrit sur stdout par défaut', () => {

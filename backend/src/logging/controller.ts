@@ -1,11 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import type { ErrorRequestHandler, Request, RequestHandler } from 'express';
 import type { Logger } from 'pino';
-import { avecRequestId, businessLog, elapsedMs, type Level } from './logger.js';
+import {
+  avecContexte,
+  businessLog,
+  elapsedMs,
+  type ContexteRequete,
+  type Level,
+} from './logger.js';
 import { HttpError } from './http-error.js';
+import { messageRequete } from './messages.js';
 
 // Couche contrôleur (layer controller) : un log par requête HTTP, avec la route
-// déclarée (jamais l'URL avec ses valeurs, ni le corps), le statut et la durée.
+// déclarée (jamais l'URL avec ses valeurs, ni le corps), le statut et la durée,
+// un message lisible (messages.ts) et l'identifiant de l'utilisateur s'il est connu.
 // 4xx : warn ; 5xx : error ; /health qui répond : debug (appelé en boucle par les sondes).
 // Chaque requête reçoit un requestId (en-tête X-Request-Id reçu s'il est bien formé,
 // sinon généré), présent sur toutes ses lignes de log et renvoyé dans la réponse.
@@ -14,20 +22,41 @@ export function requestLogger(log: Logger): RequestHandler {
     const start = process.hrtime.bigint();
     const requestId = requestIdRecu(req.get('x-request-id')) ?? randomUUID();
     res.setHeader('X-Request-Id', requestId);
+    // Complété pendant la requête (identifierUtilisateur, logger.ts)
+    const enCours: ContexteRequete = { requestId };
     res.on('finish', () => {
       const route = declaredRoute(req);
       const status = res.statusCode;
+      const { userId, email, details } = enCours;
       businessLog(
         log,
         levelOf(route, status),
         'controller',
         controllerName(route),
         handlerName(req),
-        `${req.method} ${route} ${status}`,
-        { requestId, httpMethod: req.method, route, status, durationMs: elapsedMs(start) },
+        messageRequete({
+          httpMethod: req.method,
+          route,
+          chemin: req.path,
+          status,
+          params: req.params,
+          userId,
+          email,
+          details,
+        }),
+        {
+          ...details, // en premier : ne remplace jamais un champ obligatoire
+          requestId,
+          httpMethod: req.method,
+          route,
+          status,
+          durationMs: elapsedMs(start),
+          ...(userId && { userId }),
+          ...(email && { email }),
+        },
       );
     });
-    avecRequestId(requestId, next);
+    avecContexte(enCours, next);
   };
 }
 
