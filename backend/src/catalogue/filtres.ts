@@ -1,8 +1,12 @@
+import { frequence } from '../db/schema.js';
 import { HttpError } from '../logging/http-error.js';
 
 // Filtres du Catalogue (US-10a, US-10b), lus dans l'URL de GET /scpis :
 //   categorie, pays, gerant, capitalisation : valeurs répétées (?categorie=Santé&categorie=Bureaux)
 //   tauxMin/tauxMax, prixMin/prixMax, fraisMin/fraisMax, minimumMin/minimumMax : nombres
+//   fraisGestionMin/fraisGestionMax, jouissanceMin/jouissanceMax : nombres
+//   frequence : valeurs répétées (Mensuelle, Trimestrielle…)
+//   demembrement=oui, versementProgramme=oui : seulement les SCPI qui le proposent
 // Un filtre à plusieurs valeurs retient une SCPI qui correspond à au moins une valeur ;
 // plusieurs filtres actifs doivent tous être satisfaits (ET). Bornes incluses. Une SCPI
 // sans valeur pour un filtre actif ne le satisfait pas (jamais assimilée à zéro).
@@ -25,6 +29,15 @@ export type FiltresCatalogue = {
   frais: Plage;
   // investissement minimum, en euros
   minimum: Plage;
+  // frais de gestion, en %
+  fraisGestion: Plage;
+  // délai de jouissance, en mois
+  jouissance: Plage;
+  // fréquence de versement des loyers
+  frequences: string[];
+  // démembrement possible / versement programmé possible (false : filtre inactif)
+  demembrement: boolean;
+  versementProgramme: boolean;
 };
 
 // Tranches de capitalisation (en euros), bornes : min inclus, max exclu. À valider avec
@@ -46,6 +59,11 @@ export const AUCUN_FILTRE: FiltresCatalogue = {
   prix: { min: null, max: null },
   frais: { min: null, max: null },
   minimum: { min: null, max: null },
+  fraisGestion: { min: null, max: null },
+  jouissance: { min: null, max: null },
+  frequences: [],
+  demembrement: false,
+  versementProgramme: false,
 };
 
 const MESSAGE = 'Filtre invalide';
@@ -71,11 +89,21 @@ function plage(requete: Record<string, unknown>, nom: string): Plage {
   return { min, max };
 }
 
+// Case « possible » : active avec oui (ou true), inactive si absente ; autre valeur : 400
+function caseCochee(brut: unknown): boolean {
+  if (brut === undefined || brut === '') return false;
+  if (brut === 'oui' || brut === 'true') return true;
+  throw new HttpError(400, MESSAGE);
+}
+
 // Filtres lus dans l'URL ; 400 « Filtre invalide » si un nombre ou une tranche est faux
 export function lireFiltres(requete: Record<string, unknown> = {}): FiltresCatalogue {
   const capitalisations = valeurs(requete.capitalisation);
   const codes = new Set<string>(TRANCHES_CAPITALISATION.map((t) => t.code));
   if (capitalisations.some((c) => !codes.has(c))) throw new HttpError(400, MESSAGE);
+  const frequences = valeurs(requete.frequence);
+  const connues = new Set<string>(frequence.enumValues);
+  if (frequences.some((v) => !connues.has(v))) throw new HttpError(400, MESSAGE);
   return {
     categories: valeurs(requete.categorie),
     pays: valeurs(requete.pays),
@@ -85,5 +113,10 @@ export function lireFiltres(requete: Record<string, unknown> = {}): FiltresCatal
     prix: plage(requete, 'prix'),
     frais: plage(requete, 'frais'),
     minimum: plage(requete, 'minimum'),
+    fraisGestion: plage(requete, 'fraisGestion'),
+    jouissance: plage(requete, 'jouissance'),
+    frequences,
+    demembrement: caseCochee(requete.demembrement),
+    versementProgramme: caseCochee(requete.versementProgramme),
   };
 }

@@ -428,7 +428,14 @@ function conditionsFiltres(filtres: FiltresCatalogue): SQL {
     ...bornes(PRIX_RECENT, filtres.prix),
     ...bornes(sql`c.frais_souscription`, filtres.frais),
     ...bornes(sql`c.minimum_souscription`, filtres.minimum),
+    ...bornes(sql`c.frais_gestion`, filtres.fraisGestion),
+    ...bornes(sql`c.delai_jouissance`, filtres.jouissance),
   );
+  if (filtres.frequences.length) {
+    conditions.push(sql`c.frequence::text in (${liste(filtres.frequences)})`);
+  }
+  if (filtres.demembrement) conditions.push(sql`c.demembrement = true`);
+  if (filtres.versementProgramme) conditions.push(sql`c.versement_programme = true`);
   return conditions.length ? sql.join(conditions, sql` and `) : sql`true`;
 }
 
@@ -498,18 +505,24 @@ export function depotCatalogue(db: Db): DepotCatalogue {
     async valeursFiltres(anneeTaux): Promise<ValeursFiltres> {
       const textes = async (requete: SQL) =>
         (await db.execute<{ valeur: string }>(requete)).rows.map((r) => r.valeur);
-      const [categories, pays, gerants, nombres] = await Promise.all([
+      const [categories, pays, gerants, frequences, nombres] = await Promise.all([
         textes(sql`select distinct secteur::text as valeur from scpi_secteurs order by 1`),
         textes(sql`select distinct pays as valeur from scpi_localisation order by 1`),
         textes(sql`select distinct trim(gerant) as valeur from scpi_catalog
           where trim(gerant) <> '' order by 1`),
+        textes(sql`select distinct frequence::text as valeur from scpi_catalog
+          where frequence is not null order by 1`),
         db.execute<Record<string, number | null>>(sql`
           select min(t.taux)::float8 as "tauxMin", max(t.taux)::float8 as "tauxMax",
                  min(p.prix)::float8 as "prixMin", max(p.prix)::float8 as "prixMax",
                  min(c.frais_souscription)::float8 as "fraisMin",
                  max(c.frais_souscription)::float8 as "fraisMax",
                  min(c.minimum_souscription)::float8 as "minimumMin",
-                 max(c.minimum_souscription)::float8 as "minimumMax"
+                 max(c.minimum_souscription)::float8 as "minimumMax",
+                 min(c.frais_gestion)::float8 as "fraisGestionMin",
+                 max(c.frais_gestion)::float8 as "fraisGestionMax",
+                 min(c.delai_jouissance)::float8 as "jouissanceMin",
+                 max(c.delai_jouissance)::float8 as "jouissanceMax"
           from scpi_catalog c
           left join scpi_taux_distribution t on t.scpi_id = c.id and t.annee = ${anneeTaux}
           left join lateral (select p.prix from scpi_prix_part p where p.scpi_id = c.id
@@ -525,6 +538,9 @@ export function depotCatalogue(db: Db): DepotCatalogue {
         prix: plage('prix'),
         frais: plage('frais'),
         minimum: plage('minimum'),
+        fraisGestion: plage('fraisGestion'),
+        jouissance: plage('jouissance'),
+        frequences,
       };
     },
 

@@ -136,17 +136,39 @@ describe('Catalogue (e2e)', () => {
           frais_souscription: '0',
           minimum_souscription: '5000',
           Gerant: 'Gestion B',
+          frais_gestion: '8',
+          delai_jouissance: '0',
+          frequence_loyers: 'Mensuelle',
+          demembrement: 'Oui',
+          decote_demembrement: '5,80,10,70',
         }),
         scpi('Gamma', '', {
           secteurs: 'Sante,100',
           localisation: 'France,50,Espagne,50',
           capitalisation: '700000000',
           Gerant: 'Gestion A',
+          frais_gestion: '15',
+          delai_jouissance: '6',
+          versement_programme: 'Oui',
         }),
       ),
     );
     const noms = async (requete: Record<string, unknown>) =>
       (await service.lister('1', requete)).scpis.map((s) => s.nom);
+
+    // Nouveaux filtres : frais de gestion, délai de jouissance, fréquence, options
+    expect(await noms({ fraisGestionMax: '12' })).toEqual(['Beta', 'Alpha']);
+    expect(await noms({ fraisGestionMin: '13' })).toEqual(['Gamma']);
+    expect(await noms({ jouissanceMin: '4', jouissanceMax: '6' })).toEqual(['Alpha', 'Gamma']);
+    expect(await noms({ frequence: 'Mensuelle' })).toEqual(['Beta']);
+    expect(await noms({ frequence: ['Mensuelle', 'Trimestrielle'] })).toEqual([
+      'Beta',
+      'Alpha',
+      'Gamma',
+    ]);
+    expect(await noms({ demembrement: 'oui' })).toEqual(['Beta']);
+    expect(await noms({ versementProgramme: 'oui' })).toEqual(['Gamma']);
+    expect(await noms({ demembrement: 'oui', versementProgramme: 'oui' })).toEqual([]);
 
     // Secteur présent, même minoritaire (Alpha : 20 % Santé)
     expect(await noms({ categorie: 'Santé' })).toEqual(['Alpha', 'Gamma']);
@@ -178,6 +200,9 @@ describe('Catalogue (e2e)', () => {
       prix: { min: 180, max: 200 },
       frais: { min: 0, max: 10 },
       minimum: { min: 1000, max: 5000 },
+      fraisGestion: { min: 8, max: 15 },
+      jouissance: { min: 0, max: 6 },
+      frequences: ['Mensuelle', 'Trimestrielle'],
       capitalisations: expect.any(Array),
       anneeTaux: new Date().getFullYear() - 1,
     });

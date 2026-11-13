@@ -12,6 +12,7 @@ export const CHOIX = [
   { cle: 'pays', parametre: 'pays', titre: 'Pays' },
   { cle: 'capitalisations', parametre: 'capitalisation', titre: 'Capitalisation' },
   { cle: 'gerants', parametre: 'gerant', titre: 'Société de gestion' },
+  { cle: 'frequences', parametre: 'frequence', titre: 'Fréquence de versement' },
 ];
 
 // Filtres à plage (curseurs min/max) : pas du curseur et unité
@@ -19,7 +20,15 @@ export const PLAGES = [
   { cle: 'taux', titre: 'Taux de distribution', unite: '%', pas: 0.01 },
   { cle: 'prix', titre: 'Prix de la part', unite: '€', pas: 1 },
   { cle: 'frais', titre: 'Frais de souscription', unite: '%', pas: 0.1 },
+  { cle: 'fraisGestion', titre: 'Frais de gestion', unite: '%', pas: 0.1 },
+  { cle: 'jouissance', titre: 'Délai de jouissance', unite: 'mois', pas: 1 },
   { cle: 'minimum', titre: 'Investissement minimum', unite: '€', pas: 10 },
+];
+
+// Cases « possible » : seulement les SCPI qui proposent l'option (paramètre <cle>=oui)
+export const OPTIONS = [
+  { cle: 'demembrement', titre: 'Démembrement possible' },
+  { cle: 'versementProgramme', titre: 'Versement programmé possible' },
 ];
 
 export const FILTRES_VIDES = Object.freeze({
@@ -27,10 +36,15 @@ export const FILTRES_VIDES = Object.freeze({
   pays: [],
   capitalisations: [],
   gerants: [],
+  frequences: [],
   taux: { min: null, max: null },
   prix: { min: null, max: null },
   frais: { min: null, max: null },
   minimum: { min: null, max: null },
+  fraisGestion: { min: null, max: null },
+  jouissance: { min: null, max: null },
+  demembrement: false,
+  versementProgramme: false,
 });
 
 const nombreFr = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
@@ -49,6 +63,9 @@ export function parametresFiltres(filtres) {
     const { min, max } = filtres[cle];
     if (min !== null) parametres.append(`${cle}Min`, String(min));
     if (max !== null) parametres.append(`${cle}Max`, String(max));
+  }
+  for (const { cle } of OPTIONS) {
+    if (filtres[cle]) parametres.append(cle, 'oui');
   }
   return parametres.toString();
 }
@@ -106,6 +123,10 @@ export function pastilles(filtres, options) {
       retirer: (f) => ({ ...f, [cle]: { min: null, max: null } }),
     });
   }
+  for (const { cle, titre } of OPTIONS) {
+    if (!filtres[cle]) continue;
+    liste.push({ id: cle, libelle: titre, retirer: (f) => ({ ...f, [cle]: false }) });
+  }
   return liste;
 }
 
@@ -114,13 +135,16 @@ function valide(filtres) {
     filtres !== null &&
     typeof filtres === 'object' &&
     CHOIX.every(({ cle }) => Array.isArray(filtres[cle])) &&
-    PLAGES.every(({ cle }) => filtres[cle] && 'min' in filtres[cle] && 'max' in filtres[cle])
+    PLAGES.every(({ cle }) => filtres[cle] && 'min' in filtres[cle] && 'max' in filtres[cle]) &&
+    OPTIONS.every(({ cle }) => typeof filtres[cle] === 'boolean')
   );
 }
 
 export function relireFiltres() {
   try {
-    const filtres = JSON.parse(sessionStorage.getItem(CLE));
+    const lus = JSON.parse(sessionStorage.getItem(CLE));
+    // Filtres gardés avant l'ajout de nouveaux filtres : ceux-ci démarrent vides
+    const filtres = lus && typeof lus === 'object' ? { ...FILTRES_VIDES, ...lus } : null;
     return valide(filtres) ? filtres : FILTRES_VIDES;
   } catch {
     return FILTRES_VIDES;

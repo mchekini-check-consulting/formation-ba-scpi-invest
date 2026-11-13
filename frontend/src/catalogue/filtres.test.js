@@ -41,6 +41,59 @@ describe('filtres du Catalogue (US-10)', () => {
     });
   });
 
+  it('nouveaux filtres : fréquence, frais de gestion, jouissance, cases « possible »', () => {
+    const filtres = {
+      ...FILTRES_VIDES,
+      frequences: ['Mensuelle'],
+      fraisGestion: { min: 8, max: null },
+      jouissance: { min: null, max: 3 },
+      demembrement: true,
+      versementProgramme: true,
+    };
+    expect(Object.fromEntries(new URLSearchParams(parametresFiltres(filtres)))).toEqual({
+      frequence: 'Mensuelle',
+      fraisGestionMin: '8',
+      jouissanceMax: '3',
+      demembrement: 'oui',
+      versementProgramme: 'oui',
+    });
+    const liste = pastilles(filtres, OPTIONS);
+    expect(liste.map((p) => p.libelle.replaceAll(/\s/gu, ' '))).toEqual([
+      'Mensuelle',
+      'Frais de gestion : 8 % minimum',
+      'Délai de jouissance : 3 mois maximum',
+      'Démembrement possible',
+      'Versement programmé possible',
+    ]);
+    const sansDemembrement = liste[3].retirer(filtres);
+    expect(sansDemembrement.demembrement).toBe(false);
+    expect(sansDemembrement.versementProgramme).toBe(true);
+  });
+
+  it('filtres gardés avant l’ajout des nouveaux filtres : relus, nouveaux filtres vides', () => {
+    sessionStorage.setItem(
+      'scpi-invest.catalogue.filtres',
+      JSON.stringify({
+        pays: ['France'],
+        categories: [],
+        capitalisations: [],
+        gerants: [],
+        taux: { min: null, max: null },
+        prix: { min: null, max: null },
+        frais: { min: null, max: null },
+        minimum: { min: null, max: null },
+      }),
+    );
+    expect(relireFiltres()).toEqual({ ...FILTRES_VIDES, pays: ['France'] });
+    sessionStorage.setItem(
+      'scpi-invest.catalogue.filtres',
+      JSON.stringify({ ...FILTRES_VIDES, demembrement: 'oui' }),
+    );
+    expect(relireFiltres()).toEqual(FILTRES_VIDES);
+    sessionStorage.setItem('scpi-invest.catalogue.filtres', 'null');
+    expect(relireFiltres()).toEqual(FILTRES_VIDES);
+  });
+
   it('basculer : ajoute puis retire une valeur', () => {
     const avec = basculer(FILTRES_VIDES, 'pays', 'France');
     expect(avec.pays).toEqual(['France']);
