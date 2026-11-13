@@ -83,7 +83,7 @@
 
 .investisseur-progression__etape--courante {
   font-weight: 700;
-  color: var(--texte);
+  color: var(--bleu); /* #1e3a8a */
 }
 
 .investisseur-progression__etape--courante .investisseur-progression__pastille {
@@ -289,4 +289,50 @@
 
 .compte__carte.mise-a-jour {
   box-shadow: none;
+}
+
+/* Récapitulatif avant validation (FinQuestionnaire.jsx) : réponses par étape */
+.recap-investisseur {
+  padding: 16px 20px;
+  border: 1px solid var(--ligne);
+  border-radius: 16px;
+  background: var(--cadre);
+}
+
+.recap-investisseur__titre {
+  margin: 0 0 12px;
+  color: var(--bleu); /* #1e3a8a */
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.recap-investisseur__liste {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.recap-investisseur__ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 4px 16px;
+}
+
+.recap-investisseur__ligne dt {
+  color: var(--encre-douce);
+  font-size: 14px;
+}
+
+.recap-investisseur__ligne dd {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .recap-investisseur__ligne {
+    grid-template-columns: 1fr;
+  }
 }

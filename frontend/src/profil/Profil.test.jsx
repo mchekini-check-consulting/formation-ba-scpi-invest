@@ -96,6 +96,17 @@ describe('Page Profil', () => {
     expect(within(carte()).getByText('À mettre à jour · validé le 4 novembre 2026')).toBeTruthy();
   });
 
+  it('une mise à jour par 24 heures : bouton grisé et date de la prochaine possible', async () => {
+    const profil = { ...DONNEES.profil, miseAJourPossibleLe: '2026-11-14T14:30:00.000Z' };
+    await afficher({ charger: vi.fn().mockResolvedValue({ ...DONNEES, profil }) });
+    expect(within(carte()).queryByRole('link', { name: 'Mettre à jour mon profil' })).toBeNull();
+    const bouton = within(carte()).getByRole('button', { name: 'Mettre à jour mon profil' });
+    expect(bouton.disabled).toBe(true);
+    expect(carte().textContent).toContain(
+      'Votre profil a été validé il y a moins de 24 heures. Nouvelle mise à jour possible le 14 novembre 2026 à 15:30.',
+    );
+  });
+
   it('US-05d : pas de bouton tant que le profil n’est pas validé', async () => {
     await afficher({ charger: vi.fn().mockResolvedValue({ ...DONNEES, profil: null }) });
     expect(within(carte()).queryByRole('link', { name: 'Mettre à jour mon profil' })).toBeNull();

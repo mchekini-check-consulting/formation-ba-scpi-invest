@@ -454,3 +454,31 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Mise à jour pas encore possible (une par 24 heures) : bouton grisé et explication */
+.compte .profil__identite button.profil__mise-a-jour {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 18px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 25%);
+  color: rgb(255 255 255 / 75%);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: not-allowed;
+}
+
+.profil__attente-mise-a-jour {
+  margin: 10px 0 0;
+  color: var(--texte-sur-nuit);
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-align: left;
+}

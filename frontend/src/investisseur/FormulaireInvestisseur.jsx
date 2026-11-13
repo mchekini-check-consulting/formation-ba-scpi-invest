@@ -1,18 +1,13 @@
 // Formulaire investisseur (US-05a) : questionnaire MIF2 en 5 étapes, réponses enregistrées
-// à chaque « Suivant » et reprise à la première étape non complétée ; à la fin, profil
-// calculé, certification et validation (US-05b, ResultatProfil.jsx).
+// à chaque « Suivant » et reprise à la première étape non complétée ; à la fin,
+// récapitulatif des réponses, certification et validation, puis profil calculé et bouton
+// « Accéder au Catalogue » (US-05b, FinQuestionnaire.jsx).
 // Écran /formulaire-investisseur, destination après la validation du KYC (US-04b) :
 // accessible seulement avec un KYC validé (ExigerKycComplete, Routeur.jsx).
 import { useEffect, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import PageCompte from '../PageCompte.jsx';
-import {
-  enregistrerEtape,
-  lireProfil,
-  lireQuestionnaire,
-  reinitialiserEtape,
-  validerProfil,
-} from './api.js';
+import { enregistrerEtape, lireQuestionnaire, reinitialiserEtape, validerProfil } from './api.js';
 import {
   ETAPES,
   MESSAGES,
@@ -23,8 +18,11 @@ import {
   questionsVisibles,
   reponsesAEnvoyer,
 } from './questionnaire.js';
-import ResultatProfil from './ResultatProfil.jsx';
+import FinQuestionnaire from './FinQuestionnaire.jsx';
 import './investisseur.css';
+
+// Montant en euros : 9 chiffres au plus (jusqu'à 999 999 999 €)
+const LONGUEUR_MAX_MONTANT = 9;
 
 function naviguer(url) {
   window.location.assign(url);
@@ -83,8 +81,12 @@ export function Question({ question, valeur, erreur, changer }) {
             type="text"
             inputMode="numeric"
             value={valeur ?? ''}
-            // chiffres seulement : lettres et autres caractères ignorés (frappe ou collage)
-            onChange={(e) => changer(e.target.value.replace(/\D/g, ''))}
+            maxLength={LONGUEUR_MAX_MONTANT}
+            // chiffres seulement, 9 au plus : lettres et autres caractères ignorés (frappe
+            // ou collage)
+            onChange={(e) =>
+              changer(e.target.value.replace(/\D/g, '').slice(0, LONGUEUR_MAX_MONTANT))
+            }
             aria-invalid={Boolean(erreur)}
             aria-describedby={idErreur}
           />
@@ -131,7 +133,6 @@ export default function FormulaireInvestisseur({
   lire = lireQuestionnaire,
   enregistrer = enregistrerEtape,
   effacer = reinitialiserEtape,
-  calculerProfil = lireProfil,
   valider = validerProfil,
   seDeconnecter = deconnecter,
   allerA = naviguer,
@@ -241,11 +242,13 @@ export default function FormulaireInvestisseur({
   if (etape > NOMBRE_ETAPES) {
     return (
       <PageCompte titre="Formulaire investisseur" seDeconnecter={quitter}>
-        <ResultatProfil
-          lireProfil={calculerProfil}
+        <FinQuestionnaire
+          reponses={reponses}
           valider={valider}
           modifier={() => setEtape(1)}
-          apresValidation={() => allerA('/catalogue')}
+          destination="/catalogue"
+          libelleBouton="Accéder au Catalogue"
+          allerA={allerA}
         />
       </PageCompte>
     );

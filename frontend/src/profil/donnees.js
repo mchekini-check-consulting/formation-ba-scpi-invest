@@ -48,6 +48,22 @@ const DATE_LONGUE = new Intl.DateTimeFormat('fr-FR', {
   year: 'numeric',
 });
 
+const DATE_HEURE = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: 'Europe/Paris',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+// « 14 novembre 2026 à 15:30 » ; '' si la date est absente ou illisible
+export function dateEtHeure(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? '' : DATE_HEURE.format(date);
+}
+
 // « 4 novembre 2026 » ; '' si la date est absente ou illisible
 export function dateLongue(iso) {
   if (!iso) return '';
@@ -77,6 +93,8 @@ export function profilInvestisseur(profil) {
     valideLe: dateLongue(profil.valideLe),
     // US-05d : profil de plus de 24 mois ou questionnaire modifié
     aMettreAJour: profil.aMettreAJour === true,
+    // Une mise à jour au plus par 24 heures : date de la prochaine possible ('' : possible)
+    miseAJourPossibleLe: dateEtHeure(profil.miseAJourPossibleLe),
     ...PROFILS[profil.profil],
   };
 }
