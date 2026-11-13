@@ -47,6 +47,10 @@ export type ValeursFiltres = {
   prix: Plage;
   frais: Plage;
   minimum: Plage;
+  fraisGestion: Plage;
+  jouissance: Plage;
+  // fréquences de versement présentes dans les données
+  frequences: string[];
 };
 
 export type OptionsFiltres = ValeursFiltres & {

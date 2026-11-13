@@ -21,6 +21,9 @@ const OPTIONS = {
   prix: { min: 168, max: 1664 },
   frais: { min: 0, max: 12 },
   minimum: { min: null, max: null },
+  fraisGestion: { min: 7.2, max: 24 },
+  jouissance: { min: 0, max: 6 },
+  frequences: ['Mensuelle', 'Trimestrielle'],
   anneeTaux: 2025,
 };
 
@@ -408,13 +411,18 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
       'Pays',
       'Capitalisation',
       'Société de gestion',
+      'Fréquence de versement',
       'Taux de distribution 2025 (%)',
       'Prix de la part (€)',
       'Frais de souscription (%)',
+      'Frais de gestion (%)',
+      'Délai de jouissance (mois)',
+      'Options',
     ]);
     // Investissement minimum : aucune donnée, pas de curseur
     expect(within(panneau()).getByRole('checkbox', { name: 'Plus de 3 Md€' })).toBeDefined();
-    expect(within(panneau()).getAllByRole('slider')).toHaveLength(6);
+    expect(within(panneau()).getAllByRole('slider')).toHaveLength(10);
+    expect(within(panneau()).getByRole('checkbox', { name: 'Mensuelle' })).toBeDefined();
     expect(document.activeElement.getAttribute('aria-label')).toBe('Fermer les filtres');
   });
 
@@ -442,6 +450,26 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     // Gardés le temps de la session du navigateur
     const gardes = JSON.parse(sessionStorage.getItem('scpi-invest.catalogue.filtres'));
     expect(gardes.pays).toEqual(['France']);
+  });
+
+  it('cases « possible » : démembrement appliqué tout de suite, pastille retirable', async () => {
+    const { lister } = await ouvrir();
+    await act(async () => {
+      fireEvent.click(within(panneau()).getByRole('checkbox', { name: 'Démembrement possible' }));
+    });
+    expect(lister).toHaveBeenLastCalledWith(
+      1,
+      { ...FILTRES_VIDES, demembrement: true },
+      TRI_PAR_DEFAUT,
+    );
+    const actifs = screen.getByRole('list', { name: 'Filtres actifs' });
+    expect(actifs.textContent).toContain('Démembrement possible');
+    await act(async () => {
+      fireEvent.click(
+        within(actifs).getByRole('button', { name: 'Retirer le filtre Démembrement possible' }),
+      );
+    });
+    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, TRI_PAR_DEFAUT);
   });
 
   it('US-10b : curseur appliqué au relâchement, bornes issues des données', async () => {

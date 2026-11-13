@@ -8,6 +8,7 @@ import './filtres.css';
 import {
   CHOIX,
   FILTRES_VIDES,
+  OPTIONS,
   PLAGES,
   basculer,
   changerPlage,
@@ -136,7 +137,31 @@ function CasesACocher({ titre, valeurs, choisies, libelle = (v) => v, onBasculer
 
 function valeursChoix(cle, options) {
   if (cle === 'capitalisations') return options.capitalisations.map((t) => t.code);
-  return options[cle];
+  return options[cle] ?? [];
+}
+
+// Cases « possible » (démembrement, versement programmé) : cochée = seulement les SCPI
+// qui proposent l'option
+function CasesOptions({ filtres, onChange }) {
+  return (
+    <fieldset className="filtres__groupe">
+      <legend className="filtres__titre">Options</legend>
+      <ul className="filtres__cases">
+        {OPTIONS.map(({ cle, titre }) => (
+          <li key={cle}>
+            <label className="filtres__case">
+              <input
+                type="checkbox"
+                checked={filtres[cle]}
+                onChange={() => onChange({ ...filtres, [cle]: !filtres[cle] })}
+              />
+              {titre}
+            </label>
+          </li>
+        ))}
+      </ul>
+    </fieldset>
+  );
 }
 
 function libelleChoix(cle, options) {
@@ -247,6 +272,7 @@ export function PanneauFiltres({ filtres, options, total, onChange, onFermer, re
                   />
                 ),
               )}
+              <CasesOptions filtres={filtres} onChange={onChange} />
             </>
           ) : (
             <p className="filtres__vide">Les filtres ne sont pas disponibles pour le moment.</p>

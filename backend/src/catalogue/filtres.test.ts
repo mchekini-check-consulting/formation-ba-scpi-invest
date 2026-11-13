@@ -11,6 +11,42 @@ function erreur(requete: Record<string, unknown>): unknown {
   return null;
 }
 
+describe('nouveaux filtres : frais de gestion, jouissance, fréquence, options', () => {
+  it('plages, fréquences et cases « possible » lues dans l’URL', () => {
+    expect(
+      lireFiltres({
+        fraisGestionMin: '8',
+        fraisGestionMax: '12.5',
+        jouissanceMax: '3',
+        frequence: ['Mensuelle', 'Trimestrielle', 'Mensuelle'],
+        demembrement: 'oui',
+        versementProgramme: 'true',
+      }),
+    ).toMatchObject({
+      fraisGestion: { min: 8, max: 12.5 },
+      jouissance: { min: null, max: 3 },
+      frequences: ['Mensuelle', 'Trimestrielle'],
+      demembrement: true,
+      versementProgramme: true,
+    });
+    expect(lireFiltres({ demembrement: '' })).toMatchObject({ demembrement: false });
+  });
+
+  it('fréquence inconnue, case mal renseignée ou plage inversée -> 400', () => {
+    for (const requete of [
+      { frequence: 'Hebdomadaire' },
+      { demembrement: 'peut-être' },
+      { versementProgramme: 'non' },
+      { jouissanceMin: '5', jouissanceMax: '2' },
+      { fraisGestionMin: 'abc' },
+    ]) {
+      const e = erreur(requete);
+      expect(e).toBeInstanceOf(HttpError);
+      expect((e as HttpError).status).toBe(400);
+    }
+  });
+});
+
 describe('filtres du Catalogue lus dans l’URL (US-10a, US-10b)', () => {
   it('aucun filtre : rien n’est restreint', () => {
     expect(lireFiltres()).toEqual(AUCUN_FILTRE);
