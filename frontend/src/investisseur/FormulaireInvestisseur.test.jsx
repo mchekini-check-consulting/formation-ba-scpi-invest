@@ -277,7 +277,7 @@ describe('FormulaireInvestisseur (US-05a)', () => {
     expect(screen.getByRole('form', { name: 'Récapitulatif' })).toBeDefined();
   });
 
-  it('US-05b scénario 9 : validation -> profil affiché, puis Catalogue', async () => {
+  it('US-05b scénario 9 : validation -> profil affiché, Catalogue au clic sur le bouton', async () => {
     const { valider, allerA } = await afficher({ avancement: { etapeCourante: 6, reponses: {} } });
     fireEvent.click(
       screen.getByRole('checkbox', { name: 'Je certifie l’exactitude de mes réponses' }),
@@ -285,7 +285,8 @@ describe('FormulaireInvestisseur (US-05a)', () => {
     await cliquer('Valider');
     expect(valider).toHaveBeenCalled();
     expect(texte()).toContain('Équilibré');
-    await cliquer('Continuer maintenant');
+    expect(allerA).not.toHaveBeenCalled();
+    await cliquer('Accéder au Catalogue');
     expect(allerA).toHaveBeenCalledWith('/catalogue');
   });
 

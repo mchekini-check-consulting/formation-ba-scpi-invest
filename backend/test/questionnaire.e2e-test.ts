@@ -124,6 +124,7 @@ describe('formulaire investisseur (e2e)', () => {
       avertissements: [],
       valideLe: null,
       aMettreAJour: false,
+      miseAJourPossibleLe: null,
     });
 
     // certification obligatoire, puis validation
@@ -161,6 +162,14 @@ describe('formulaire investisseur (e2e)', () => {
     expect((await pool.query('select id from profil_investisseur')).rows).toHaveLength(1);
 
     await appel('post', '/mise-a-jour/validation').send({ reponses: nouvelles }).expect(400);
+    // Une mise à jour au plus par 24 heures : refusée juste après la première validation
+    const refus = await appel('post', '/mise-a-jour/validation')
+      .send({ reponses: nouvelles, certification: true })
+      .expect(409);
+    expect(refus.body.message).toContain('moins de 24 heures');
+    expect((await appel('get', '/profil').expect(200)).body.miseAJourPossibleLe).not.toBeNull();
+    // Première validation vieillie de 25 heures : mise à jour acceptée
+    await pool.query("update profil_investisseur set valide_le = valide_le - interval '25 hours'");
     await appel('post', '/mise-a-jour/validation')
       .send({ reponses: nouvelles, certification: true })
       .expect(201, { profil: 'prudent', avertissements: ['horizon'] });
@@ -171,6 +180,7 @@ describe('formulaire investisseur (e2e)', () => {
     expect(historique.rows.map((ligne) => ligne.profil)).toEqual(['equilibre', 'prudent']);
     const actif = (await appel('get', '/profil').expect(200)).body;
     expect(actif).toMatchObject({ profil: 'prudent', aMettreAJour: false });
+    expect(actif.miseAJourPossibleLe).not.toBeNull();
     expect(actif.valideLe).toBe(new Date(historique.rows[1].valide_le).toISOString());
     expect((await appel('get').expect(200)).body.reponses['4'].horizon).toBe('<3');
   });

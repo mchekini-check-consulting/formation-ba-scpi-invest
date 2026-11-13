@@ -119,7 +119,7 @@ export default function MiseAJourProfil({
         valider={validerNouveauProfil}
         modifier={() => setEtape(1)}
         destination="/profil"
-        libelleDestination="votre page Mon profil"
+        libelleBouton="Revenir à mon profil"
         allerA={allerA}
       />
     );

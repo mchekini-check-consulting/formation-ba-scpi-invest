@@ -83,6 +83,49 @@ function statutProfil(profil) {
   return `Validé le ${profil.valideLe}`;
 }
 
+const ICONE_MISE_A_JOUR = (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M3 12a9 9 0 0 1 15.5-6.3L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.3L3 16M3 21v-5h5" />
+  </svg>
+);
+
+// « Mettre à jour mon profil » ; grisé, avec son explication, moins de 24 heures après la
+// dernière validation (une mise à jour au plus par 24 heures)
+function BoutonMiseAJour({ profil }) {
+  if (profil.miseAJourPossibleLe) {
+    return (
+      <>
+        <button
+          type="button"
+          className="profil__mise-a-jour"
+          disabled
+          aria-describedby="profil-mise-a-jour-attente"
+        >
+          {ICONE_MISE_A_JOUR}
+          Mettre à jour mon profil
+        </button>
+        <p id="profil-mise-a-jour-attente" className="profil__attente-mise-a-jour">
+          Votre profil a été validé il y a moins de 24 heures. Nouvelle mise à jour possible le{' '}
+          {profil.miseAJourPossibleLe}.
+        </p>
+      </>
+    );
+  }
+  return (
+    <LienInterne
+      to={CHEMIN_MISE_A_JOUR}
+      className={
+        profil.aMettreAJour
+          ? 'profil__mise-a-jour profil__mise-a-jour--rappel'
+          : 'profil__mise-a-jour'
+      }
+    >
+      {ICONE_MISE_A_JOUR}
+      Mettre à jour mon profil
+    </LienInterne>
+  );
+}
+
 function Statut({ libelle, valeur, ok }) {
   return (
     <div className="profil__statut">
@@ -119,19 +162,7 @@ function CarteIdentite({ donnees, pieces }) {
               qu’il reflète votre situation actuelle.
             </p>
           )}
-          <LienInterne
-            to={CHEMIN_MISE_A_JOUR}
-            className={
-              profil.aMettreAJour
-                ? 'profil__mise-a-jour profil__mise-a-jour--rappel'
-                : 'profil__mise-a-jour'
-            }
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M3 12a9 9 0 0 1 15.5-6.3L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.3L3 16M3 21v-5h5" />
-            </svg>
-            Mettre à jour mon profil
-          </LienInterne>
+          <BoutonMiseAJour profil={profil} />
         </>
       ) : (
         <p className="profil__a-completer">

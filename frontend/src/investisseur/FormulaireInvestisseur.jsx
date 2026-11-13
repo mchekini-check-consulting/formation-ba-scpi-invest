@@ -1,7 +1,7 @@
 // Formulaire investisseur (US-05a) : questionnaire MIF2 en 5 étapes, réponses enregistrées
 // à chaque « Suivant » et reprise à la première étape non complétée ; à la fin,
-// récapitulatif des réponses, certification et validation, puis profil calculé et
-// Catalogue (US-05b, FinQuestionnaire.jsx).
+// récapitulatif des réponses, certification et validation, puis profil calculé et bouton
+// « Accéder au Catalogue » (US-05b, FinQuestionnaire.jsx).
 // Écran /formulaire-investisseur, destination après la validation du KYC (US-04b) :
 // accessible seulement avec un KYC validé (ExigerKycComplete, Routeur.jsx).
 import { useEffect, useState } from 'react';
@@ -247,7 +247,7 @@ export default function FormulaireInvestisseur({
           valider={valider}
           modifier={() => setEtape(1)}
           destination="/catalogue"
-          libelleDestination="le Catalogue"
+          libelleBouton="Accéder au Catalogue"
           allerA={allerA}
         />
       </PageCompte>

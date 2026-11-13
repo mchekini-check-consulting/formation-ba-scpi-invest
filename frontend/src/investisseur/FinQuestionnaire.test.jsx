@@ -3,10 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ErreurApi } from '../auth.js';
 import FinQuestionnaire from './FinQuestionnaire.jsx';
 
-afterEach(() => {
-  cleanup();
-  vi.useRealTimers();
-});
+afterEach(cleanup);
 
 const REPONSES = {
   1: { revenus: '30-60k', patrimoine: '50-150k', charges: '<20', epargne: '15000' },
@@ -27,7 +24,6 @@ function afficher({
   valider = vi.fn().mockResolvedValue({ profil: 'prudent', avertissements: ['horizon'] }),
   modifier = vi.fn(),
   allerA = vi.fn(),
-  delai,
 } = {}) {
   render(
     <FinQuestionnaire
@@ -35,9 +31,8 @@ function afficher({
       valider={valider}
       modifier={modifier}
       destination="/catalogue"
-      libelleDestination="le Catalogue"
+      libelleBouton="Accéder au Catalogue"
       allerA={allerA}
-      delai={delai}
     />,
   );
   return { valider, modifier, allerA };
@@ -95,29 +90,42 @@ describe('Fin du formulaire investisseur : récapitulatif puis résultat', () =>
     expect(bouton.disabled).toBe(false);
   });
 
-  it('validation : profil et avertissements affichés, puis Catalogue automatiquement', async () => {
+  it('validation : profil et avertissements affichés, pas de redirection automatique', async () => {
     vi.useFakeTimers();
-    const { valider, allerA } = afficher({ delai: 5000 });
-    fireEvent.click(certification());
-    await cliquer('Valider');
-    expect(valider).toHaveBeenCalled();
-    expect(texte()).toContain('Votre profil investisseur');
-    expect(texte()).toContain('Prudent');
-    expect(texte()).toContain('La durée de placement recommandée');
-    expect(texte()).toContain('Vous allez être redirigé vers le Catalogue');
-    expect(allerA).not.toHaveBeenCalled();
-    await act(async () => {
-      vi.advanceTimersByTime(5000);
-    });
-    expect(allerA).toHaveBeenCalledWith('/catalogue');
+    try {
+      const { valider, allerA } = afficher();
+      fireEvent.click(certification());
+      await cliquer('Valider');
+      expect(valider).toHaveBeenCalled();
+      expect(texte()).toContain('Votre profil investisseur');
+      expect(texte()).toContain('Prudent');
+      expect(texte()).toContain('La durée de placement recommandée');
+      expect(texte()).not.toContain('Votre profil est enregistré.');
+      await act(async () => {
+        vi.advanceTimersByTime(60_000);
+      });
+      expect(allerA).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
-  it('« Continuer maintenant » : Catalogue sans attendre', async () => {
+  it('« Accéder au Catalogue » : le Catalogue s’ouvre au clic', async () => {
     const { allerA } = afficher();
     fireEvent.click(certification());
     await cliquer('Valider');
-    await cliquer('Continuer maintenant');
+    await cliquer('Accéder au Catalogue');
     expect(allerA).toHaveBeenCalledWith('/catalogue');
+  });
+
+  it('mise à jour refusée par le backend (409) : son message, on reste sur le récapitulatif', async () => {
+    const message = 'Votre profil a été validé il y a moins de 24 heures. Réessayez plus tard.';
+    const valider = vi.fn().mockRejectedValue(new ErreurApi(409, message));
+    afficher({ valider });
+    fireEvent.click(certification());
+    await cliquer('Valider');
+    expect(screen.getByRole('alert').textContent).toBe(message);
+    expect(screen.getByRole('form', { name: 'Récapitulatif' })).toBeDefined();
   });
 
   it('échec de la validation : message, réponses conservées, nouvel essai possible', async () => {

@@ -3,6 +3,7 @@ import { ErreurApi } from '../auth.js';
 import {
   chargerProfil,
   compteurPieces,
+  dateEtHeure,
   dateLongue,
   identite,
   piecesAffichees,
@@ -64,6 +65,14 @@ describe('chargerProfil', () => {
     await expect(
       chargerProfil(sources({ lireLeProfil: vi.fn().mockRejectedValue(new ErreurApi(401, 'x')) })),
     ).rejects.toMatchObject({ status: 401 });
+  });
+});
+
+describe('dateEtHeure', () => {
+  it('date et heure de Paris ; vide si absente ou illisible', () => {
+    expect(dateEtHeure('2026-11-14T14:30:00.000Z')).toBe('14 novembre 2026 à 15:30');
+    expect(dateEtHeure(null)).toBe('');
+    expect(dateEtHeure('pas une date')).toBe('');
   });
 });
 

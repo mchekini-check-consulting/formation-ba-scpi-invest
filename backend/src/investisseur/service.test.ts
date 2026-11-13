@@ -7,6 +7,7 @@ import {
   type DerniereValidation,
   aMettreAJour,
   creerQuestionnaireService,
+  prochaineMiseAJour,
 } from './service.js';
 
 // Horloge des tests : 10 novembre 2026
@@ -144,6 +145,7 @@ describe('QuestionnaireService (US-05b)', () => {
       avertissements: [],
       valideLe: null,
       aMettreAJour: false,
+      miseAJourPossibleLe: null,
     });
   });
 
@@ -312,5 +314,49 @@ describe('QuestionnaireService (US-05d)', () => {
     const demande = { reponses: REPONSES, certification: true };
     expect((await erreurDe(service.validerMiseAJour('u1', demande))).status).toBe(409);
     expect(profils.enregistrer).not.toHaveBeenCalled();
+  });
+});
+
+describe('QuestionnaireService : une mise à jour au plus par 24 heures', () => {
+  const validation = (valideLe: string) => ({
+    valideLe: new Date(valideLe),
+    versionQuestionnaire: VERSION_QUESTIONNAIRE,
+  });
+
+  it('prochaineMiseAJour : 24 heures après la dernière validation ; null sinon', () => {
+    expect(prochaineMiseAJour(null, MAINTENANT)).toBeNull();
+    expect(prochaineMiseAJour(validation('2026-11-10T09:00:00.000Z'), MAINTENANT)).toEqual(
+      new Date('2026-11-11T09:00:00.000Z'),
+    );
+    expect(prochaineMiseAJour(validation('2026-11-09T10:00:00.000Z'), MAINTENANT)).toBeNull();
+    expect(prochaineMiseAJour(validation('2026-11-01T00:00:00.000Z'), MAINTENANT)).toBeNull();
+  });
+
+  it('profil : date de la prochaine mise à jour possible', async () => {
+    const { service } = preparer(TERMINE, true, validation('2026-11-10T09:00:00.000Z'));
+    expect((await service.profil('u1')).miseAJourPossibleLe).toBe('2026-11-11T09:00:00.000Z');
+  });
+
+  it('validerMiseAJour : moins de 24 heures après la dernière validation -> 409, rien enregistré', async () => {
+    const { service, depot, profils } = preparer(
+      TERMINE,
+      true,
+      validation('2026-11-10T09:00:00.000Z'),
+    );
+    const err = await erreurDe(
+      service.validerMiseAJour('u1', { reponses: REPONSES, certification: true }),
+    );
+    expect([err.status, err.message]).toEqual([
+      409,
+      'Votre profil a été validé il y a moins de 24 heures. Réessayez plus tard.',
+    ]);
+    expect(profils.enregistrer).not.toHaveBeenCalled();
+    expect(depot.enregistrer).not.toHaveBeenCalled();
+  });
+
+  it('validerMiseAJour : 24 heures ou plus après -> accepté', async () => {
+    const { service, profils } = preparer(TERMINE, true, validation('2026-11-09T10:00:00.000Z'));
+    await service.validerMiseAJour('u1', { reponses: REPONSES, certification: true });
+    expect(profils.enregistrer).toHaveBeenCalled();
   });
 });

@@ -3,13 +3,11 @@
 //    réponses conservées) ;
 // 2. certification obligatoire (« Valider » désactivé tant qu'elle n'est pas cochée) ;
 // 3. validation : le backend calcule et enregistre le profil, qui s'affiche alors avec ses
-//    avertissements ; l'écran suivant s'ouvre tout seul après quelques secondes.
-import { useEffect, useState } from 'react';
+//    avertissements ; l'investisseur passe à l'écran suivant quand il le décide (bouton),
+//    sans redirection automatique.
+import { useState } from 'react';
 import { AVERTISSEMENTS, CERTIFICATION, ECHEC_VALIDATION, PROFILS } from './profils.js';
 import { recapitulatif } from './questionnaire.js';
-
-// Temps laissé pour lire le profil avant d'ouvrir l'écran suivant
-export const DELAI_REDIRECTION = 6000;
 
 function Recapitulatif({ reponses }) {
   return recapitulatif(reponses).map((etape) => (
@@ -27,13 +25,8 @@ function Recapitulatif({ reponses }) {
   ));
 }
 
-// Profil obtenu après la validation, puis l'écran suivant
-function ProfilObtenu({ resultat, intro, destination, libelleDestination, allerA, delai }) {
-  useEffect(() => {
-    const minuterie = setTimeout(() => allerA(destination), delai);
-    return () => clearTimeout(minuterie);
-  }, [allerA, destination, delai]);
-
+// Profil obtenu après la validation ; l'écran suivant s'ouvre au clic sur le bouton
+function ProfilObtenu({ resultat, intro, destination, libelleBouton, allerA }) {
   const { nom, explication } = PROFILS[resultat.profil];
   return (
     <div className="compte__form" aria-live="polite">
@@ -49,28 +42,23 @@ function ProfilObtenu({ resultat, intro, destination, libelleDestination, allerA
           {AVERTISSEMENTS[cle]}
         </p>
       ))}
-      <p className="compte__texte">
-        Votre profil est enregistré. Vous allez être redirigé vers {libelleDestination} dans
-        quelques secondes.
-      </p>
       <button type="button" className="compte__bouton" onClick={() => allerA(destination)}>
-        Continuer maintenant
+        {libelleBouton}
       </button>
     </div>
   );
 }
 
 // reponses : réponses des 5 étapes ({ 1: {...}, ... }) ; valider() renvoie le profil
-// calculé ; destination : écran ouvert après la validation (allerA)
+// calculé ; destination : écran ouvert par le bouton libelleBouton après la validation
 export default function FinQuestionnaire({
   reponses,
   valider,
   modifier,
   destination,
-  libelleDestination,
+  libelleBouton,
   allerA,
   intro = 'Votre profil investisseur',
-  delai = DELAI_REDIRECTION,
 }) {
   const [certifie, setCertifie] = useState(false);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
@@ -84,8 +72,9 @@ export default function FinQuestionnaire({
     setErreur('');
     try {
       setResultat(await valider());
-    } catch {
-      setErreur(ECHEC_VALIDATION);
+    } catch (err) {
+      // Refus expliqué par le backend (ex. une mise à jour par 24 heures) : son message
+      setErreur(err?.status === 409 ? err.message : ECHEC_VALIDATION);
       setEnvoiEnCours(false);
     }
   }
@@ -96,9 +85,8 @@ export default function FinQuestionnaire({
         resultat={resultat}
         intro={intro}
         destination={destination}
-        libelleDestination={libelleDestination}
+        libelleBouton={libelleBouton}
         allerA={allerA}
-        delai={delai}
       />
     );
   }

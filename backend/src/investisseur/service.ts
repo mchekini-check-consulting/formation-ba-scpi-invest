@@ -15,8 +15,14 @@ export type Etat = Avancement & { valide: boolean };
 export type ProfilAffiche = { profil: Profil; avertissements: Avertissement[] };
 
 // Page Profil : date et heure de la dernière validation (ISO), null si pas encore validé ;
-// aMettreAJour : rappel de l'US-05d (profil de plus de 24 mois ou questionnaire modifié)
-export type ProfilConsulte = ProfilAffiche & { valideLe: string | null; aMettreAJour: boolean };
+// aMettreAJour : rappel de l'US-05d (profil de plus de 24 mois ou questionnaire modifié) ;
+// miseAJourPossibleLe : date (ISO) à partir de laquelle une nouvelle mise à jour est
+// possible, null si elle l'est déjà (une mise à jour au plus par 24 heures)
+export type ProfilConsulte = ProfilAffiche & {
+  valideLe: string | null;
+  aMettreAJour: boolean;
+  miseAJourPossibleLe: string | null;
+};
 
 // Dernière validation d'un utilisateur : date et version du questionnaire alors en vigueur
 export type DerniereValidation = { valideLe: Date; versionQuestionnaire: string };
@@ -57,6 +63,21 @@ export function aMettreAJour(derniere: DerniereValidation | null, maintenant: Da
   const limite = new Date(derniere.valideLe);
   limite.setMonth(limite.getMonth() + DUREE_VALIDITE_MOIS);
   return limite <= maintenant || derniere.versionQuestionnaire !== VERSION_QUESTIONNAIRE;
+}
+
+// Une mise à jour du profil au plus par 24 heures glissantes, après la dernière validation
+export const DELAI_ENTRE_MISES_A_JOUR_MS = 24 * 60 * 60 * 1000;
+export const MESSAGE_TROP_TOT =
+  'Votre profil a été validé il y a moins de 24 heures. Réessayez plus tard.';
+
+// Date à partir de laquelle une nouvelle mise à jour est possible ; null si elle l'est déjà
+export function prochaineMiseAJour(
+  derniere: DerniereValidation | null,
+  maintenant: Date,
+): Date | null {
+  if (!derniere) return null;
+  const possible = new Date(derniere.valideLe.getTime() + DELAI_ENTRE_MISES_A_JOUR_MS);
+  return possible > maintenant ? possible : null;
 }
 
 function objet(valeur: unknown): valeur is Record<string, unknown> {
@@ -177,6 +198,7 @@ export function creerQuestionnaireService(
       avertissements,
       valideLe: derniere?.valideLe.toISOString() ?? null,
       aMettreAJour: aMettreAJour(derniere, maintenant()),
+      miseAJourPossibleLe: prochaineMiseAJour(derniere, maintenant())?.toISOString() ?? null,
     };
   }
 
@@ -227,6 +249,9 @@ export function creerQuestionnaireService(
       throw new HttpError(400, SANS_CERTIFICATION);
     }
     const reponses = await reponsesDeMiseAJour(utilisateurId, demande);
+    if (prochaineMiseAJour(await profils.derniereValidation(utilisateurId), maintenant())) {
+      throw new HttpError(409, MESSAGE_TROP_TOT);
+    }
     const calcule = calculerProfil(reponses);
     await profils.enregistrer(utilisateurId, {
       ...calcule,

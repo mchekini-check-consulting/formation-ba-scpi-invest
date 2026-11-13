@@ -115,7 +115,8 @@ describe('Mise à jour du profil investisseur (US-05d)', () => {
     expect(texte()).toContain('Votre nouveau profil investisseur');
     expect(texte()).toContain('Prudent');
     expect(texte()).toContain('La durée de placement recommandée');
-    await cliquer('Continuer maintenant');
+    expect(allerA).not.toHaveBeenCalledWith('/profil');
+    await cliquer('Revenir à mon profil');
     expect(allerA).toHaveBeenCalledWith('/profil');
   });
 
