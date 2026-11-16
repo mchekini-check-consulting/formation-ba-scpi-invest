@@ -1,0 +1,30 @@
+# Pile réservée aux tests de bout en bout (démarrée par playwright.config.ts) :
+# rien de commun avec la base de lancer-en-local (port 5432) ni avec R2.
+# Recréée vide à chaque lancement des tests. Arrêt : docker compose -f e2e-tests/compose.yaml down
+name: scpi-invest-e2e
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: scpi_invest
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      # Port peu courant : 5432 et 5433 sont souvent pris par un PostgreSQL du poste
+      - '55433:5432'
+    # Données en mémoire : perdues à l'arrêt du conteneur, rien à nettoyer
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'app', '-d', 'scpi_invest']
+      interval: 1s
+      retries: 30
+
+  # Imitation de Cloudflare R2 (API S3) : CSV du catalogue et pièces du KYC.
+  # Fichiers gardés dans le conteneur : perdus à son arrêt.
+  s3:
+    image: adobe/s3mock:5.2.3
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: scpi-e2e
+    ports:
+      - '9590:9090'
