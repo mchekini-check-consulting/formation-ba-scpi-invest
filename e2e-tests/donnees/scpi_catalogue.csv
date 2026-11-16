@@ -1,0 +1,4 @@
+Nom,taux_distribution,minimum_souscription,localisation,secteurs,prix_part,capitalisation,Gerant,frais_souscription,frais_gestion,delai_jouissance,frequence_loyers,valeur_reconstitution,iban,bic,decote_demembrement,demembrement,cashback,versement_programme,publicite
+Alpha Bureaux,"5.1,4.9",1000,"France,100","Bureaux,100",200,150000000,Atlas REIM,10,12,4,Trimestrielle,215.5,FR7630001007941234567890185,BNPAFRPPXXX,"5,80",Oui,,Oui,Texte Alpha Bureaux
+Bêta Santé,"4.5,4.2",500,"Espagne,100","Sante,100",250,500000000,Mistral Capital,10,12,4,Trimestrielle,260,FR7630001007941234567890185,BNPAFRPPXXX,"5,80",Oui,,Oui,Texte Bêta Santé
+Gamma Patrimoine,"6.2,5.8",5000,"Allemagne,70,France,30","Bureaux,60,Sante,40",1000,400000000,Pierre Gestion,10,12,4,Trimestrielle,1050,FR7630001007941234567890185,BNPAFRPPXXX,"5,80",Oui,,Oui,Texte Gamma Patrimoine

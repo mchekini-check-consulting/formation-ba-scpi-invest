@@ -1,0 +1,14 @@
+{
+  // Tests de bout en bout Playwright uniquement (backend/ et frontend/ ont leur propre configuration).
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": ["playwright.config.ts", "e2e-tests/**/*.ts"]
+}

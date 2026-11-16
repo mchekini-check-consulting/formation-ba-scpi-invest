@@ -10,7 +10,8 @@ export default defineConfig({
     // Appels au backend en local : /api -> backend lancé sur le poste (src/api.js : apiBase)
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        // BACKEND_URL : autre backend local (tests de bout en bout, playwright.config.ts)
+        target: process.env.BACKEND_URL ?? 'http://localhost:8080',
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },

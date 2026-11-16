@@ -1,0 +1,55 @@
+# Pull request vers main : tests de bout en bout Playwright (e2e-tests/), à part de pr.yaml.
+# playwright.config.ts démarre toute l'application de test : pile Docker (PostgreSQL jetable,
+# S3Mock à la place de R2, catalogue de test), backend, frontend. Aucun secret nécessaire.
+# Rapport HTML (captures, traces) gardé en artifact « playwright-report », succès ou échec :
+# le télécharger depuis la page du run, le décompresser, puis npx playwright show-report <dossier>.
+name: e2e
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Nouveau push sur la PR : le run précédent, devenu inutile, est annulé
+concurrency:
+  group: e2e-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24 # comme les Dockerfile du backend et du frontend
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Dépendances (Playwright, backend, frontend)
+        run: |
+          npm ci
+          npm ci --prefix backend
+          npm ci --prefix frontend
+
+      - name: Navigateur Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Tests Playwright
+        run: npx playwright test
+
+      # !cancelled() : aussi quand les tests échouent (pas quand le run est annulé)
+      - name: Rapport Playwright
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 3
