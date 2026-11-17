@@ -2,18 +2,24 @@
 // (US-10a, US-10b). Le panneau s'ouvre par-dessus la liste, défile verticalement, et se
 // ferme par « Fermer », « Voir les SCPI », Échap ou un clic à côté. Chaque changement est
 // appliqué tout de suite à la liste ; un curseur l'est quand on le relâche.
-import { useEffect, useId, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './filtres.css';
 import {
   CHOIX,
   FILTRES_VIDES,
+  MODES,
+  MODE_PAR_DEFAUT,
+  NOMBRE_VISIBLE,
   OPTIONS,
   PLAGES,
   basculer,
   changerPlage,
   formaterValeur,
   pastilles,
+  phraseRecherche,
+  regle,
+  valeursVisibles,
 } from './filtres.js';
 
 const PRECISION = 1e-9;
@@ -109,15 +115,81 @@ function CurseurPlage({ titre, unite, pas, plage, bornes, anneeTaux, onChange })
   );
 }
 
-function CasesACocher({ titre, valeurs, choisies, libelle = (v) => v, onBasculer }) {
+// Choix de la combinaison des cases (catégorie, pays) : au moins un, tous, uniquement
+function ChoixMode({ titre, valeur, onChange }) {
+  return (
+    <div className="filtres__modes" role="group" aria-label={`Combinaison des cases ${titre}`}>
+      {MODES.map(({ code, libelle }) => (
+        <button
+          key={code}
+          type="button"
+          className="filtres__mode"
+          aria-pressed={valeur === code}
+          onClick={() => onChange(code)}
+        >
+          {libelle}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CasesACocher({
+  titre,
+  valeurs,
+  choisies,
+  libelle = (v) => v,
+  onBasculer,
+  mode,
+  valeurMode = MODE_PAR_DEFAUT,
+  onMode,
+  colonnes = false,
+  recherche = false,
+}) {
+  const idListe = useId();
+  const [texte, setTexte] = useState('');
+  const [tout, setTout] = useState(false);
+  const { visibles, cachees } = recherche
+    ? valeursVisibles(valeurs, { choisies, texte, tout, libelle })
+    : { visibles: valeurs, cachees: 0 };
+
+  // Échap dans la recherche : vide le champ d'abord, ferme le panneau ensuite
+  function surTouche(evenement) {
+    if (evenement.key === 'Escape' && texte) {
+      evenement.stopPropagation();
+      setTexte('');
+    }
+  }
+
   return (
     <fieldset className="filtres__groupe">
       <legend className="filtres__titre">{titre}</legend>
-      {valeurs.length === 0 ? (
-        <p className="filtres__vide">Aucune valeur disponible.</p>
-      ) : (
-        <ul className="filtres__cases">
-          {valeurs.map((valeur) => (
+      {mode && <ChoixMode titre={titre} valeur={valeurMode} onChange={onMode} />}
+      <p className="filtres__regle">{regle(valeurMode, mode?.nom)}</p>
+      {recherche && valeurs.length > NOMBRE_VISIBLE && (
+        <input
+          type="search"
+          className="filtres__chercher"
+          placeholder={`Rechercher parmi ${valeurs.length}…`}
+          aria-label={`Rechercher : ${titre}`}
+          aria-controls={idListe}
+          value={texte}
+          onChange={(e) => setTexte(e.target.value)}
+          onKeyDown={surTouche}
+        />
+      )}
+      {valeurs.length === 0 && <p className="filtres__vide">Aucune valeur disponible.</p>}
+      {valeurs.length > 0 && visibles.length === 0 && (
+        <p className="filtres__vide" role="status">
+          Aucun résultat pour « {texte.trim()} ».
+        </p>
+      )}
+      {visibles.length > 0 && (
+        <ul
+          id={idListe}
+          className={colonnes ? 'filtres__cases filtres__cases--colonnes' : 'filtres__cases'}
+        >
+          {visibles.map((valeur) => (
             <li key={valeur}>
               <label className="filtres__case">
                 <input
@@ -130,6 +202,17 @@ function CasesACocher({ titre, valeurs, choisies, libelle = (v) => v, onBasculer
             </li>
           ))}
         </ul>
+      )}
+      {recherche && !texte.trim() && (cachees > 0 || tout) && (
+        <button
+          type="button"
+          className="filtres__plus"
+          aria-expanded={tout}
+          aria-controls={idListe}
+          onClick={() => setTout(!tout)}
+        >
+          {tout ? 'Voir moins' : `Voir les ${valeurs.length}`}
+        </button>
       )}
     </fieldset>
   );
@@ -167,6 +250,29 @@ function CasesOptions({ filtres, onChange }) {
 function libelleChoix(cle, options) {
   if (cle !== 'capitalisations') return undefined;
   return (code) => options.capitalisations.find((t) => t.code === code)?.libelle ?? code;
+}
+
+// Résumé des filtres choisis, en bas du panneau : les critères reliés par ET
+function VotreRecherche({ filtres, options }) {
+  const parties = phraseRecherche(filtres, options);
+  return (
+    <p className="filtres__recherche" aria-live="polite">
+      <span className="filtres__recherche-titre">Votre recherche</span>
+      {parties.length === 0
+        ? 'Toutes les SCPI'
+        : parties.map((partie, i) => (
+            <span key={partie}>
+              {i > 0 && (
+                <>
+                  {' '}
+                  <span className="filtres__et">ET</span>{' '}
+                </>
+              )}
+              {partie}
+            </span>
+          ))}
+    </p>
+  );
 }
 
 function focusables(conteneur) {
@@ -246,14 +352,19 @@ export function PanneauFiltres({ filtres, options, total, onChange, onFermer, re
         <div className="filtres__corps">
           {options ? (
             <>
-              {CHOIX.map(({ cle, titre }) => (
+              {CHOIX.map(({ cle, titre, mode, colonnes, recherche }) => (
                 <CasesACocher
                   key={cle}
+                  colonnes={colonnes}
+                  recherche={recherche}
                   titre={titre}
                   valeurs={valeursChoix(cle, options)}
                   choisies={filtres[cle]}
                   libelle={libelleChoix(cle, options)}
                   onBasculer={(valeur) => onChange(basculer(filtres, cle, valeur))}
+                  mode={mode}
+                  valeurMode={mode ? filtres[mode.cle] : undefined}
+                  onMode={mode ? (code) => onChange({ ...filtres, [mode.cle]: code }) : undefined}
                 />
               ))}
               {PLAGES.map(({ cle, titre, unite, pas }) =>
@@ -278,6 +389,7 @@ export function PanneauFiltres({ filtres, options, total, onChange, onFermer, re
             <p className="filtres__vide">Les filtres ne sont pas disponibles pour le moment.</p>
           )}
         </div>
+        {options && <VotreRecherche filtres={filtres} options={options} />}
         <div className="filtres__bas">
           <button
             type="button"
@@ -339,17 +451,31 @@ export function FiltresActifs({ filtres, options, onChange }) {
       </button>
       <ul className="barre-filtres__pastilles" aria-label="Filtres actifs">
         {liste.map((p) => (
-          <li key={p.id} className="pastille-filtre">
-            {p.libelle}
-            <button
-              type="button"
-              className="pastille-filtre__retirer"
-              aria-label={`Retirer le filtre ${p.libelle}`}
-              onClick={() => onChange(p.retirer(filtres))}
-            >
-              ×
-            </button>
-          </li>
+          <Fragment key={p.id}>
+            {/* Règles visibles : ET entre deux critères, « ou » / « et » / « uniquement »
+                dans un même critère ; décoratifs (la phrase du panneau les dit aussi) */}
+            {p.et && (
+              <li className="barre-filtres__et" aria-hidden="true">
+                ET
+              </li>
+            )}
+            {p.liaison && (
+              <li className="barre-filtres__liaison" aria-hidden="true">
+                {p.liaison}
+              </li>
+            )}
+            <li className="pastille-filtre">
+              {p.libelle}
+              <button
+                type="button"
+                className="pastille-filtre__retirer"
+                aria-label={`Retirer le filtre ${p.libelle}`}
+                onClick={() => onChange(p.retirer(filtres))}
+              >
+                ×
+              </button>
+            </li>
+          </Fragment>
         ))}
       </ul>
     </div>

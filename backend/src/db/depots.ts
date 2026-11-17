@@ -3,7 +3,9 @@ import { type SQL, and, asc, desc, eq, gte, isNull, max, or, sql } from 'drizzle
 import type { Db } from './index.js';
 import {
   type FiltresCatalogue,
+  type Mode,
   type Plage,
+  SEUIL_PRINCIPAL,
   TRANCHES_CAPITALISATION,
 } from '../catalogue/filtres.js';
 import type { DepotCatalogue, ScpiCatalogue, ValeursFiltres } from '../catalogue/service.js';
@@ -399,15 +401,41 @@ function bornes(colonne: SQL, { min, max }: Plage): SQL[] {
   return conditions;
 }
 
+// Filtre sur une répartition (secteurs, pays) selon le mode choisi (catalogue/filtres.ts) :
+//   au-moins-un : une des valeurs est présente, quel que soit son pourcentage
+//   tous        : toutes les valeurs sont présentes
+//   uniquement  : au moins une valeur principale (> SEUIL_PRINCIPAL %) et aucune valeur
+//                 principale hors du choix ; les valeurs minoritaires sont ignorées
+function conditionRepartition(table: SQL, colonne: SQL, valeurs: string[], mode: Mode): SQL {
+  const parmi = sql`r.${colonne} in (${liste(valeurs)})`;
+  const de = sql`from ${table} r where r.scpi_id = c.id`;
+  if (mode === 'tous') {
+    return sql`(select count(distinct r.${colonne}) ${de} and ${parmi}) = ${valeurs.length}`;
+  }
+  if (mode === 'uniquement') {
+    const principal = sql`r.pourcentage > ${SEUIL_PRINCIPAL}`;
+    return sql`(exists (select 1 ${de} and ${principal} and ${parmi})
+      and not exists (select 1 ${de} and ${principal} and not ${parmi}))`;
+  }
+  return sql`exists (select 1 ${de} and ${parmi})`;
+}
+
 function conditionsFiltres(filtres: FiltresCatalogue): SQL {
   const conditions: SQL[] = [];
   if (filtres.categories.length) {
-    conditions.push(sql`exists (select 1 from scpi_secteurs s where s.scpi_id = c.id
-      and s.secteur::text in (${liste(filtres.categories)}))`);
+    conditions.push(
+      conditionRepartition(
+        sql`scpi_secteurs`,
+        sql`secteur::text`,
+        filtres.categories,
+        filtres.modeCategories,
+      ),
+    );
   }
   if (filtres.pays.length) {
-    conditions.push(sql`exists (select 1 from scpi_localisation l where l.scpi_id = c.id
-      and l.pays in (${liste(filtres.pays)}))`);
+    conditions.push(
+      conditionRepartition(sql`scpi_localisation`, sql`pays`, filtres.pays, filtres.modePays),
+    );
   }
   if (filtres.gerants.length) {
     conditions.push(sql`trim(c.gerant) in (${liste(filtres.gerants)})`);

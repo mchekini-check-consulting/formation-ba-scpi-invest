@@ -7,7 +7,10 @@ import {
   oublierFiltres,
   parametresFiltres,
   pastilles,
+  phraseRecherche,
+  regle,
   relireFiltres,
+  valeursVisibles,
 } from './filtres.js';
 
 beforeEach(() => sessionStorage.clear());
@@ -135,6 +138,93 @@ describe('filtres du Catalogue (US-10)', () => {
     expect(liste[2].retirer(filtres).taux).toEqual({ min: null, max: null });
     // Tranche inconnue des options : son code est affiché
     expect(pastilles({ ...FILTRES_VIDES, capitalisations: ['x'] }, null)[0].libelle).toBe('x');
+  });
+
+  it('mode : envoyé seulement s’il n’est pas « au moins un » et que des valeurs sont cochées', () => {
+    const avec = (f) => Object.fromEntries(new URLSearchParams(parametresFiltres(f)));
+    expect(avec({ ...FILTRES_VIDES, categories: ['Santé'] })).toEqual({ categorie: 'Santé' });
+    expect(avec({ ...FILTRES_VIDES, categories: ['Santé'], modeCategories: 'uniquement' })).toEqual(
+      { categorie: 'Santé', categorieMode: 'uniquement' },
+    );
+    expect(avec({ ...FILTRES_VIDES, pays: ['France'], modePays: 'tous' })).toEqual({
+      pays: 'France',
+      paysMode: 'tous',
+    });
+    // Mode choisi sans valeur cochée : ne filtre pas
+    expect(avec({ ...FILTRES_VIDES, modePays: 'tous' })).toEqual({});
+  });
+
+  it('règles visibles : liaisons entre pastilles, ET entre critères, phrase', () => {
+    const filtres = {
+      ...FILTRES_VIDES,
+      categories: ['Santé', 'Bureaux', 'Commerces'],
+      pays: ['France', 'Espagne'],
+      modePays: 'tous',
+      gerants: ['Gestion A'],
+      demembrement: true,
+    };
+    expect(
+      pastilles(filtres, OPTIONS).map(({ libelle, et, liaison }) => [libelle, et, liaison]),
+    ).toEqual([
+      ['Santé', false, null],
+      ['Bureaux', false, 'ou'],
+      ['Commerces', false, 'ou'],
+      ['France', true, null],
+      ['Espagne', false, 'et'],
+      ['Gestion A', true, null],
+      ['Démembrement possible', true, null],
+    ]);
+    expect(phraseRecherche(filtres, OPTIONS)).toEqual([
+      'Catégorie : Santé, Bureaux ou Commerces',
+      'Pays : France et Espagne (tous)',
+      'Société de gestion : Gestion A',
+      'Démembrement possible',
+    ]);
+    const exclusif = {
+      ...FILTRES_VIDES,
+      categories: ['Santé', 'Bureaux'],
+      modeCategories: 'uniquement',
+    };
+    expect(pastilles(exclusif, OPTIONS).map((p) => p.liaison)).toEqual(['uniquement', 'ou']);
+    expect(phraseRecherche(exclusif, OPTIONS)).toEqual(['Catégorie : uniquement Santé ou Bureaux']);
+    expect(
+      phraseRecherche({ ...FILTRES_VIDES, modePays: 'tous', pays: ['France'] }, OPTIONS),
+    ).toEqual(['Pays : France']);
+    expect(phraseRecherche(FILTRES_VIDES, OPTIONS)).toEqual([]);
+  });
+
+  it('valeursVisibles : 7 premières + cochées, tout, ou recherche sans accent', () => {
+    const valeurs = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'Élan', 'J'];
+    expect(valeursVisibles(valeurs, { choisies: ['J'] })).toEqual({
+      visibles: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'J'],
+      cachees: 2,
+    });
+    expect(valeursVisibles(valeurs, { choisies: [], tout: true })).toEqual({
+      visibles: valeurs,
+      cachees: 0,
+    });
+    expect(valeursVisibles(valeurs, { choisies: [], texte: '  ELA ' })).toEqual({
+      visibles: ['Élan'],
+      cachees: 0,
+    });
+    expect(
+      valeursVisibles(['x'], { choisies: [], texte: 'plus', libelle: () => 'Plus de 3 Md€' })
+        .visibles,
+    ).toEqual(['x']);
+  });
+
+  it('règle affichée sous un filtre selon son mode', () => {
+    expect(regle('au-moins-un')).toBe('Plusieurs cases : au moins une (OU)');
+    expect(regle('tous', 'secteurs')).toBe('Plusieurs cases : toutes présentes (ET)');
+    expect(regle('uniquement', 'pays')).toContain('Seulement ces pays');
+  });
+
+  it('mode inconnu gardé dans la session : filtres remis à zéro', () => {
+    sessionStorage.setItem(
+      'scpi-invest.catalogue.filtres',
+      JSON.stringify({ ...FILTRES_VIDES, modeCategories: 'exclusif' }),
+    );
+    expect(relireFiltres()).toEqual(FILTRES_VIDES);
   });
 
   it('session du navigateur : gardés, relus, effacés ; contenu illisible ignoré', () => {
