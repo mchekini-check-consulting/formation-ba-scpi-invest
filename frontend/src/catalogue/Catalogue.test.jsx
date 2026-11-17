@@ -452,6 +452,94 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     expect(gardes.pays).toEqual(['France']);
   });
 
+  it('mode des cases (catégorie, pays) : au moins un, tous, uniquement ; règles visibles', async () => {
+    memoriser({ categories: ['Santé', 'Bureaux'], pays: ['France'] });
+    const { lister } = await ouvrir();
+    const categorie = within(panneau()).getByRole('group', {
+      name: 'Combinaison des cases Catégorie',
+    });
+    // Par défaut : au moins un (OU), écrit sous le filtre
+    expect(
+      within(categorie).getByRole('button', { name: 'Au moins un' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(panneau().textContent).toContain('Plusieurs cases : au moins une (OU)');
+    // Seuls la catégorie et le pays proposent un choix
+    expect(within(panneau()).getAllByRole('group', { name: /^Combinaison/ })).toHaveLength(2);
+
+    await act(async () => {
+      fireEvent.click(within(categorie).getByRole('button', { name: 'Uniquement' }));
+    });
+    expect(lister).toHaveBeenLastCalledWith(
+      1,
+      {
+        ...FILTRES_VIDES,
+        categories: ['Santé', 'Bureaux'],
+        modeCategories: 'uniquement',
+        pays: ['France'],
+      },
+      TRI_PAR_DEFAUT,
+    );
+    expect(panneau().textContent).toContain('Seulement ces secteurs, sans compter ceux de 25 %');
+    // Phrase « Votre recherche » : critères reliés par ET
+    expect(panneau().textContent).toContain(
+      'Votre rechercheCatégorie : uniquement Santé ou Bureaux ET Pays : France',
+    );
+    // Pastilles : mots de liaison décoratifs, pastilles toujours retirables
+    const barre = screen.getByRole('list', { name: 'Filtres actifs' });
+    expect(barre.textContent).toContain('uniquementSanté×ouBureaux×ETFrance×');
+    expect(within(barre).getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  it('mise en page : catégorie et pays sur deux colonnes ; sociétés : recherche, 7, voir plus', async () => {
+    const gerants = [
+      'Amundi',
+      'Corum',
+      'Épargne Pierre',
+      'Fiducial',
+      'Iroko',
+      'Kyaneos',
+      'Lazard',
+      'Novaxia',
+      'Perial',
+      'Remake',
+    ];
+    memoriser({ gerants: ['Remake'] });
+    await ouvrir({ lireFiltres: vi.fn().mockResolvedValue({ ...OPTIONS, gerants }) });
+    const listes = [...panneau().querySelectorAll('ul')].map((ul) => ul.className);
+    expect(listes.slice(0, 3)).toEqual([
+      'filtres__cases filtres__cases--colonnes',
+      'filtres__cases filtres__cases--colonnes',
+      'filtres__cases',
+    ]);
+    const societe = [...panneau().querySelectorAll('fieldset')].find(
+      (f) => f.querySelector('legend').textContent === 'Société de gestion',
+    );
+    const cases = () =>
+      within(societe)
+        .getAllByRole('checkbox')
+        .map((c) => c.labels[0].textContent);
+    // 7 premières, plus « Remake » déjà cochée
+    expect(cases()).toEqual([...gerants.slice(0, 7), 'Remake']);
+    const plus = within(societe).getByRole('button', { name: 'Voir les 10' });
+    fireEvent.click(plus);
+    expect(cases()).toEqual(gerants);
+    fireEvent.click(within(societe).getByRole('button', { name: 'Voir moins' }));
+    expect(cases()).toHaveLength(8);
+
+    // Recherche dans la liste déjà chargée, accents ignorés ; Échap vide d'abord le champ
+    const champ = within(societe).getByRole('searchbox', {
+      name: 'Rechercher : Société de gestion',
+    });
+    fireEvent.change(champ, { target: { value: 'epar' } });
+    expect(cases()).toEqual(['Épargne Pierre']);
+    expect(within(societe).queryByRole('button', { name: /^Voir/ })).toBeNull();
+    fireEvent.change(champ, { target: { value: 'zzz' } });
+    expect(societe.textContent).toContain('Aucun résultat pour « zzz ».');
+    fireEvent.keyDown(champ, { key: 'Escape' });
+    expect(champ.value).toBe('');
+    expect(screen.getByRole('dialog', { name: 'Filtres' })).toBeDefined();
+  });
+
   it('cases « possible » : démembrement appliqué tout de suite, pastille retirable', async () => {
     const { lister } = await ouvrir();
     await act(async () => {

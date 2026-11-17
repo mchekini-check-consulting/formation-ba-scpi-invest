@@ -34,6 +34,18 @@ describe('detailsCatalogue', () => {
     });
   });
 
+  it('mode tous / uniquement journalisé, jamais le mode par défaut ni sans valeur', () => {
+    expect(
+      detailsCatalogue(
+        { ...AUCUN_FILTRE, categories: ['Santé'], modeCategories: 'uniquement', modePays: 'tous' },
+        TRI_PAR_DEFAUT,
+      ),
+    ).toEqual({ categories: 'Santé', modeCategories: 'uniquement', tri: 'taux-desc' });
+    expect(
+      detailsCatalogue({ ...AUCUN_FILTRE, pays: ['France'], modePays: 'tous' }, TRI_PAR_DEFAUT),
+    ).toEqual({ pays: 'France', modePays: 'tous', tri: 'taux-desc' });
+  });
+
   it('texte libre borné', () => {
     expect(borner('x'.repeat(500))).toHaveLength(LONGUEUR_MAX);
     const details = detailsCatalogue(

@@ -176,6 +176,25 @@ describe('Catalogue (e2e)', () => {
     expect(await noms({ categorie: ['Santé', 'Commerces'] })).toEqual(['Beta', 'Alpha', 'Gamma']);
     // Plusieurs filtres : ET ; pays présent, même à 50 %
     expect(await noms({ categorie: 'Santé', pays: 'Espagne' })).toEqual(['Gamma']);
+    // Mode « tous » : toutes les valeurs présentes (Alpha : Bureaux 80 % et Santé 20 %)
+    expect(await noms({ categorie: ['Santé', 'Bureaux'], categorieMode: 'tous' })).toEqual([
+      'Alpha',
+    ]);
+    expect(await noms({ pays: ['France', 'Espagne'], paysMode: 'tous' })).toEqual(['Gamma']);
+    // Mode « uniquement » : secteurs (pays) de 25 % ou moins ignorés ; Alpha reste une SCPI
+    // de Bureaux malgré ses 20 % de Santé, Gamma (50 % Espagne) n'est pas « que France »
+    expect(await noms({ categorie: 'Bureaux', categorieMode: 'uniquement' })).toEqual(['Alpha']);
+    expect(await noms({ categorie: 'Santé', categorieMode: 'uniquement' })).toEqual(['Gamma']);
+    expect(await noms({ categorie: ['Santé', 'Commerces'], categorieMode: 'uniquement' })).toEqual([
+      'Beta',
+      'Gamma',
+    ]);
+    expect(await noms({ pays: 'France', paysMode: 'uniquement' })).toEqual(['Alpha']);
+    expect(await noms({ pays: ['France', 'Espagne'], paysMode: 'uniquement' })).toEqual([
+      'Beta',
+      'Alpha',
+      'Gamma',
+    ]);
     expect(await noms({ gerant: 'Gestion A' })).toEqual(['Alpha', 'Gamma']);
     expect(await noms({ capitalisation: ['moins-100m', 'plus-3md'] })).toEqual(['Beta', 'Alpha']);
     // Bornes incluses ; Gamma sans taux N-1 exclue d'un filtre sur le taux

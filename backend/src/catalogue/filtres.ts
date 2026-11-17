@@ -7,17 +7,31 @@ import { HttpError } from '../logging/http-error.js';
 //   fraisGestionMin/fraisGestionMax, jouissanceMin/jouissanceMax : nombres
 //   frequence : valeurs répétées (Mensuelle, Trimestrielle…)
 //   demembrement=oui, versementProgramme=oui : seulement les SCPI qui le proposent
-// Un filtre à plusieurs valeurs retient une SCPI qui correspond à au moins une valeur ;
-// plusieurs filtres actifs doivent tous être satisfaits (ET). Bornes incluses. Une SCPI
+//   categorieMode, paysMode : tous | uniquement (absent : au-moins-un)
+// Un filtre à plusieurs valeurs retient une SCPI qui correspond à au moins une valeur (OU).
+// Pour la catégorie et le pays, l'investisseur peut choisir un autre mode :
+//   tous       : la SCPI contient toutes les valeurs choisies (ET)
+//   uniquement : ses secteurs (pays) principaux, ceux de plus de SEUIL_PRINCIPAL %, sont
+//                tous parmi les valeurs choisies (filtre exclusif) ; les autres sont ignorés
+// Plusieurs filtres actifs doivent tous être satisfaits (ET). Bornes incluses. Une SCPI
 // sans valeur pour un filtre actif ne le satisfait pas (jamais assimilée à zéro).
 
 export type Plage = { min: number | null; max: number | null };
 
+export const MODES = ['au-moins-un', 'tous', 'uniquement'] as const;
+export type Mode = (typeof MODES)[number];
+
+// En mode « uniquement », un secteur ou un pays de SEUIL_PRINCIPAL % ou moins n'est pas
+// considéré : ce n'est pas l'activité principale de la SCPI (décision Product Owner)
+export const SEUIL_PRINCIPAL = 25;
+
 export type FiltresCatalogue = {
   // secteur présent dans la SCPI, quel que soit son pourcentage
   categories: string[];
+  modeCategories: Mode;
   // pays présent dans la SCPI, quel que soit son pourcentage
   pays: string[];
+  modePays: Mode;
   gerants: string[];
   // codes des tranches (TRANCHES_CAPITALISATION)
   capitalisations: string[];
@@ -52,7 +66,9 @@ export const TRANCHES_CAPITALISATION = [
 
 export const AUCUN_FILTRE: FiltresCatalogue = {
   categories: [],
+  modeCategories: 'au-moins-un',
   pays: [],
+  modePays: 'au-moins-un',
   gerants: [],
   capitalisations: [],
   taux: { min: null, max: null },
@@ -96,6 +112,13 @@ function caseCochee(brut: unknown): boolean {
   throw new HttpError(400, MESSAGE);
 }
 
+// Mode d'un filtre à choix multiple ; absent : au-moins-un ; valeur inconnue : 400
+function mode(brut: unknown): Mode {
+  if (brut === undefined || brut === '') return 'au-moins-un';
+  if (typeof brut === 'string' && (MODES as readonly string[]).includes(brut)) return brut as Mode;
+  throw new HttpError(400, MESSAGE);
+}
+
 // Filtres lus dans l'URL ; 400 « Filtre invalide » si un nombre ou une tranche est faux
 export function lireFiltres(requete: Record<string, unknown> = {}): FiltresCatalogue {
   const capitalisations = valeurs(requete.capitalisation);
@@ -106,7 +129,9 @@ export function lireFiltres(requete: Record<string, unknown> = {}): FiltresCatal
   if (frequences.some((v) => !connues.has(v))) throw new HttpError(400, MESSAGE);
   return {
     categories: valeurs(requete.categorie),
+    modeCategories: mode(requete.categorieMode),
     pays: valeurs(requete.pays),
+    modePays: mode(requete.paysMode),
     gerants: valeurs(requete.gerant),
     capitalisations,
     taux: plage(requete, 'taux'),

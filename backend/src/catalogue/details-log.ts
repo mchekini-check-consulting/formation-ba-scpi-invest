@@ -27,6 +27,13 @@ export function detailsCatalogue(filtres: FiltresCatalogue, tri: TriCatalogue): 
   for (const [nom, valeurs] of Object.entries(listes)) {
     if (valeurs.length > 0) details[nom] = borner(valeurs.join(','));
   }
+  // Mode choisi (tous, uniquement), seulement s'il n'est pas celui par défaut
+  if (filtres.categories.length > 0 && filtres.modeCategories !== 'au-moins-un') {
+    details.modeCategories = filtres.modeCategories;
+  }
+  if (filtres.pays.length > 0 && filtres.modePays !== 'au-moins-un') {
+    details.modePays = filtres.modePays;
+  }
   for (const nom of ['taux', 'prix', 'frais', 'minimum'] as const) {
     const plage = filtres[nom];
     if (plage.min !== null || plage.max !== null) details[nom] = bornes(plage);

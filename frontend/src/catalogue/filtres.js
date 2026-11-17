@@ -6,12 +6,46 @@
 
 const CLE = 'scpi-invest.catalogue.filtres';
 
-// Filtres à choix multiple : clé de l'état, paramètre de l'URL, titre du panneau
+// Combinaison des cases d'un même filtre. Seuls la catégorie et le pays (une SCPI en a
+// plusieurs) laissent choisir ; les autres filtres sont toujours en « au moins un » (OU).
+// Uniquement : secteurs (pays) de 25 % ou moins ignorés (backend, SEUIL_PRINCIPAL).
+export const MODES = [
+  { code: 'au-moins-un', libelle: 'Au moins un', liaison: 'ou' },
+  { code: 'tous', libelle: 'Tous', liaison: 'et' },
+  { code: 'uniquement', libelle: 'Uniquement', liaison: 'ou' },
+];
+export const MODE_PAR_DEFAUT = 'au-moins-un';
+
+// Règle affichée sous un filtre à choix multiple, selon son mode
+export function regle(code, nom) {
+  if (code === 'tous') return 'Plusieurs cases : toutes présentes (ET)';
+  if (code === 'uniquement') {
+    return `Seulement ces ${nom}, sans compter ceux de 25 % ou moins (exclusif)`;
+  }
+  return 'Plusieurs cases : au moins une (OU)';
+}
+
+// Filtres à choix multiple : clé de l'état, paramètre de l'URL, titre du panneau ;
+// mode : clé de l'état du mode, son paramètre d'URL et le nom des valeurs (règle) ;
+// colonnes : cases sur deux colonnes (noms courts) ; recherche : longue liste, avec un
+// champ de recherche et seulement les NOMBRE_VISIBLE premières valeurs au départ
 export const CHOIX = [
-  { cle: 'categories', parametre: 'categorie', titre: 'Catégorie' },
-  { cle: 'pays', parametre: 'pays', titre: 'Pays' },
+  {
+    cle: 'categories',
+    parametre: 'categorie',
+    titre: 'Catégorie',
+    colonnes: true,
+    mode: { cle: 'modeCategories', parametre: 'categorieMode', nom: 'secteurs' },
+  },
+  {
+    cle: 'pays',
+    parametre: 'pays',
+    titre: 'Pays',
+    colonnes: true,
+    mode: { cle: 'modePays', parametre: 'paysMode', nom: 'pays' },
+  },
   { cle: 'capitalisations', parametre: 'capitalisation', titre: 'Capitalisation' },
-  { cle: 'gerants', parametre: 'gerant', titre: 'Société de gestion' },
+  { cle: 'gerants', parametre: 'gerant', titre: 'Société de gestion', recherche: true },
   { cle: 'frequences', parametre: 'frequence', titre: 'Fréquence de versement' },
 ];
 
@@ -33,7 +67,9 @@ export const OPTIONS = [
 
 export const FILTRES_VIDES = Object.freeze({
   categories: [],
+  modeCategories: MODE_PAR_DEFAUT,
   pays: [],
+  modePays: MODE_PAR_DEFAUT,
   capitalisations: [],
   gerants: [],
   frequences: [],
@@ -56,8 +92,11 @@ export function formaterValeur(valeur, unite) {
 // Paramètres de l'URL de GET /scpis (sans la page) ; vide sans filtre
 export function parametresFiltres(filtres) {
   const parametres = new URLSearchParams();
-  for (const { cle, parametre } of CHOIX) {
+  for (const { cle, parametre, mode } of CHOIX) {
     for (const valeur of filtres[cle]) parametres.append(parametre, valeur);
+    if (mode && filtres[cle].length > 0 && filtres[mode.cle] !== MODE_PAR_DEFAUT) {
+      parametres.append(mode.parametre, filtres[mode.cle]);
+    }
   }
   for (const { cle } of PLAGES) {
     const { min, max } = filtres[cle];
@@ -68,6 +107,28 @@ export function parametresFiltres(filtres) {
     if (filtres[cle]) parametres.append(cle, 'oui');
   }
   return parametres.toString();
+}
+
+export const NOMBRE_VISIBLE = 7;
+
+function sansAccent(texte) {
+  return texte
+    .normalize('NFD')
+    .replaceAll(/\p{Diacritic}/gu, '')
+    .toLocaleLowerCase('fr');
+}
+
+// Cases affichées d'une longue liste (société de gestion), sans appel au backend :
+// - texte saisi : les valeurs dont le libellé le contient (majuscules et accents ignorés)
+// - sinon, liste repliée : les NOMBRE_VISIBLE premières, plus celles déjà cochées
+// cachees : nombre de valeurs non affichées (lien « Voir les … »)
+export function valeursVisibles(valeurs, { choisies, texte = '', tout, libelle = (v) => v }) {
+  const cherche = sansAccent(texte.trim());
+  let visibles;
+  if (cherche) visibles = valeurs.filter((v) => sansAccent(libelle(v)).includes(cherche));
+  else if (tout) visibles = valeurs;
+  else visibles = valeurs.filter((v, i) => i < NOMBRE_VISIBLE || choisies.includes(v));
+  return { visibles, cachees: cherche ? 0 : valeurs.length - visibles.length };
 }
 
 // Ajoute ou retire une valeur d'un filtre à choix multiple
@@ -102,32 +163,72 @@ function libellePlage(titre, unite, { min, max }) {
   return `${titre} : ${formaterValeur(max, unite)} maximum`;
 }
 
-// Une pastille par filtre actif : une par valeur choisie, une par plage (US-10c)
-export function pastilles(filtres, options) {
+function modeDe(filtres, mode) {
+  const code = mode ? filtres[mode.cle] : MODE_PAR_DEFAUT;
+  return MODES.find((m) => m.code === code) ?? MODES[0];
+}
+
+// Filtres actifs regroupés par critère, dans l'ordre du panneau : un groupe par filtre à
+// choix multiple (une pastille par valeur), un par plage, un par case « possible »
+function groupes(filtres, options) {
   const liste = [];
-  for (const { cle } of CHOIX) {
-    for (const valeur of filtres[cle]) {
-      liste.push({
+  for (const { cle, titre, mode } of CHOIX) {
+    if (filtres[cle].length === 0) continue;
+    const libelle = (v) => (cle === 'capitalisations' ? libelleCapitalisation(v, options) : v);
+    liste.push({
+      titre,
+      mode: modeDe(filtres, mode),
+      pastilles: filtres[cle].map((valeur) => ({
         id: `${cle}:${valeur}`,
-        libelle: cle === 'capitalisations' ? libelleCapitalisation(valeur, options) : valeur,
+        libelle: libelle(valeur),
         retirer: (f) => basculer(f, cle, valeur),
-      });
-    }
+      })),
+    });
   }
   for (const { cle, titre, unite } of PLAGES) {
     const plage = filtres[cle];
     if (plage.min === null && plage.max === null) continue;
+    const libelle = libellePlage(titre, unite, plage);
     liste.push({
-      id: cle,
-      libelle: libellePlage(titre, unite, plage),
-      retirer: (f) => ({ ...f, [cle]: { min: null, max: null } }),
+      pastilles: [
+        { id: cle, libelle, retirer: (f) => ({ ...f, [cle]: { min: null, max: null } }) },
+      ],
     });
   }
   for (const { cle, titre } of OPTIONS) {
     if (!filtres[cle]) continue;
-    liste.push({ id: cle, libelle: titre, retirer: (f) => ({ ...f, [cle]: false }) });
+    liste.push({
+      pastilles: [{ id: cle, libelle: titre, retirer: (f) => ({ ...f, [cle]: false }) }],
+    });
   }
   return liste;
+}
+
+// Une pastille par filtre actif : une par valeur choisie, une par plage (US-10c). Pour
+// rendre les règles visibles : `et` = premier filtre d'un nouveau critère (badge ET),
+// `liaison` = mot affiché avant la pastille (« ou », « et », « uniquement »)
+export function pastilles(filtres, options) {
+  return groupes(filtres, options).flatMap((groupe, g) =>
+    groupe.pastilles.map((pastille, i) => {
+      let liaison = null;
+      if (i > 0) liaison = groupe.mode.liaison;
+      else if (groupe.mode?.code === 'uniquement') liaison = 'uniquement';
+      return { ...pastille, et: g > 0 && i === 0, liaison };
+    }),
+  );
+}
+
+// Phrase « Votre recherche » : une partie par critère actif, toutes reliées par ET
+export function phraseRecherche(filtres, options) {
+  return groupes(filtres, options).map(({ titre, mode, pastilles: liste }) => {
+    if (!titre) return liste[0].libelle;
+    const valeurs = liste.map((p) => p.libelle);
+    const fin = valeurs.length > 1 ? ` ${mode.liaison} ${valeurs.at(-1)}` : '';
+    const texte = valeurs.slice(0, Math.max(1, valeurs.length - 1)).join(', ') + fin;
+    if (mode.code === 'uniquement') return `${titre} : uniquement ${texte}`;
+    if (mode.code === 'tous' && valeurs.length > 1) return `${titre} : ${texte} (tous)`;
+    return `${titre} : ${texte}`;
+  });
 }
 
 function valide(filtres) {
@@ -135,6 +236,7 @@ function valide(filtres) {
     filtres !== null &&
     typeof filtres === 'object' &&
     CHOIX.every(({ cle }) => Array.isArray(filtres[cle])) &&
+    CHOIX.every(({ mode }) => !mode || MODES.some((m) => m.code === filtres[mode.cle])) &&
     PLAGES.every(({ cle }) => filtres[cle] && 'min' in filtres[cle] && 'max' in filtres[cle]) &&
     OPTIONS.every(({ cle }) => typeof filtres[cle] === 'boolean')
   );

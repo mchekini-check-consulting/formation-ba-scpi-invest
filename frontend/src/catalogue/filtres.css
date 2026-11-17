@@ -222,6 +222,97 @@
   border-bottom: 0;
 }
 
+/* Règles visibles : badge ET posé sur la ligne entre deux critères (tous combinés) */
+.filtres__groupe {
+  position: relative;
+}
+
+.filtres__groupe + .filtres__groupe::before {
+  content: 'ET' / '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--ocre);
+  color: var(--encre);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+/* Combinaison des cases (catégorie, pays) : au moins un, tous, uniquement */
+.filtres__modes {
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 6px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--papier);
+}
+
+.filtres__mode {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--encre-douce);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.filtres__mode[aria-pressed='true'] {
+  background: #fff;
+  color: var(--bleu);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgb(15 31 69 / 15%);
+}
+
+.filtres__regle {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  color: var(--discret);
+}
+
+/* « Votre recherche », au-dessus des boutons du bas du panneau */
+.filtres__recherche {
+  margin: 0;
+  padding: 12px 22px;
+  border-top: 1px solid var(--ligne);
+  background: var(--papier);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--encre);
+}
+
+.filtres__recherche-titre {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--discret);
+}
+
+.filtres__et,
+.barre-filtres__et {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--ocre);
+  color: var(--encre);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Barre des filtres actifs : mots de liaison entre les pastilles d'un même critère */
+.barre-filtres__liaison {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--encre-douce);
+}
+
 /* Titre posé dans le flux (et non sur la bordure) pour un espacement régulier */
 .filtres__titre {
   float: left;
@@ -259,6 +350,57 @@
   height: 18px;
   margin: 0;
   accent-color: var(--bleu-vif);
+}
+
+/* Noms courts (catégorie, pays) sur deux colonnes, remplies de haut en bas pour garder
+   l'ordre alphabétique ; une seule colonne si le panneau est très étroit */
+.filtres__cases--colonnes {
+  display: block;
+  columns: 2;
+  column-gap: 16px;
+}
+
+.filtres__cases--colonnes > li {
+  break-inside: avoid;
+}
+
+@media (width <= 360px) {
+  .filtres__cases--colonnes {
+    columns: 1;
+  }
+}
+
+/* Longue liste (société de gestion) : recherche, puis « Voir les … » / « Voir moins » */
+.filtres__chercher {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 38px;
+  margin-bottom: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--ligne);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--encre);
+  font: inherit;
+  font-size: 14.5px;
+}
+
+.filtres__chercher:focus {
+  border-color: var(--bleu-vif);
+  outline: none;
+}
+
+.filtres__plus {
+  margin-top: 6px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--bleu-vif);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .filtres__vide,

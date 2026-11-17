@@ -87,7 +87,21 @@ describe('filtres du Catalogue lus dans l’URL (US-10a, US-10b)', () => {
     });
   });
 
+  it('mode de la catégorie et du pays : au-moins-un par défaut, tous ou uniquement', () => {
+    expect(lireFiltres({ categorie: 'Santé' })).toMatchObject({
+      modeCategories: 'au-moins-un',
+      modePays: 'au-moins-un',
+    });
+    expect(lireFiltres({ categorieMode: 'uniquement', paysMode: 'tous' })).toMatchObject({
+      modeCategories: 'uniquement',
+      modePays: 'tous',
+    });
+    expect(lireFiltres({ categorieMode: '' })).toMatchObject({ modeCategories: 'au-moins-un' });
+  });
+
   it.each([
+    { categorieMode: 'exclusif' },
+    { paysMode: ['tous', 'uniquement'] },
     { tauxMin: 'abc' },
     { prixMax: ['1', '2'] },
     { fraisMin: 'Infinity' },
