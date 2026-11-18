@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   FILTRES_VIDES,
   basculer,
+  groupesActifs,
   changerPlage,
   memoriserFiltres,
   oublierFiltres,
@@ -154,7 +155,7 @@ describe('filtres du Catalogue (US-10)', () => {
     expect(avec({ ...FILTRES_VIDES, modePays: 'tous' })).toEqual({});
   });
 
-  it('règles visibles : liaisons entre pastilles, ET entre critères, phrase', () => {
+  it('filtres actifs regroupés par critère ; phrase avec ses liaisons ou / et', () => {
     const filtres = {
       ...FILTRES_VIDES,
       categories: ['Santé', 'Bureaux', 'Commerces'],
@@ -164,19 +165,26 @@ describe('filtres du Catalogue (US-10)', () => {
       demembrement: true,
     };
     expect(
-      pastilles(filtres, OPTIONS).map(({ libelle, et, liaison }) => [libelle, et, liaison]),
+      groupesActifs(filtres, OPTIONS).map((g) => [
+        g.court,
+        g.mode?.code,
+        g.pastilles.map((p) => p.libelle),
+      ]),
     ).toEqual([
-      ['Santé', false, null],
-      ['Bureaux', false, 'ou'],
-      ['Commerces', false, 'ou'],
-      ['France', true, null],
-      ['Espagne', false, 'et'],
-      ['Gestion A', true, null],
-      ['Démembrement possible', true, null],
+      ['Catégorie', 'au-moins-un', ['Santé', 'Bureaux', 'Commerces']],
+      ['Pays', 'tous', ['France', 'Espagne']],
+      ['Gestion', 'au-moins-un', ['Gestion A']],
+      [undefined, undefined, ['Démembrement possible']],
     ]);
-    expect(phraseRecherche(filtres, OPTIONS)).toEqual([
-      'Catégorie : Santé, Bureaux ou Commerces',
-      'Pays : France et Espagne (tous)',
+    expect(pastilles(filtres, OPTIONS)).toHaveLength(7);
+    // Texte de la phrase ; les liaisons sont des morceaux à part (colorés à l'écran)
+    const texte = (f) =>
+      phraseRecherche(f, OPTIONS).map((morceaux) =>
+        morceaux.map((m) => (typeof m === 'string' ? m : `[${m.liaison}]`)).join(''),
+      );
+    expect(texte(filtres)).toEqual([
+      'Catégorie : Santé, Bureaux [ou] Commerces',
+      'Pays : France [et] Espagne (tous)',
       'Société de gestion : Gestion A',
       'Démembrement possible',
     ]);
@@ -185,12 +193,11 @@ describe('filtres du Catalogue (US-10)', () => {
       categories: ['Santé', 'Bureaux'],
       modeCategories: 'uniquement',
     };
-    expect(pastilles(exclusif, OPTIONS).map((p) => p.liaison)).toEqual(['uniquement', 'ou']);
-    expect(phraseRecherche(exclusif, OPTIONS)).toEqual(['Catégorie : uniquement Santé ou Bureaux']);
-    expect(
-      phraseRecherche({ ...FILTRES_VIDES, modePays: 'tous', pays: ['France'] }, OPTIONS),
-    ).toEqual(['Pays : France']);
-    expect(phraseRecherche(FILTRES_VIDES, OPTIONS)).toEqual([]);
+    expect(texte(exclusif)).toEqual(['Catégorie : uniquement Santé [ou] Bureaux']);
+    expect(texte({ ...FILTRES_VIDES, modePays: 'tous', pays: ['France'] })).toEqual([
+      'Pays : France',
+    ]);
+    expect(texte(FILTRES_VIDES)).toEqual([]);
   });
 
   it('valeursVisibles : 7 premières + cochées, tout, ou recherche sans accent', () => {

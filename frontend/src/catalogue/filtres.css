@@ -54,11 +54,61 @@
   font-size: 12.5px;
 }
 
-.barre-filtres__pastilles {
+/* Filtres actifs : une bulle par critère, un trait fin entre deux critères */
+.barre-filtres__groupes,
+.groupe-actif__pastilles {
   display: contents;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.barre-filtres__groupes > li + li {
+  position: relative;
+  margin-left: 9px;
+}
+
+.barre-filtres__groupes > li + li::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: -10px;
+  width: 1px;
+  background: var(--ligne);
+}
+
+.groupe-actif {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: #eef3fa;
+}
+
+.groupe-actif .pastille-filtre {
+  background: #fff;
+}
+
+.groupe-actif__nom {
+  padding: 0 4px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--discret);
+}
+
+.groupe-actif__mode {
+  padding: 1px 6px;
+  border: 1px solid var(--bleu-ciel);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--bleu);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .pastille-filtre {
@@ -222,26 +272,6 @@
   border-bottom: 0;
 }
 
-/* Règles visibles : badge ET posé sur la ligne entre deux critères (tous combinés) */
-.filtres__groupe {
-  position: relative;
-}
-
-.filtres__groupe + .filtres__groupe::before {
-  content: 'ET' / '';
-  position: absolute;
-  top: -9px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 1px 8px;
-  border-radius: 6px;
-  background: var(--ocre);
-  color: var(--encre);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
 /* Combinaison des cases (catégorie, pays) : au moins un, tous, uniquement */
 .filtres__modes {
   display: inline-flex;
@@ -296,8 +326,8 @@
   color: var(--discret);
 }
 
-.filtres__et,
-.barre-filtres__et {
+/* ET entre deux critères (orange), ou / et entre les valeurs d'un critère (bleu) */
+.filtres__et {
   padding: 1px 6px;
   border-radius: 6px;
   background: var(--ocre);
@@ -306,11 +336,9 @@
   font-weight: 800;
 }
 
-/* Barre des filtres actifs : mots de liaison entre les pastilles d'un même critère */
-.barre-filtres__liaison {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--encre-douce);
+.filtres__ou {
+  color: var(--bleu-vif);
+  font-weight: 700;
 }
 
 /* Titre posé dans le flux (et non sur la bordure) pour un espacement régulier */

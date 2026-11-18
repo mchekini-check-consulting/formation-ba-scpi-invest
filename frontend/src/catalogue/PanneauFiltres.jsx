@@ -2,7 +2,7 @@
 // (US-10a, US-10b). Le panneau s'ouvre par-dessus la liste, défile verticalement, et se
 // ferme par « Fermer », « Voir les SCPI », Échap ou un clic à côté. Chaque changement est
 // appliqué tout de suite à la liste ; un curseur l'est quand on le relâche.
-import { Fragment, useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './filtres.css';
 import {
@@ -16,6 +16,7 @@ import {
   basculer,
   changerPlage,
   formaterValeur,
+  groupesActifs,
   pastilles,
   phraseRecherche,
   regle,
@@ -23,7 +24,6 @@ import {
 } from './filtres.js';
 
 const PRECISION = 1e-9;
-
 function decimales(pas) {
   return String(pas).split('.')[1]?.length ?? 0;
 }
@@ -62,7 +62,8 @@ function CurseurPlage({ titre, unite, pas, plage, bornes, anneeTaux, onChange })
   }
 
   function deplacer(borne, valeur) {
-    const v = Number(valeur);
+    // Valeur ramenée sur le cran le plus proche (évite 3,0000000004 %)
+    const v = arrondir(Number(valeur), pas);
     setBrouillon((b) =>
       borne === 'min' ? { ...b, min: Math.min(v, b.max) } : { ...b, max: Math.max(v, b.min) },
     );
@@ -260,15 +261,23 @@ function VotreRecherche({ filtres, options }) {
       <span className="filtres__recherche-titre">Votre recherche</span>
       {parties.length === 0
         ? 'Toutes les SCPI'
-        : parties.map((partie, i) => (
-            <span key={partie}>
+        : parties.map((morceaux, i) => (
+            <span key={i}>
               {i > 0 && (
                 <>
                   {' '}
                   <span className="filtres__et">ET</span>{' '}
                 </>
               )}
-              {partie}
+              {morceaux.map((m, j) =>
+                typeof m === 'string' ? (
+                  m
+                ) : (
+                  <span key={j} className="filtres__ou">
+                    {m.liaison}
+                  </span>
+                ),
+              )}
             </span>
           ))}
     </p>
@@ -434,9 +443,25 @@ export function BoutonFiltres({ filtres, options, onOuvrir, refBouton, ouvert })
 
 // Sous la ligne des outils, seulement si des filtres sont actifs : « Réinitialiser les
 // filtres », puis une pastille par filtre actif (croix pour le retirer) (US-10c)
+function Pastille({ pastille, filtres, onChange }) {
+  return (
+    <li className="pastille-filtre">
+      {pastille.libelle}
+      <button
+        type="button"
+        className="pastille-filtre__retirer"
+        aria-label={`Retirer le filtre ${pastille.libelle}`}
+        onClick={() => onChange(pastille.retirer(filtres))}
+      >
+        ×
+      </button>
+    </li>
+  );
+}
+
 export function FiltresActifs({ filtres, options, onChange }) {
-  const liste = pastilles(filtres, options);
-  if (liste.length === 0) return null;
+  const groupes = groupesActifs(filtres, options);
+  if (groupes.length === 0) return null;
   return (
     <div className="barre-filtres">
       <button
@@ -449,34 +474,32 @@ export function FiltresActifs({ filtres, options, onChange }) {
         </svg>
         Réinitialiser les filtres
       </button>
-      <ul className="barre-filtres__pastilles" aria-label="Filtres actifs">
-        {liste.map((p) => (
-          <Fragment key={p.id}>
-            {/* Règles visibles : ET entre deux critères, « ou » / « et » / « uniquement »
-                dans un même critère ; décoratifs (la phrase du panneau les dit aussi) */}
-            {p.et && (
-              <li className="barre-filtres__et" aria-hidden="true">
-                ET
-              </li>
-            )}
-            {p.liaison && (
-              <li className="barre-filtres__liaison" aria-hidden="true">
-                {p.liaison}
-              </li>
-            )}
-            <li className="pastille-filtre">
-              {p.libelle}
-              <button
-                type="button"
-                className="pastille-filtre__retirer"
-                aria-label={`Retirer le filtre ${p.libelle}`}
-                onClick={() => onChange(p.retirer(filtres))}
-              >
-                ×
-              </button>
+      {/* Une bulle par critère à choix multiple (nom court, « Uniquement » si ce mode
+          est choisi, ses pastilles), un trait entre les critères ; plages et cases
+          « possible » : une pastille seule. La phrase du panneau détaille les ET / OU. */}
+      <ul className="barre-filtres__groupes" aria-label="Filtres actifs">
+        {groupes.map((groupe) =>
+          groupe.titre ? (
+            <li key={groupe.id} className="groupe-actif">
+              <span className="groupe-actif__nom">{groupe.court}</span>
+              {groupe.mode.code === 'uniquement' && (
+                <span className="groupe-actif__mode">Uniquement</span>
+              )}
+              <ul className="groupe-actif__pastilles" aria-label={groupe.titre}>
+                {groupe.pastilles.map((p) => (
+                  <Pastille key={p.id} pastille={p} filtres={filtres} onChange={onChange} />
+                ))}
+              </ul>
             </li>
-          </Fragment>
-        ))}
+          ) : (
+            <Pastille
+              key={groupe.id}
+              pastille={groupe.pastilles[0]}
+              filtres={filtres}
+              onChange={onChange}
+            />
+          ),
+        )}
       </ul>
     </div>
   );
