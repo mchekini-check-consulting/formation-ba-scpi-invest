@@ -480,14 +480,23 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
       TRI_PAR_DEFAUT,
     );
     expect(panneau().textContent).toContain('Seulement ces secteurs, sans compter ceux de 25 %');
-    // Phrase « Votre recherche » : critères reliés par ET
+    // Phrase « Votre recherche » : critères reliés par ET (orange), valeurs par ou (bleu)
     expect(panneau().textContent).toContain(
       'Votre rechercheCatégorie : uniquement Santé ou Bureaux ET Pays : France',
     );
-    // Pastilles : mots de liaison décoratifs, pastilles toujours retirables
+    expect(panneau().querySelector('.filtres__et').textContent).toBe('ET');
+    expect(panneau().querySelector('.filtres__ou').textContent).toBe('ou');
+    // Barre : une bulle par critère (nom court, « Uniquement »), sans mot ET / OU
     const barre = screen.getByRole('list', { name: 'Filtres actifs' });
-    expect(barre.textContent).toContain('uniquementSanté×ouBureaux×ETFrance×');
-    expect(within(barre).getAllByRole('listitem')).toHaveLength(3);
+    expect(barre.textContent).toBe('CatégorieUniquementSanté×Bureaux×PaysFrance×');
+    const categories = within(barre).getByRole('list', { name: 'Catégorie' });
+    expect(within(categories).getAllByRole('listitem')).toHaveLength(2);
+    // « Tous » n'est pas affiché dans la barre
+    const pays = within(panneau()).getByRole('group', { name: 'Combinaison des cases Pays' });
+    await act(async () => {
+      fireEvent.click(within(pays).getByRole('button', { name: 'Tous' }));
+    });
+    expect(barre.textContent).toBe('CatégorieUniquementSanté×Bureaux×PaysFrance×');
   });
 
   it('mise en page : catégorie et pays sur deux colonnes ; sociétés : recherche, 7, voir plus', async () => {
@@ -564,8 +573,17 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     const { lister } = await ouvrir();
     const nom = 'Taux de distribution 2025 : minimum';
     const minimum = within(panneau()).getByRole('slider', { name: nom });
-    expect([minimum.min, minimum.max, minimum.value]).toEqual(['2.26', '8.35', '2.26']);
+    // Crans de 1 % ; extrémités (données : 2,26 % à 8,35 %) alignées sur les crans
+    expect([minimum.min, minimum.max, minimum.step, minimum.value]).toEqual(['2', '9', '1', '2']);
+    // Montants par 10 €, jouissance par mois
+    const pas = (n) => within(panneau()).getByRole('slider', { name: `${n} : minimum` }).step;
+    expect(['Prix de la part', 'Frais de gestion', 'Délai de jouissance'].map(pas)).toEqual([
+      '10',
+      '1',
+      '1',
+    ]);
     fireEvent.change(minimum, { target: { value: '4' } });
+    expect(panneau().textContent).toMatch(/4\s%\s–\s9\s%/u);
     expect(lister).toHaveBeenCalledTimes(1);
     await act(async () => {
       fireEvent.pointerUp(minimum);
@@ -629,9 +647,9 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
       TRI_PAR_DEFAUT,
     );
     const actifs = screen.getByRole('list', { name: 'Filtres actifs' });
-    const libelles = within(actifs)
-      .getAllByRole('listitem')
-      .map((li) => li.firstChild.textContent);
+    const libelles = [...actifs.querySelectorAll('.pastille-filtre')].map(
+      (li) => li.firstChild.textContent,
+    );
     expect(libelles).toEqual(['Santé', 'France']);
     const boutonFiltres = screen.getByRole('button', { name: 'Filtres, 2 actifs' });
     // Une ligne : recherche, « Filtres », tri ; en dessous « Réinitialiser les
@@ -686,7 +704,8 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
       fireEvent.click(within(panneau()).getByRole('button', { name: 'Réinitialiser' }));
     });
     expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, TRI_PAR_DEFAUT);
-    expect(prix.value).toBe('168');
+    // Plus petit prix (168 €) ramené sur le cran de 10 € inférieur
+    expect(prix.value).toBe('160');
     const reinitialiser = within(panneau()).getByRole('button', { name: 'Réinitialiser' });
     expect(reinitialiser.disabled).toBe(true);
   });

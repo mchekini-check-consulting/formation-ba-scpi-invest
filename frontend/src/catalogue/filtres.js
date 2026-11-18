@@ -45,16 +45,29 @@ export const CHOIX = [
     mode: { cle: 'modePays', parametre: 'paysMode', nom: 'pays' },
   },
   { cle: 'capitalisations', parametre: 'capitalisation', titre: 'Capitalisation' },
-  { cle: 'gerants', parametre: 'gerant', titre: 'Société de gestion', recherche: true },
-  { cle: 'frequences', parametre: 'frequence', titre: 'Fréquence de versement' },
+  {
+    cle: 'gerants',
+    parametre: 'gerant',
+    titre: 'Société de gestion',
+    court: 'Gestion',
+    recherche: true,
+  },
+  {
+    cle: 'frequences',
+    parametre: 'frequence',
+    titre: 'Fréquence de versement',
+    court: 'Fréquence',
+  },
 ];
 
 // Filtres à plage (curseurs min/max) : pas du curseur et unité
 export const PLAGES = [
-  { cle: 'taux', titre: 'Taux de distribution', unite: '%', pas: 0.01 },
-  { cle: 'prix', titre: 'Prix de la part', unite: '€', pas: 1 },
-  { cle: 'frais', titre: 'Frais de souscription', unite: '%', pas: 0.1 },
-  { cle: 'fraisGestion', titre: 'Frais de gestion', unite: '%', pas: 0.1 },
+  // Crans : 1 % pour les pourcentages, 10 € pour les montants, 1 mois pour la jouissance
+  // (sa plage, 0 à 6 mois, est trop courte pour 10) ; extrémités alignées sur les crans
+  { cle: 'taux', titre: 'Taux de distribution', unite: '%', pas: 1 },
+  { cle: 'prix', titre: 'Prix de la part', unite: '€', pas: 10 },
+  { cle: 'frais', titre: 'Frais de souscription', unite: '%', pas: 1 },
+  { cle: 'fraisGestion', titre: 'Frais de gestion', unite: '%', pas: 1 },
   { cle: 'jouissance', titre: 'Délai de jouissance', unite: 'mois', pas: 1 },
   { cle: 'minimum', titre: 'Investissement minimum', unite: '€', pas: 10 },
 ];
@@ -169,14 +182,17 @@ function modeDe(filtres, mode) {
 }
 
 // Filtres actifs regroupés par critère, dans l'ordre du panneau : un groupe par filtre à
-// choix multiple (une pastille par valeur), un par plage, un par case « possible »
-function groupes(filtres, options) {
+// choix multiple (une pastille par valeur, titre et nom court du critère), un par plage,
+// un par case « possible » (sans titre : une seule pastille qui se suffit)
+export function groupesActifs(filtres, options) {
   const liste = [];
-  for (const { cle, titre, mode } of CHOIX) {
+  for (const { cle, titre, court = titre, mode } of CHOIX) {
     if (filtres[cle].length === 0) continue;
     const libelle = (v) => (cle === 'capitalisations' ? libelleCapitalisation(v, options) : v);
     liste.push({
+      id: cle,
       titre,
+      court,
       mode: modeDe(filtres, mode),
       pastilles: filtres[cle].map((valeur) => ({
         id: `${cle}:${valeur}`,
@@ -190,6 +206,7 @@ function groupes(filtres, options) {
     if (plage.min === null && plage.max === null) continue;
     const libelle = libellePlage(titre, unite, plage);
     liste.push({
+      id: cle,
       pastilles: [
         { id: cle, libelle, retirer: (f) => ({ ...f, [cle]: { min: null, max: null } }) },
       ],
@@ -198,36 +215,32 @@ function groupes(filtres, options) {
   for (const { cle, titre } of OPTIONS) {
     if (!filtres[cle]) continue;
     liste.push({
+      id: cle,
       pastilles: [{ id: cle, libelle: titre, retirer: (f) => ({ ...f, [cle]: false }) }],
     });
   }
   return liste;
 }
 
-// Une pastille par filtre actif : une par valeur choisie, une par plage (US-10c). Pour
-// rendre les règles visibles : `et` = premier filtre d'un nouveau critère (badge ET),
-// `liaison` = mot affiché avant la pastille (« ou », « et », « uniquement »)
+// Une pastille par filtre actif : une par valeur choisie, une par plage (US-10c)
 export function pastilles(filtres, options) {
-  return groupes(filtres, options).flatMap((groupe, g) =>
-    groupe.pastilles.map((pastille, i) => {
-      let liaison = null;
-      if (i > 0) liaison = groupe.mode.liaison;
-      else if (groupe.mode?.code === 'uniquement') liaison = 'uniquement';
-      return { ...pastille, et: g > 0 && i === 0, liaison };
-    }),
-  );
+  return groupesActifs(filtres, options).flatMap((groupe) => groupe.pastilles);
 }
 
-// Phrase « Votre recherche » : une partie par critère actif, toutes reliées par ET
+// Phrase « Votre recherche » : une partie par critère actif (reliées par ET à l'écran).
+// Chaque partie est une suite de morceaux : du texte, ou { liaison: 'ou' | 'et' } entre
+// les valeurs d'un même critère (coloré à l'écran)
 export function phraseRecherche(filtres, options) {
-  return groupes(filtres, options).map(({ titre, mode, pastilles: liste }) => {
-    if (!titre) return liste[0].libelle;
+  return groupesActifs(filtres, options).map(({ titre, mode, pastilles: liste }) => {
+    if (!titre) return [liste[0].libelle];
     const valeurs = liste.map((p) => p.libelle);
-    const fin = valeurs.length > 1 ? ` ${mode.liaison} ${valeurs.at(-1)}` : '';
-    const texte = valeurs.slice(0, Math.max(1, valeurs.length - 1)).join(', ') + fin;
-    if (mode.code === 'uniquement') return `${titre} : uniquement ${texte}`;
-    if (mode.code === 'tous' && valeurs.length > 1) return `${titre} : ${texte} (tous)`;
-    return `${titre} : ${texte}`;
+    const morceaux = [`${titre} : ${mode.code === 'uniquement' ? 'uniquement ' : ''}${valeurs[0]}`];
+    valeurs.slice(1).forEach((valeur, i) => {
+      if (i < valeurs.length - 2) morceaux.push(`, ${valeur}`);
+      else morceaux.push(' ', { liaison: mode.liaison }, ` ${valeur}`);
+    });
+    if (mode.code === 'tous' && valeurs.length > 1) morceaux.push(' (tous)');
+    return morceaux;
   });
 }
 
