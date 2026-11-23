@@ -7,6 +7,8 @@ import { createApp } from './app.js';
 import { creerAuth, fournisseurBetterAuth } from './auth/better-auth.js';
 import { routesCatalogue } from './catalogue/routes.js';
 import { creerCatalogueService } from './catalogue/service.js';
+import { routesComparaison } from './comparaison/routes.js';
+import { creerComparaisonService } from './comparaison/service.js';
 import { routesComptes } from './comptes/routes.js';
 import {
   decrirePlanification,
@@ -21,6 +23,7 @@ import {
   depotAcceptationsCgu,
   depotTentativesConnexion,
   depotCatalogue,
+  depotComparaison,
   depotInformations,
   depotKyc,
   depotOutilsImport,
@@ -63,6 +66,8 @@ const kyc = creerKycService(depotKyc(db));
 const adresses = creerAdressesService();
 // US-08 : liste des SCPI du Catalogue
 const catalogue = creerCatalogueService(depotCatalogue(db));
+// US-04 : SCPI du comparateur
+const comparaison = creerComparaisonService(depotComparaison(db));
 // US-04c : fichiers des pièces dans R2 (dépôt indisponible, 503, sans les variables R2)
 const pieces = creerPiecesService(depotKyc(db), depotPieces(db), stockagePieces());
 // US-06 : mise à jour des informations personnelles (justificatifs dans R2, comme les pièces)
@@ -101,6 +106,8 @@ createApp(() => db.execute(sql`select 1`), logger, {
     routesPiecesKyc(pieces, fournisseur),
     routesQuestionnaire(questionnaires, fournisseur),
     routesInformations(informations, fournisseur),
+    // Avant le Catalogue : /scpis/comparables ne doit pas être pris pour une adresse /scpis/<id>
+    routesComparaison(comparaison, fournisseur),
     routesCatalogue(catalogue, fournisseur),
     routesOutilsImport(outilsImport),
   ],

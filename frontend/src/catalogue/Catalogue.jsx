@@ -11,9 +11,10 @@
 // sur tout le catalogue ; changer de tri garde les filtres et ramène à la première page.
 // Recherche par nom (Recherche.jsx) : ses résultats remplacent la liste tant qu'elle est
 // active. Recherche, filtres et tri se combinent (US-12) : changer l'un garde les autres.
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { deconnecter } from '../auth.js';
 import { lireQuestionnaire } from '../investisseur/api.js';
+import { LienInterne } from '../MiseEnPage.jsx';
 import { formulairesPassables } from '../outils/passerFormulaires.js';
 import PageApplication from '../navigation/PageApplication.jsx';
 import { lireFiltresCatalogue, listerScpis, rechercherScpis } from './api.js';
@@ -113,28 +114,6 @@ function Info({ emoji, libelle, valeur }) {
   );
 }
 
-// Bouton visible mais pas encore actif : aucun effet au clic, bulle « Bientôt disponible »
-// au survol et au focus clavier (aria-disabled plutôt que disabled : un bouton disabled ne
-// réagit ni au survol dans tous les navigateurs, ni au clavier).
-function BoutonBientot({ principal, children }) {
-  const idBulle = useId();
-  return (
-    <span className="scpi__bouton-zone">
-      <button
-        type="button"
-        className={principal ? 'scpi__bouton scpi__bouton--principal' : 'scpi__bouton'}
-        aria-disabled="true"
-        aria-describedby={idBulle}
-      >
-        {children}
-      </button>
-      <span id={idBulle} role="tooltip" className="scpi__bulle">
-        Bientôt disponible
-      </span>
-    </span>
-  );
-}
-
 function CarteScpi({ scpi, anneeTaux, photo }) {
   const cashback = pastilleCashback(scpi.cashback);
   return (
@@ -180,16 +159,16 @@ function CarteScpi({ scpi, anneeTaux, photo }) {
           valeur={formaterMontant(scpi.minimumSouscription)}
         />
       </dl>
-      {/* Boutons affichés mais pas encore actifs (fonctionnalités à venir) */}
+      {/* Liens vers la fiche et l'écran Investir (adresses C1) */}
       <div className="scpi__actions">
-        <BoutonBientot>
+        <LienInterne to={`/catalogue/${scpi.id}`} className="scpi__bouton">
           <Icone nom="info" />
           En savoir plus
-        </BoutonBientot>
-        <BoutonBientot principal>
+        </LienInterne>
+        <LienInterne to={`/investir/${scpi.id}`} className="scpi__bouton scpi__bouton--principal">
           Investir
           <Icone nom="fleche" />
-        </BoutonBientot>
+        </LienInterne>
       </div>
     </li>
   );

@@ -10,6 +10,11 @@ import {
 } from '../catalogue/filtres.js';
 import type { DepotCatalogue, ScpiCatalogue, ValeursFiltres } from '../catalogue/service.js';
 import { type CritereTri, TRI_PAR_DEFAUT, type TriCatalogue } from '../catalogue/tri.js';
+import {
+  DUREE_EVOLUTION,
+  type DepotComparaison,
+  type LigneComparable,
+} from '../comparaison/service.js';
 import type { DepotTentativesConnexion } from '../comptes/service.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
@@ -605,6 +610,50 @@ export function depotCatalogue(db: Db): DepotCatalogue {
       const resultat = await db.execute<ScpiCatalogue>(
         cartesCatalogue(anneeTaux, conditions, limite, 0, tri),
       );
+      return resultat.rows;
+    },
+  };
+}
+
+// US-04 : SCPI du comparateur, triées par nom. Dernier taux connu (année la plus récente),
+// prix de part de l'année la plus récente - 5 à la plus récente, pays et secteur les plus
+// représentés (à égalité : ordre alphabétique) ; null si non renseigné, jamais 0.
+export function depotComparaison(db: Db): DepotComparaison {
+  return {
+    async lister(): Promise<LigneComparable[]> {
+      const resultat = await db.execute<LigneComparable>(sql`
+        select c.id,
+               c.nom,
+               t.taux::float8 as "tauxDistribution",
+               t.annee as "anneeTaux",
+               coalesce((
+                 select json_agg(json_build_object('annee', p.annee, 'prix', p.prix::float8)
+                          order by p.annee)
+                 from scpi_prix_part p
+                 where p.scpi_id = c.id
+                   and p.annee >= (select max(r.annee) from scpi_prix_part r
+                                   where r.scpi_id = c.id) - ${DUREE_EVOLUTION}
+               ), '[]') as prix,
+               c.minimum_souscription as minimum,
+               c.capitalisation,
+               c.frais_souscription as "fraisSouscription",
+               c.frais_gestion as "fraisGestion",
+               c.delai_jouissance as "delaiJouissance",
+               c.frequence::text as frequence,
+               c.demembrement,
+               c.versement_programme as "versementProgramme",
+               (select json_build_object('libelle', l.pays, 'part', l.pourcentage::float8)
+                from scpi_localisation l where l.scpi_id = c.id
+                order by l.pourcentage desc, l.pays limit 1) as "paysPrincipal",
+               (select json_build_object('libelle', s.secteur, 'part', s.pourcentage::float8)
+                from scpi_secteurs s where s.scpi_id = c.id
+                order by s.pourcentage desc, s.secteur limit 1) as "secteurPrincipal"
+        from scpi_catalog c
+        left join lateral (
+          select d.taux, d.annee from scpi_taux_distribution d where d.scpi_id = c.id
+          order by d.annee desc nulls last limit 1
+        ) t on true
+        order by c.nom, c.id`);
       return resultat.rows;
     },
   };

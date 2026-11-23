@@ -1,0 +1,131 @@
+/* Liste déroulante avec recherche (ListeAvecRecherche.jsx), même allure que la liste des
+   pays du KYC (kyc.css) */
+.liste-recherche {
+  position: relative;
+}
+
+.liste-recherche__champ {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 36px 0 12px;
+  border: 1px solid var(--bordure-champ, var(--ligne));
+  border-radius: 14px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.liste-recherche__champ::placeholder {
+  color: var(--discret);
+  font-weight: 500;
+}
+
+.liste-recherche__champ:focus-visible {
+  outline: 2px solid var(--bleu-vif);
+  outline-offset: 1px;
+}
+
+/* Flèche dans le champ, à droite : ouvre ou ferme la liste */
+.liste-recherche__fleche {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--encre-douce);
+  cursor: pointer;
+}
+
+.liste-recherche__fleche svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Bouton « poubelle » dans le champ, à gauche de la flèche */
+.liste-recherche--effacable .liste-recherche__champ {
+  padding-right: 68px;
+}
+
+.liste-recherche__effacer {
+  position: absolute;
+  top: 50%;
+  right: 34px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--encre-douce);
+  cursor: pointer;
+}
+
+.liste-recherche__effacer:hover {
+  background: rgb(14 26 51 / 8%);
+  color: #b42318;
+}
+
+.liste-recherche__effacer svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.liste-recherche__liste {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--cadre);
+  border: 1px solid var(--ligne);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgb(14 26 51 / 12%);
+}
+
+.liste-recherche__option {
+  padding: 8px 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.liste-recherche__option[data-actif='true'] {
+  background: var(--papier);
+}
+
+.liste-recherche__option[aria-selected='true'] {
+  font-weight: 700;
+  color: var(--bleu-vif);
+}
+
+.liste-recherche__option[aria-disabled='true'] {
+  color: var(--discret);
+  cursor: not-allowed;
+}
+
+.liste-recherche__vide {
+  padding: 8px 12px;
+  color: var(--encre-douce);
+}

@@ -366,51 +366,16 @@
   color: #fff;
 }
 
-.scpi__bouton[aria-disabled='true'] {
-  cursor: not-allowed;
+/* Les boutons sont des liens : ni couleur ni soulignement de lien (.compte a, compte.css) */
+.compte .scpi__actions .scpi__bouton,
+.compte .scpi__actions .scpi__bouton:hover {
+  color: var(--texte);
+  text-decoration: none;
 }
 
-/* Bulle « Bientôt disponible » au-dessus du bouton, au survol ou au focus clavier */
-.scpi__bouton-zone {
-  position: relative;
-  display: grid;
-}
-
-.scpi__bulle {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  z-index: 1;
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: var(--nuit);
+.compte .scpi__actions .scpi__bouton--principal,
+.compte .scpi__actions .scpi__bouton--principal:hover {
   color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transform: translate(-50%, 4px);
-  transition:
-    opacity 0.15s,
-    transform 0.15s;
-}
-
-/* Petite pointe sous la bulle */
-.scpi__bulle::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  border: 5px solid transparent;
-  border-top-color: var(--nuit);
-  transform: translateX(-50%);
-}
-
-.scpi__bouton-zone:hover .scpi__bulle,
-.scpi__bouton-zone:focus-within .scpi__bulle {
-  opacity: 1;
-  transform: translate(-50%, 0);
 }
 
 .pagination {
