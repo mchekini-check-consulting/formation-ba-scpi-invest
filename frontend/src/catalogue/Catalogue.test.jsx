@@ -140,7 +140,7 @@ describe('Catalogue : liste des SCPI (US-08)', () => {
     ).toBe('6,20 %');
     const lignes = [...carte.querySelectorAll('.scpi__info')].map((l) => [
       l.querySelector('dt').textContent,
-      l.querySelector('dd').textContent.replaceAll(String.fromCharCode(160), ' '),
+      l.querySelector('dd').textContent.replaceAll(/\s/gu, ' '),
     ]);
     expect(lignes).toEqual([
       ['📍Principal pays', 'France'],
@@ -967,7 +967,7 @@ describe('Catalogue : minimum à investir et cashback sur la carte (SCPI-252)', 
 
   it('scénario minimum renseigné : « 1 090 € » (format C4)', async () => {
     await afficher({ lister: vi.fn().mockResolvedValue(PAGE) });
-    expect(minimum('Corum Origin').textContent.replaceAll('\u00a0', ' ')).toBe('1 090 €');
+    expect(minimum('Corum Origin').textContent.replaceAll(/\s/gu, ' ')).toBe('1 090 €');
   });
 
   it('scénario minimum absent : « N/C », jamais 0', async () => {

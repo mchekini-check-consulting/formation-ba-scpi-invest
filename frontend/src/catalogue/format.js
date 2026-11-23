@@ -1,5 +1,7 @@
 // Mise en forme des données du Catalogue (US-08). Donnée non renseignée -> « N/C »,
 // jamais 0.
+import { formaterEuros } from '../utils/format.js';
+
 export const NON_COMMUNIQUE = 'N/C';
 
 const ESPACE = ' '; // espace insécable : « 5,10 % » ne se coupe pas en fin de ligne
@@ -26,14 +28,10 @@ export function formaterCapitalisation(montant) {
   return `${grouper(Math.round(n))}${ESPACE}€`;
 }
 
-// Convention C4 : montant en euros, espace pour les milliers, décimales seulement si le
-// montant n'est pas rond : 1090 -> « 1 090 € », 2085.5 -> « 2 085,50 € »
+// Convention C4 (utils/format.js) : 1090 -> « 1 090 € », 2085.5 -> « 2 085,50 € ».
+// Donnée absente : « N/C » sur les cartes du Catalogue (choix du BA, SCPI-252).
 export function formaterMontant(montant) {
-  if (absent(montant)) return NON_COMMUNIQUE;
-  const n = Number(montant);
-  if (Number.isInteger(n)) return `${grouper(n)}${ESPACE}€`;
-  const [entier, decimales] = n.toFixed(2).split('.');
-  return `${grouper(entier)},${decimales}${ESPACE}€`;
+  return absent(montant) ? NON_COMMUNIQUE : formaterEuros(montant);
 }
 
 // SCPI-252 : texte de la pastille du cashback (en %) : 5 -> « Cashback 5 % ».

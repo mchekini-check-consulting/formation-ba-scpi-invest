@@ -11,6 +11,8 @@ import {
   segmentsPleins,
 } from './format.js';
 
+// Espaces insécables (fine ou non) -> espace simple
+const espacesSimples = (texte) => texte.replaceAll(/\s/gu, ' ');
 const sansEspace = (texte) => texte.replaceAll(' ', ' ');
 
 describe('mise en forme du Catalogue (US-08)', () => {
@@ -26,11 +28,11 @@ describe('mise en forme du Catalogue (US-08)', () => {
   });
 
   it('montant au format C4 : espace pour les milliers, décimales si pas rond', () => {
-    expect(sansEspace(formaterMontant(1090))).toBe('1 090 €');
-    expect(sansEspace(formaterMontant(500))).toBe('500 €');
-    expect(sansEspace(formaterMontant(2085.5))).toBe('2 085,50 €');
-    expect(sansEspace(formaterMontant('1090'))).toBe('1 090 €');
-    expect(sansEspace(formaterMontant(0))).toBe('0 €');
+    expect(espacesSimples(formaterMontant(1090))).toBe('1 090 €');
+    expect(espacesSimples(formaterMontant(500))).toBe('500 €');
+    expect(espacesSimples(formaterMontant(2085.5))).toBe('2 085,50 €');
+    expect(espacesSimples(formaterMontant('1090'))).toBe('1 090 €');
+    expect(espacesSimples(formaterMontant(0))).toBe('0 €');
   });
 
   it('SCPI-252 : pastille du cashback en %, aucune si 0 ou absent', () => {
