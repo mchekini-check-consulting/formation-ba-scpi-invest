@@ -6,6 +6,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } fr
 import App from './App.jsx';
 import { EVENEMENT_SESSION_EXPIREE } from './auth.js';
 import Catalogue from './catalogue/Catalogue.jsx';
+import Comparateur from './comparaison/Comparateur.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import { memoriserPage } from './connexion/destination.js';
 import Indicateurs from './Indicateurs.jsx';
@@ -29,7 +30,6 @@ import Profil from './profil/Profil.jsx';
 // actif : entrée du menu marquée sélectionnée
 const ECRANS_A_VENIR = [
   { chemin: '/catalogue/:id', titre: 'Détails' },
-  { chemin: '/comparaison', titre: 'Comparer', actif: 'comparaison' },
   { chemin: '/simulation', titre: 'Simuler', actif: 'simulation' },
   { chemin: '/investir/:id', titre: 'Investir' },
   // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
@@ -109,6 +109,15 @@ export default function Routeur({ passer = formulairesPassables() }) {
           element={
             <ExigerKycComplete>
               <Catalogue />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Comparateur (US-04) : SCPI pré-sélectionnées par ?scpi=<id>,<id>,<id> (C1) */}
+        <Route
+          path="/comparaison"
+          element={
+            <ExigerKycComplete>
+              <Comparateur />
             </ExigerKycComplete>
           }
         />
