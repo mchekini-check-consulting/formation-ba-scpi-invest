@@ -5,6 +5,7 @@ import { HttpError } from '../logging/http-error.js';
 //   categorie, pays, gerant, capitalisation : valeurs répétées (?categorie=Santé&categorie=Bureaux)
 //   tauxMin/tauxMax, prixMin/prixMax, fraisMin/fraisMax, minimumMin/minimumMax : nombres
 //   fraisGestionMin/fraisGestionMax, jouissanceMin/jouissanceMax : nombres
+//   cashback : valeurs répétées, en % (?cashback=4&cashback=5) ; SCPI sans cashback jamais retenues
 //   frequence : valeurs répétées (Mensuelle, Trimestrielle…)
 //   demembrement=oui, versementProgramme=oui : seulement les SCPI qui le proposent
 //   categorieMode, paysMode : tous | uniquement (absent : au-moins-un)
@@ -47,6 +48,8 @@ export type FiltresCatalogue = {
   fraisGestion: Plage;
   // délai de jouissance, en mois
   jouissance: Plage;
+  // cashbacks à la souscription choisis, en % (SCPI-252) : au moins un (OU)
+  cashback: number[];
   // fréquence de versement des loyers
   frequences: string[];
   // démembrement possible / versement programmé possible (false : filtre inactif)
@@ -77,6 +80,7 @@ export const AUCUN_FILTRE: FiltresCatalogue = {
   minimum: { min: null, max: null },
   fraisGestion: { min: null, max: null },
   jouissance: { min: null, max: null },
+  cashback: [],
   frequences: [],
   demembrement: false,
   versementProgramme: false,
@@ -103,6 +107,13 @@ function plage(requete: Record<string, unknown>, nom: string): Plage {
   const max = nombre(requete[`${nom}Max`]);
   if (min !== null && max !== null && min > max) throw new HttpError(400, MESSAGE);
   return { min, max };
+}
+
+// Cashbacks choisis : nombres strictement positifs, sans doublon ; autre valeur : 400
+function cashbacks(brut: unknown): number[] {
+  const liste = valeurs(brut).map(Number);
+  if (liste.some((v) => !Number.isFinite(v) || v <= 0)) throw new HttpError(400, MESSAGE);
+  return [...new Set(liste)];
 }
 
 // Case « possible » : active avec oui (ou true), inactive si absente ; autre valeur : 400
@@ -140,6 +151,7 @@ export function lireFiltres(requete: Record<string, unknown> = {}): FiltresCatal
     minimum: plage(requete, 'minimum'),
     fraisGestion: plage(requete, 'fraisGestion'),
     jouissance: plage(requete, 'jouissance'),
+    cashback: cashbacks(requete.cashback),
     frequences,
     demembrement: caseCochee(requete.demembrement),
     versementProgramme: caseCochee(requete.versementProgramme),

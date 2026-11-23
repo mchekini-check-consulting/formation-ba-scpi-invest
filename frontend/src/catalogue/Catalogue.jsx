@@ -30,8 +30,10 @@ import {
   SEGMENTS,
   formaterCapitalisation,
   formaterDate,
+  formaterMontant,
   formaterTaux,
   formaterTexte,
+  pastilleCashback,
   segmentsPleins,
 } from './format.js';
 
@@ -113,11 +115,19 @@ function Info({ emoji, libelle, valeur }) {
 }
 
 function CarteScpi({ scpi, anneeTaux, photo }) {
+  const cashback = pastilleCashback(scpi.cashback);
   return (
     <li className="scpi">
-      {/* Photo décorative (le nom de la SCPI est juste dessous) : pas un bien réel de la SCPI */}
+      {/* Photo décorative (le nom de la SCPI est juste dessous) : pas un bien réel de la SCPI.
+          SCPI-252 : pastille du cashback en haut à droite, par-dessus la photo (aucune si 0
+          ou absent) */}
       <div className="scpi__photo">
         <img src={photo} alt="" loading="lazy" decoding="async" />
+        {cashback && (
+          <p className="scpi__cashback">
+            <span aria-hidden="true">🎁</span> {cashback}
+          </p>
+        )}
       </div>
       <h2 className="scpi__nom">{scpi.nom}</h2>
       <p className="scpi__gerant">{formaterTexte(scpi.gerant)}</p>
@@ -142,6 +152,11 @@ function CarteScpi({ scpi, anneeTaux, photo }) {
           emoji="💳"
           libelle="Capitalisation"
           valeur={formaterCapitalisation(scpi.capitalisation)}
+        />
+        <Info
+          emoji="💶"
+          libelle="Minimum à investir"
+          valeur={formaterMontant(scpi.minimumSouscription)}
         />
       </dl>
       {/* Liens vers la fiche et l'écran Investir (adresses C1) */}

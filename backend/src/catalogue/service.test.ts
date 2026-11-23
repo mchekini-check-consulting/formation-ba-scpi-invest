@@ -13,6 +13,8 @@ const SCPI: ScpiCatalogue = {
   capitalisation: 289000000,
   categorie: 'Bureaux',
   zoneGeographique: 'France',
+  minimumSouscription: 1090,
+  cashback: 5,
 };
 
 const VALEURS = {
@@ -23,6 +25,7 @@ const VALEURS = {
   prix: { min: 168, max: 1664 },
   frais: { min: 0, max: 12 },
   minimum: { min: 180, max: 10200 },
+  cashback: [2, 3, 4, 5],
 };
 
 const MAJ = new Date('2026-11-05T02:00:00Z');

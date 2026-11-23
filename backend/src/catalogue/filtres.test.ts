@@ -87,6 +87,14 @@ describe('filtres du Catalogue lus dans l’URL (US-10a, US-10b)', () => {
     });
   });
 
+  it('SCPI-252 : cashbacks choisis, en %, sans doublon ; valeur invalide refusée', () => {
+    expect(lireFiltres({ cashback: ['4', '5', '5'] }).cashback).toEqual([4, 5]);
+    expect(lireFiltres({ cashback: '5' }).cashback).toEqual([5]);
+    for (const faux of ['x', '0', '-2']) {
+      expect(() => lireFiltres({ cashback: faux })).toThrow('Filtre invalide');
+    }
+  });
+
   it('mode de la catégorie et du pays : au-moins-un par défaut, tous ou uniquement', () => {
     expect(lireFiltres({ categorie: 'Santé' })).toMatchObject({
       modeCategories: 'au-moins-un',

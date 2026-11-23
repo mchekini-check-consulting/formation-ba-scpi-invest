@@ -161,6 +161,23 @@
   background: var(--sable);
 }
 
+/* SCPI-252 : pastille du cashback, en haut à droite, par-dessus la photo */
+.scpi__cashback {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  margin: 0;
+  padding: 4px 12px;
+  border: 1.5px solid var(--vert);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--vert);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(14 26 51 / 25%);
+}
+
 .scpi__photo img {
   display: block;
   width: 100%;
