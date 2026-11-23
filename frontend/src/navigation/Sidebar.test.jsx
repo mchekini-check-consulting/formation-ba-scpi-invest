@@ -1,9 +1,6 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import Routeur from '../Routeur.jsx';
-import { CHEMINS_INACTIFS, ENTREES } from './entrees.js';
 import { initiales, lireIdentite } from './identite.js';
 import PageApplication from './PageApplication.jsx';
 import Sidebar from './Sidebar.jsx';
@@ -40,14 +37,15 @@ const liste = () => within(menu()).getByRole('list');
 const adresse = () => screen.getByTestId('adresse').textContent;
 
 describe('Sidebar de navigation (US-06)', () => {
-  it('scénario 1 : 4 entrées avec icône et libellé, Catalogue sélectionné', () => {
+  it('scénario 1 : entrées avec icône et libellé, Catalogue sélectionné', () => {
     afficher();
     const entrees = within(liste()).getAllByRole('listitem');
-    expect(entrees.map((e) => e.textContent.replace(' (bientôt disponible)', ''))).toEqual([
+    expect(entrees.map((e) => e.textContent)).toEqual([
       'Catalogue',
       'Comparaison',
       'Simulation',
       'Portefeuille',
+      'Versements programmés',
     ]);
     for (const entree of entrees) {
       expect(entree.querySelector('svg.sidebar__icone')).not.toBeNull();
@@ -62,27 +60,16 @@ describe('Sidebar de navigation (US-06)', () => {
     expect(adresse()).toBe('/catalogue');
   });
 
-  it('scénario 3 : entrées inactives, pas de lien, le clic ne change pas d’écran', () => {
+  it.each([
+    ['Comparaison', '/comparaison'],
+    ['Simulation', '/simulation'],
+    ['Portefeuille', '/portefeuille'],
+    ['Versements programmés', '/versements/nouveau'],
+    ['Infos fiscales', '/fiscalite'],
+  ])('EN-03 : « %s » mène à %s', (libelle, chemin) => {
     afficher();
-    // le seul lien des entrées est le Catalogue
-    expect(within(liste()).getAllByRole('link')).toHaveLength(1);
-    for (const libelle of ['Comparaison', 'Simulation', 'Portefeuille']) {
-      const entree = within(menu()).getByText(libelle).closest('.sidebar__entree');
-      expect(entree.tagName).toBe('SPAN');
-      expect(entree.getAttribute('aria-disabled')).toBe('true');
-      fireEvent.click(entree);
-      expect(adresse()).toBe('/catalogue');
-    }
-    expect(screen.queryByRole('alert')).toBeNull();
-  });
-
-  it('scénario 4 : entrées inactives grisées, infobulle « Bientôt disponible »', () => {
-    afficher();
-    const simulation = within(menu()).getByText('Simulation').closest('.sidebar__entree');
-    expect(simulation.classList.contains('sidebar__entree--inactive')).toBe(true);
-    expect(simulation.getAttribute('data-infobulle')).toBe('Bientôt disponible');
-    // annoncée aux lecteurs d'écran
-    expect(simulation.textContent).toContain('(bientôt disponible)');
+    fireEvent.click(within(menu()).getByRole('link', { name: libelle }));
+    expect(adresse()).toBe(chemin);
   });
 
   it('écran actif autre que le Catalogue : aucune entrée sélectionnée', () => {
@@ -112,8 +99,6 @@ describe('Sidebar de navigation (US-06)', () => {
     afficher();
     const catalogue = within(menu()).getByRole('link', { name: 'Catalogue' });
     expect(catalogue.getAttribute('data-infobulle')).toBe('Catalogue');
-    const simulation = within(menu()).getByText('Simulation').closest('.sidebar__entree');
-    expect(simulation.getAttribute('data-libelle')).toBe('Simulation');
   });
 
   it('initiales, nom et profil de l’investisseur en bas de la barre', async () => {
@@ -188,11 +173,6 @@ describe('Sidebar de navigation (US-06)', () => {
     afficher();
     expect(within(menu()).queryByRole('button', { name: 'Se déconnecter' })).toBeNull();
   });
-
-  it('entrées et adresses inactives cohérentes', () => {
-    expect(ENTREES.filter((e) => !e.inactive).map((e) => e.id)).toEqual(['catalogue']);
-    expect(CHEMINS_INACTIFS).toEqual(['/comparaison', '/simulation', '/portefeuille']);
-  });
 });
 
 describe('Mise en page des écrans de l’application (US-06)', () => {
@@ -220,20 +200,6 @@ describe('Mise en page des écrans de l’application (US-06)', () => {
     expect(deconnecte).toBe(false); // confirmation demandée d'abord
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Oui' })));
     expect(deconnecte).toBe(true);
-  });
-});
-
-describe('Accès direct à un écran inactif (US-06, scénario 5)', () => {
-  it.each(CHEMINS_INACTIFS)('%s : redirection vers le Catalogue', (chemin) => {
-    render(
-      <QueryClientProvider client={new QueryClient()}>
-        <MemoryRouter initialEntries={[chemin]}>
-          <Routeur />
-          <Adresse />
-        </MemoryRouter>
-      </QueryClientProvider>,
-    );
-    expect(adresse()).toBe('/catalogue');
   });
 });
 

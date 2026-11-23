@@ -18,12 +18,28 @@ import Cgu from './legal/Cgu.jsx';
 import Confidentialite from './legal/Confidentialite.jsx';
 import Contact from './legal/Contact.jsx';
 import MentionsLegales from './legal/MentionsLegales.jsx';
-import { CHEMINS_INACTIFS } from './navigation/entrees.js';
+import PageBientot from './navigation/PageBientot.jsx';
 import { CHEMIN_MISE_A_JOUR } from './navigation/rappel.js';
 import { CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
 import { formulairesPassables } from './outils/passerFormulaires.js';
 import ImportCatalogue from './outils/ImportCatalogue.jsx';
 import Profil from './profil/Profil.jsx';
+
+// Adresses définitives des écrans du sprint 2 (convention C1), en attente de leur US ;
+// actif : entrée du menu marquée sélectionnée
+const ECRANS_A_VENIR = [
+  { chemin: '/catalogue/:id', titre: 'Détails' },
+  { chemin: '/comparaison', titre: 'Comparer', actif: 'comparaison' },
+  { chemin: '/simulation', titre: 'Simuler', actif: 'simulation' },
+  { chemin: '/investir/:id', titre: 'Investir' },
+  // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
+  { chemin: '/demandes/:id', titre: 'Suivi de ma demande' },
+  // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
+  { chemin: '/versements/nouveau', titre: 'Programmer un versement', actif: 'versements' },
+  // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
+  { chemin: '/portefeuille', titre: 'Mon portefeuille', actif: 'portefeuille' },
+  { chemin: '/fiscalite', titre: 'Fiscalité', actif: 'fiscalite' },
+];
 
 // Email pré-rempli transmis par l'adresse (?email=...)
 function useEmailDeLAdresse() {
@@ -114,10 +130,17 @@ export default function Routeur({ passer = formulairesPassables() }) {
             </ExigerKycComplete>
           }
         />
-        {/* Écrans pas encore disponibles (entrées grisées de la sidebar, US-06) :
-            adresse saisie directement -> Catalogue */}
-        {CHEMINS_INACTIFS.map((chemin) => (
-          <Route key={chemin} path={chemin} element={<Navigate to="/catalogue" replace />} />
+        {/* Écrans du sprint 2 pas encore développés (EN-03) */}
+        {ECRANS_A_VENIR.map(({ chemin, titre, actif }) => (
+          <Route
+            key={chemin}
+            path={chemin}
+            element={
+              <ExigerKycComplete>
+                <PageBientot titre={titre} actif={actif} />
+              </ExigerKycComplete>
+            }
+          />
         ))}
         <Route path="/indicateurs" element={<Indicateurs />} />
         {/* Outil de test de l'import du catalogue (dev et poste uniquement, sans connexion) */}
