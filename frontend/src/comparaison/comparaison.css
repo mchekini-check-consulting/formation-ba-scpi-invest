@@ -1,0 +1,223 @@
+/* Comparateur (US-04) : couleurs de compte.css (variables de .compte) */
+
+/* À droite, au-dessus du tableau : « Vider la sélection » puis le montant à investir */
+.comparateur__outils {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+/* Avertissement (à gauche, toute la place restante) et montant (à droite), alignés en bas */
+.comparateur__ligne {
+  align-self: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+/* Encadré du montant : libellé et champ */
+.comparateur__montant {
+  flex: none;
+  width: min(100%, 270px);
+  padding: 12px 14px 14px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+  background: #fff;
+}
+
+.comparateur__montant label {
+  display: block;
+  margin-bottom: 6px;
+  text-align: right;
+  font-weight: 700;
+}
+
+/* Champ avec la croix d'effacement à droite */
+.comparateur__saisie {
+  position: relative;
+}
+
+.comparateur__montant input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 40px 0 12px;
+  border: 1px solid var(--bordure-champ);
+  border-radius: 14px;
+  background: #fff;
+  font: inherit;
+}
+
+.comparateur__effacer {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--texte-secondaire);
+  cursor: pointer;
+}
+
+.comparateur__effacer:hover {
+  background: rgb(14 26 51 / 8%);
+  color: var(--texte);
+}
+
+.comparateur__effacer svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.comparateur__vider {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+  background: #fff;
+  color: var(--texte);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Même hauteur que le champ du montant */
+.comparateur__info {
+  flex: 1 1 280px;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 14px;
+  text-align: left;
+  border-radius: var(--r-m);
+  background: var(--bleu-ciel);
+  color: var(--bleu);
+}
+
+/* Petit écran : le tableau défile horizontalement */
+.comparateur__defilement {
+  overflow-x: auto;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+  background: #fff;
+}
+
+.comparateur__tableau {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.comparateur__tableau th,
+.comparateur__tableau td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--bordure);
+  text-align: left;
+  vertical-align: top;
+}
+
+.comparateur__tableau tr:last-child > * {
+  border-bottom: 0;
+}
+
+/* Séparateurs verticaux discrets entre les colonnes ; trait plus marqué sous la ligne
+   des listes */
+.comparateur__tableau :is(th, td) + :is(th, td) {
+  border-left: 1px solid rgb(14 26 51 / 8%);
+}
+
+.comparateur__tableau thead :is(th, td) {
+  padding-block: 14px;
+  border-bottom: 2px solid var(--bordure);
+}
+
+/* 4 colonnes de même largeur : libellés puis les 3 SCPI */
+.comparateur__tableau :is(th, td) {
+  width: 25%;
+}
+
+/* Colonne des libellés */
+.comparateur__tableau tbody th {
+  font-weight: 600;
+  color: var(--texte-secondaire);
+}
+
+.comparateur__detail {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--texte-secondaire);
+}
+
+/* « Montant inférieur au minimum » : cliquable, remplit le montant (aspect de lien) */
+.comparateur__remplir {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--bleu-vif);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.comparateur__remplir:hover {
+  color: var(--bleu);
+}
+
+.comparateur__vide {
+  color: var(--discret);
+}
+
+/* Meilleure valeur de la ligne : toute la cellule sur fond vert, valeur en gras */
+.comparateur__tableau td.comparateur__meilleur {
+  background: #17603f57;
+  font-weight: 800;
+}
+
+.comparateur__meilleur .comparateur__detail {
+  color: var(--texte);
+  font-weight: 500;
+}
+
+.comparateur__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Liens présentés en boutons : ni couleur ni soulignement de lien (.compte a, compte.css) */
+.compte .comparateur__actions .comparateur__lien {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+  background: #fff;
+  color: var(--texte);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.compte .comparateur__actions .comparateur__lien--principal {
+  border-color: transparent;
+  background: var(--bleu-vif);
+  color: #fff;
+}
