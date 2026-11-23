@@ -284,6 +284,7 @@ export const TABLE_SCPI_CATALOG = pgTable('scpi_catalog', {
   capitalisation: bigint({ mode: 'number' }), // mode : number, sinon quand converti en JSON, ça passe pas!
   gerant: text(),
   frais_souscription: real(),
+  frais_a_la_revente: boolean().default(Math.random() < 0.35),
   frais_gestion: real(),
   delai_jouissance: integer(),
   frequence: frequence(),

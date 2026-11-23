@@ -1,0 +1,1 @@
+ALTER TABLE "scpi_catalog" ADD COLUMN "frais_a_la_revente" boolean DEFAULT false;
