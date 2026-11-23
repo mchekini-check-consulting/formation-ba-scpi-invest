@@ -24,6 +24,10 @@ export type ScpiCatalogue = {
   categorie: string | null;
   // pays majoritaire (plus fort pourcentage)
   zoneGeographique: string | null;
+  // SCPI-252 (US-01) : investissement minimum, en euros
+  minimumSouscription: number | null;
+  // SCPI-252 (US-01) : cashback à la souscription, en %
+  cashback: number | null;
 };
 
 export type PageCatalogue = {
@@ -49,6 +53,8 @@ export type ValeursFiltres = {
   minimum: Plage;
   fraisGestion: Plage;
   jouissance: Plage;
+  // SCPI-252 : cashbacks proposés (> 0), en %, du plus petit au plus grand
+  cashback: number[];
   // fréquences de versement présentes dans les données
   frequences: string[];
 };

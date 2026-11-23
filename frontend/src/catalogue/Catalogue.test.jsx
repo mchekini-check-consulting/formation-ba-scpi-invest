@@ -35,6 +35,8 @@ const scpi = (id, nom, tauxDistribution, autres = {}) => ({
   capitalisation: 289000000,
   categorie: 'Bureaux',
   zoneGeographique: 'France',
+  minimumSouscription: 1090,
+  cashback: null,
   ...autres,
 });
 
@@ -57,6 +59,7 @@ const PAGE_2 = {
       capitalisation: null,
       categorie: null,
       zoneGeographique: null,
+      minimumSouscription: null,
     }),
   ],
 };
@@ -143,11 +146,13 @@ describe('Catalogue : liste des SCPI (US-08)', () => {
       ['📍Principal pays', 'France'],
       ['🏢Secteur principal', 'Bureaux'],
       ['💳Capitalisation', '289 M€'],
+      ['💶Minimum à investir', '1 090 €'],
     ]);
     expect([...carte.querySelectorAll('.scpi__emoji')].map((e) => e.textContent)).toEqual([
       '📍',
       '🏢',
       '💳',
+      '💶',
     ]);
     // Icônes décoratives : ignorées par les lecteurs d'écran
     for (const icone of carte.querySelectorAll('svg, .scpi__emoji')) {
@@ -219,7 +224,7 @@ describe('Catalogue : liste des SCPI (US-08)', () => {
     );
     expect(valeurs).toEqual(['N/C', 'N/C']);
     const infos = [...carte.querySelectorAll('.scpi__info dd')];
-    expect(infos.map((dd) => dd.textContent)).toEqual(['N/C', 'N/C', 'N/C']);
+    expect(infos.map((dd) => dd.textContent)).toEqual(['N/C', 'N/C', 'N/C', 'N/C']);
     expect(infos.every((dd) => dd.className === 'scpi__nc')).toBe(true);
     // Jauge vide, jamais remplie comme un taux de 0 % affiché
     expect(carte.querySelectorAll('.scpi__segment--plein')).toHaveLength(0);
@@ -601,6 +606,39 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     expect(maximum.value).toBe('4');
   });
 
+  it('SCPI-252 : boutons du cashback, « Tous » puis un par valeur proposée', async () => {
+    const { lister } = await ouvrir({
+      lireFiltres: vi.fn().mockResolvedValue({ ...OPTIONS, cashback: [2, 3, 4, 5] }),
+    });
+    const groupe = within(panneau()).getByRole('group', { name: 'Cashback' });
+    const bouton = (nom) => within(groupe).getByRole('button', { name: nom });
+    expect(
+      within(groupe)
+        .getAllByRole('button')
+        .map((b) => b.textContent.replaceAll('\u00a0', ' ')),
+    ).toEqual(['Tous', '2 %', '3 %', '4 %', '5 %']);
+    expect(bouton('Tous').getAttribute('aria-pressed')).toBe('true');
+
+    // Seulement 5 %
+    await act(async () => {
+      fireEvent.click(bouton(/^5/));
+    });
+    expect(lister).toHaveBeenLastCalledWith(1, { ...FILTRES_VIDES, cashback: [5] }, TRI_PAR_DEFAUT);
+    expect(bouton(/^5/).getAttribute('aria-pressed')).toBe('true');
+    expect(bouton('Tous').getAttribute('aria-pressed')).toBe('false');
+
+    // « Tous » : plus de filtre sur le cashback
+    await act(async () => {
+      fireEvent.click(bouton('Tous'));
+    });
+    expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, TRI_PAR_DEFAUT);
+  });
+
+  it('SCPI-252 : aucun cashback proposé, pas de boutons', async () => {
+    await ouvrir();
+    expect(within(panneau()).queryByRole('group', { name: 'Cashback' })).toBeNull();
+  });
+
   it('fermeture : Échap, « Voir les SCPI », clic à côté ; focus rendu au bouton', async () => {
     await ouvrir();
     // Page du Catalogue figée tant que le panneau est ouvert
@@ -915,5 +953,47 @@ describe('Catalogue : recherche, filtres et tri combinés (US-12)', () => {
     ]);
     expect(champ().value).toBe('pierre');
     expect(screen.getByRole('list', { name: 'Filtres actifs' }).textContent).toContain('France');
+  });
+});
+
+describe('Catalogue : minimum à investir et cashback sur la carte (SCPI-252)', () => {
+  const PAGE = {
+    ...PAGE_1,
+    scpis: [
+      scpi(1, 'Corum Origin', 6.5, { minimumSouscription: 1090, cashback: 5 }),
+      scpi(2, 'Sofidynamic', 5.2, { minimumSouscription: null }),
+      scpi(3, 'Iroko Zen', 5, { cashback: 0 }),
+    ],
+  };
+  const carte = (nom) => cartes().find((c) => c.querySelector('h2').textContent === nom);
+  const minimum = (nom) => {
+    const info = [...carte(nom).querySelectorAll('.scpi__info')].find((i) =>
+      i.querySelector('dt').textContent.includes('Minimum à investir'),
+    );
+    return info.querySelector('dd');
+  };
+
+  it('scénario minimum renseigné : « 1 090 € » (format C4)', async () => {
+    await afficher({ lister: vi.fn().mockResolvedValue(PAGE) });
+    expect(minimum('Corum Origin').textContent.replaceAll('\u00a0', ' ')).toBe('1 090 €');
+  });
+
+  it('scénario minimum absent : « N/C », jamais 0', async () => {
+    await afficher({ lister: vi.fn().mockResolvedValue(PAGE) });
+    expect(minimum('Sofidynamic').textContent).toBe('N/C');
+    expect(minimum('Sofidynamic').className).toBe('scpi__nc');
+  });
+
+  it('scénario cashback renseigné : pastille « Cashback 5 % » par-dessus la photo', async () => {
+    await afficher({ lister: vi.fn().mockResolvedValue(PAGE) });
+    const pastille = carte('Corum Origin').querySelector('.scpi__photo .scpi__cashback');
+    expect(pastille.textContent.replaceAll('\u00a0', ' ')).toBe('🎁 Cashback 5 %');
+    expect(pastille.querySelector('[aria-hidden="true"]').textContent).toBe('🎁');
+  });
+
+  it('scénario pas de cashback : aucune pastille si 0 ou absent', async () => {
+    await afficher({ lister: vi.fn().mockResolvedValue(PAGE) });
+    expect(carte('Iroko Zen').querySelector('.scpi__cashback')).toBeNull();
+    expect(carte('Sofidynamic').querySelector('.scpi__cashback')).toBeNull();
   });
 });

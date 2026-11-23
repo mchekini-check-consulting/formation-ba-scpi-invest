@@ -45,6 +45,14 @@ describe('filtres du Catalogue (US-10)', () => {
     });
   });
 
+  it('SCPI-252 : cashbacks choisis, en %, une pastille par valeur', () => {
+    const filtres = { ...FILTRES_VIDES, cashback: [4, 5] };
+    expect(new URLSearchParams(parametresFiltres(filtres)).getAll('cashback')).toEqual(['4', '5']);
+    const liste = pastilles(filtres, OPTIONS);
+    expect(liste.map((p) => p.libelle.replaceAll(/\s/gu, ' '))).toEqual(['4 %', '5 %']);
+    expect(liste[0].retirer(filtres).cashback).toEqual([5]);
+  });
+
   it('nouveaux filtres : fréquence, frais de gestion, jouissance, cases « possible »', () => {
     const filtres = {
       ...FILTRES_VIDES,

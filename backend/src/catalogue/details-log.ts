@@ -23,6 +23,7 @@ export function detailsCatalogue(filtres: FiltresCatalogue, tri: TriCatalogue): 
     pays: filtres.pays,
     gerants: filtres.gerants,
     capitalisations: filtres.capitalisations,
+    cashback: filtres.cashback.map(String),
   };
   for (const [nom, valeurs] of Object.entries(listes)) {
     if (valeurs.length > 0) details[nom] = borner(valeurs.join(','));

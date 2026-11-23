@@ -58,6 +58,9 @@ export const CHOIX = [
     titre: 'Fréquence de versement',
     court: 'Fréquence',
   },
+  // SCPI-252 : un bouton par cashback proposé dans le catalogue (en %), affichés après les
+  // curseurs ; un seul bouton -> exactement ce cashback ; SCPI sans cashback jamais retenues
+  { cle: 'cashback', parametre: 'cashback', titre: 'Cashback', unite: '%', boutons: true },
 ];
 
 // Filtres à plage (curseurs min/max) : pas du curseur et unité
@@ -86,6 +89,7 @@ export const FILTRES_VIDES = Object.freeze({
   capitalisations: [],
   gerants: [],
   frequences: [],
+  cashback: [],
   taux: { min: null, max: null },
   prix: { min: null, max: null },
   frais: { min: null, max: null },
@@ -186,9 +190,12 @@ function modeDe(filtres, mode) {
 // un par case « possible » (sans titre : une seule pastille qui se suffit)
 export function groupesActifs(filtres, options) {
   const liste = [];
-  for (const { cle, titre, court = titre, mode } of CHOIX) {
+  for (const { cle, titre, court = titre, mode, unite } of CHOIX) {
     if (filtres[cle].length === 0) continue;
-    const libelle = (v) => (cle === 'capitalisations' ? libelleCapitalisation(v, options) : v);
+    const libelle = (v) => {
+      if (cle === 'capitalisations') return libelleCapitalisation(v, options);
+      return unite ? formaterValeur(v, unite) : v;
+    };
     liste.push({
       id: cle,
       titre,

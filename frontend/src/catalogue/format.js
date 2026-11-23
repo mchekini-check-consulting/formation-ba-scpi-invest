@@ -26,6 +26,25 @@ export function formaterCapitalisation(montant) {
   return `${grouper(Math.round(n))}${ESPACE}€`;
 }
 
+// Convention C4 : montant en euros, espace pour les milliers, décimales seulement si le
+// montant n'est pas rond : 1090 -> « 1 090 € », 2085.5 -> « 2 085,50 € »
+export function formaterMontant(montant) {
+  if (absent(montant)) return NON_COMMUNIQUE;
+  const n = Number(montant);
+  if (Number.isInteger(n)) return `${grouper(n)}${ESPACE}€`;
+  const [entier, decimales] = n.toFixed(2).split('.');
+  return `${grouper(entier)},${decimales}${ESPACE}€`;
+}
+
+// SCPI-252 : texte de la pastille du cashback (en %) : 5 -> « Cashback 5 % ».
+// Cashback à 0 ou absent -> null : aucune pastille sur la carte.
+export function pastilleCashback(cashback) {
+  if (absent(cashback) || Number(cashback) <= 0) return null;
+  const n = Number(cashback);
+  const valeur = Number.isInteger(n) ? String(n) : n.toFixed(2).replace('.', ',');
+  return `Cashback ${valeur}${ESPACE}%`;
+}
+
 // Jauge du taux : 10 segments de 1 %, arrondi au plus proche, bornée à 0..10.
 // Taux non renseigné -> jauge vide (jamais assimilé à 0 % dans le texte : « N/C »).
 export const SEGMENTS = 10;

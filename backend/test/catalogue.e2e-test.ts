@@ -102,6 +102,8 @@ describe('Catalogue (e2e)', () => {
       capitalisation: 150000000,
       categorie: 'Santé',
       zoneGeographique: 'France',
+      minimumSouscription: 1000,
+      cashback: null,
     });
 
     const page2 = await service.lister('2');
@@ -114,6 +116,61 @@ describe('Catalogue (e2e)', () => {
       categorie: null,
       zoneGeographique: null,
     });
+  });
+
+  it('SCPI-252 : minimum à investir et cashback sur la carte, absents -> null (jamais 0)', async () => {
+    const db = createDb(pool);
+    await pool.query('delete from scpi_catalog');
+    await importScpis(
+      db,
+      lignes(
+        scpi('Corum Origin', '6,5', { minimum_souscription: '1090', cashback: '5' }),
+        scpi('Iroko Zen', '5,4', { cashback: '0' }),
+        scpi('Sofidynamic', '4,3'),
+      ),
+    );
+    // Minimum absent en base (données antérieures aux contrôles de l'import)
+    await pool.query(
+      `update scpi_catalog set minimum_souscription = null where nom = 'Sofidynamic'`,
+    );
+
+    const { scpis } = await service.lister();
+    expect(
+      scpis.map(({ nom, minimumSouscription, cashback }) => ({
+        nom,
+        minimumSouscription,
+        cashback,
+      })),
+    ).toEqual([
+      { nom: 'Corum Origin', minimumSouscription: 1090, cashback: 5 },
+      { nom: 'Iroko Zen', minimumSouscription: 1000, cashback: 0 },
+      { nom: 'Sofidynamic', minimumSouscription: null, cashback: null },
+    ]);
+  });
+
+  it('SCPI-252 : filtre du cashback, SCPI sans cashback (0 ou absent) exclues', async () => {
+    const db = createDb(pool);
+    await pool.query('delete from scpi_catalog');
+    await importScpis(
+      db,
+      lignes(
+        scpi('Transitions Europe', '7,6', { cashback: '5' }),
+        scpi('Comète', '6,5', { cashback: '4' }),
+        scpi('Osmo Energie', '5,4', { cashback: '2' }),
+        scpi('Iroko Zen', '4,3', { cashback: '0' }),
+        scpi('Sofidynamic', '3,2'),
+      ),
+    );
+    const noms = async (requete: Record<string, string | string[]>) =>
+      (await service.lister(undefined, requete)).scpis.map((s) => s.nom);
+
+    // Un seul bouton : exactement ce cashback ; plusieurs : au moins un (OU)
+    expect(await noms({ cashback: '5' })).toEqual(['Transitions Europe']);
+    expect(await noms({ cashback: ['2', '4'] })).toEqual(['Comète', 'Osmo Energie']);
+    // Aucune SCPI à ce cashback
+    expect(await noms({ cashback: '3' })).toEqual([]);
+    // Boutons du panneau : cashbacks proposés (> 0) seulement, triés
+    expect((await service.filtres()).cashback).toEqual([2, 4, 5]);
   });
 
   it('US-10 : filtres combinés, valeurs du panneau, donnée manquante jamais égale à 0', async () => {
@@ -221,6 +278,8 @@ describe('Catalogue (e2e)', () => {
       minimum: { min: 1000, max: 5000 },
       fraisGestion: { min: 8, max: 15 },
       jouissance: { min: 0, max: 6 },
+      // aucun cashback proposé dans ces données : pas de bouton
+      cashback: [],
       frequences: ['Mensuelle', 'Trimestrielle'],
       capitalisations: expect.any(Array),
       anneeTaux: new Date().getFullYear() - 1,
@@ -309,6 +368,8 @@ describe('Catalogue (e2e)', () => {
           capitalisation: 150000000,
           categorie: 'Santé',
           zoneGeographique: 'France',
+          minimumSouscription: 1000,
+          cashback: null,
         },
       ],
       anneeTaux: new Date().getFullYear() - 1,

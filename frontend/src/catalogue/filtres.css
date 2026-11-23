@@ -300,6 +300,35 @@
   box-shadow: 0 1px 3px rgb(15 31 69 / 15%);
 }
 
+/* SCPI-252 : boutons du cashback (Tous, 2 %, 3 %…), le choisi en couleur */
+.filtres__boutons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filtres__bouton {
+  padding: 6px 14px;
+  border: 1px solid var(--bordure-champ, #d6cfc0);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--encre-douce);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.filtres__bouton:hover {
+  border-color: var(--bleu-vif);
+}
+
+.filtres__bouton[aria-pressed='true'] {
+  border-color: var(--bleu);
+  background: var(--bleu);
+  color: #fff;
+  font-weight: 700;
+}
+
 .filtres__regle {
   margin: 0 0 8px;
   font-size: 12.5px;
