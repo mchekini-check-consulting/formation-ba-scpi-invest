@@ -85,6 +85,13 @@
       "when": 1795431697283,
       "tag": "0011_nappy_owl",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795432250642,
+      "tag": "0012_frais_revente_aleatoire",
+      "breakpoints": true
     }
   ]
 }
