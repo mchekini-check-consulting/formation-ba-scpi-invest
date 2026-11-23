@@ -252,13 +252,6 @@
   color: var(--bleu);
 }
 
-/* Entrées pas encore disponibles : grisées, sans curseur de clic (scénario 4) */
-.sidebar__entree--inactive {
-  color: rgb(185 197 226 / 45%);
-  cursor: default;
-  user-select: none;
-}
-
 /* Initiales de l'investisseur */
 .sidebar__profil {
   position: relative;
@@ -323,8 +316,7 @@
   font-size: 13px;
 }
 
-/* Infobulles au survol de la barre repliée : libellé de l'entrée ; pour une entrée
-   inactive, « Comparaison · Bientôt disponible » (dépliée : « Bientôt disponible ») */
+/* Infobulles au survol de la barre repliée : libellé de l'entrée */
 .sidebar [data-infobulle]::after {
   position: absolute;
   z-index: 5;
@@ -346,14 +338,6 @@
 }
 
 .sidebar:not(.sidebar--deplie) [data-infobulle]::after {
-  content: attr(data-infobulle);
-}
-
-.sidebar:not(.sidebar--deplie) .sidebar__entree--inactive::after {
-  content: attr(data-libelle) ' · ' attr(data-infobulle);
-}
-
-.sidebar--deplie .sidebar__entree--inactive::after {
   content: attr(data-infobulle);
 }
 
@@ -423,17 +407,6 @@
 
   .sidebar [data-infobulle]::after {
     content: none;
-  }
-
-  .sidebar .sidebar__entree--inactive::after {
-    content: attr(data-infobulle);
-    left: 50%;
-    top: calc(100% + 8px);
-    transform: translate(-50%, -4px);
-  }
-
-  .sidebar .sidebar__entree--inactive:hover::after {
-    transform: translate(-50%, 0);
   }
 
   .application__contenu {

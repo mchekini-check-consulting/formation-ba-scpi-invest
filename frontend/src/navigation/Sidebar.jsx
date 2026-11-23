@@ -2,19 +2,17 @@
 // sur toute la hauteur de l'écran :
 // - en haut : le logo (vers l'accueil) et la flèche qui déplie la barre pour afficher
 //   les libellés ;
-// - au milieu : les 4 entrées (icône, libellé en infobulle quand la barre est repliée).
-//   Seul le Catalogue est cliquable ; les 3 autres sont grisées, sans lien ni curseur
-//   de clic, avec l'infobulle « Bientôt disponible » au survol (règle optionnelle de la
-//   story, à valider avec le PO) ;
-// - en bas : la pastille aux initiales de l'investisseur (lien vers la page Profil,
-//   entourée quand elle est affichée) et le bouton « Se déconnecter »,
+// - au milieu : les entrées de entrees.js (icône, libellé en infobulle quand la barre est
+//   repliée) ;
+// - en bas : « Infos fiscales » (EN-03), la pastille aux initiales de l'investisseur (lien
+//   vers la page Profil, entourée quand elle est affichée) et le bouton « Se déconnecter »,
 //   qui demande confirmation (« Oui » / « Non ») avant de déconnecter.
 import { useRef, useState } from 'react';
 import LogoIcone from '../LogoIcone.jsx';
 import ConfirmationDeconnexion from './ConfirmationDeconnexion.jsx';
 import { LienInterne } from '../MiseEnPage.jsx';
 import { PROFILS } from '../investisseur/profils.js';
-import { ENTREES } from './entrees.js';
+import { ENTREES, INFOS_FISCALES } from './entrees.js';
 import { initiales, lireIdentite, useIdentite } from './identite.js';
 import './navigation.css';
 
@@ -44,6 +42,20 @@ const ICONES = {
       <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2M2 13h20" />
     </>
   ),
+  versements: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M8 3v4M16 3v4M3 11h18" />
+    </>
+  ),
+  fiscalite: (
+    <>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5M9.5 17l5-6" />
+      <circle cx="9.75" cy="11.75" r="1" />
+      <circle cx="14.25" cy="16.25" r="1" />
+    </>
+  ),
   deconnexion: (
     <>
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -58,6 +70,21 @@ function Icone({ id }) {
     <svg className="sidebar__icone" viewBox="0 0 24 24" aria-hidden="true">
       {ICONES[id]}
     </svg>
+  );
+}
+
+// Entrée du menu, marquée sélectionnée quand son écran est affiché
+function Entree({ entree, actif }) {
+  return (
+    <LienInterne
+      to={entree.chemin}
+      className="sidebar__entree"
+      aria-current={actif === entree.id ? 'page' : undefined}
+      data-infobulle={entree.libelle}
+    >
+      <Icone id={entree.id} />
+      <span className="sidebar__libelle">{entree.libelle}</span>
+    </LienInterne>
   );
 }
 
@@ -129,33 +156,13 @@ export default function Sidebar({
       <ul className="sidebar__liste">
         {ENTREES.map((entree) => (
           <li key={entree.id}>
-            {entree.inactive ? (
-              <span
-                className="sidebar__entree sidebar__entree--inactive"
-                aria-disabled="true"
-                data-libelle={entree.libelle}
-                data-infobulle="Bientôt disponible"
-              >
-                <Icone id={entree.id} />
-                <span className="sidebar__libelle">{entree.libelle}</span>
-                <span className="sr-only"> (bientôt disponible)</span>
-              </span>
-            ) : (
-              <LienInterne
-                to={entree.chemin}
-                className="sidebar__entree"
-                aria-current={actif === entree.id ? 'page' : undefined}
-                data-infobulle={entree.libelle}
-              >
-                <Icone id={entree.id} />
-                <span className="sidebar__libelle">{entree.libelle}</span>
-              </LienInterne>
-            )}
+            <Entree entree={entree} actif={actif} />
           </li>
         ))}
       </ul>
 
       <div className="sidebar__bas">
+        <Entree entree={INFOS_FISCALES} actif={actif} />
         <Profil identite={identite} actif={actif === 'profil'} />
         {seDeconnecter && (
           <button

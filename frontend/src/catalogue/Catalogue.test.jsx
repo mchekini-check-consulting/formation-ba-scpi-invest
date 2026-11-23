@@ -182,21 +182,13 @@ describe('Catalogue : liste des SCPI (US-08)', () => {
     expect(entete.querySelector('.scpi')).toBeNull();
   });
 
-  it('boutons « En savoir plus » et « Investir » : pas encore actifs, bulle « Bientôt disponible »', async () => {
-    const { allerA } = await afficher();
-    const carte = cartes()[0];
-    const boutons = [...carte.querySelectorAll('button')];
-    expect(boutons.map((b) => b.textContent)).toEqual(['En savoir plus', 'Investir']);
-    for (const bouton of boutons) {
-      expect(bouton.getAttribute('aria-disabled')).toBe('true');
-      // Bulle « Bientôt disponible » liée au bouton (lue aussi par les lecteurs d'écran)
-      const bulle = document.getElementById(bouton.getAttribute('aria-describedby'));
-      expect(bulle.getAttribute('role')).toBe('tooltip');
-      expect(bulle.textContent).toBe('Bientôt disponible');
-    }
-    // Un clic ne fait rien (pas de navigation)
-    fireEvent.click(boutons[1]);
-    expect(allerA).not.toHaveBeenCalled();
+  it('boutons « En savoir plus » et « Investir » : liens vers la fiche et Investir (EN-03)', async () => {
+    await afficher();
+    const liens = [...cartes()[0].querySelectorAll('.scpi__actions a')];
+    expect(liens.map((l) => [l.textContent, l.getAttribute('href')])).toEqual([
+      ['En savoir plus', '/catalogue/1'],
+      ['Investir', '/investir/1'],
+    ]);
   });
 
   it('scénario 3 : nombre total de SCPI et date de mise à jour des données', async () => {
