@@ -53,8 +53,6 @@ export type ValeursFiltres = {
   minimum: Plage;
   fraisGestion: Plage;
   jouissance: Plage;
-  // SCPI-252 : cashbacks proposés (> 0), en %, du plus petit au plus grand
-  cashback: number[];
   // fréquences de versement présentes dans les données
   frequences: string[];
 };

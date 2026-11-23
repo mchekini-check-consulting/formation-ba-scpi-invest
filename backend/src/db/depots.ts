@@ -464,10 +464,10 @@ function conditionsFiltres(filtres: FiltresCatalogue): SQL {
     ...bornes(sql`c.frais_gestion`, filtres.fraisGestion),
     ...bornes(sql`c.delai_jouissance`, filtres.jouissance),
   );
-  // SCPI-252 : cashbacks choisis (au moins un) ; une SCPI sans cashback n'est jamais retenue
+  // SCPI-252 : cashbacks choisis (au moins un) ; 0 = aucun cashback (0 % ou non renseigné)
   if (filtres.cashback.length) {
     conditions.push(
-      sql`c.cashback in (${sql.join(
+      sql`coalesce(c.cashback, 0) in (${sql.join(
         filtres.cashback.map((v) => sql`${v}`),
         sql`, `,
       )})`,
@@ -549,16 +549,13 @@ export function depotCatalogue(db: Db): DepotCatalogue {
     async valeursFiltres(anneeTaux): Promise<ValeursFiltres> {
       const textes = async (requete: SQL) =>
         (await db.execute<{ valeur: string }>(requete)).rows.map((r) => r.valeur);
-      const [categories, pays, gerants, frequences, cashbacks, nombres] = await Promise.all([
+      const [categories, pays, gerants, frequences, nombres] = await Promise.all([
         textes(sql`select distinct secteur::text as valeur from scpi_secteurs order by 1`),
         textes(sql`select distinct pays as valeur from scpi_localisation order by 1`),
         textes(sql`select distinct trim(gerant) as valeur from scpi_catalog
           where trim(gerant) <> '' order by 1`),
         textes(sql`select distinct frequence::text as valeur from scpi_catalog
           where frequence is not null order by 1`),
-        // SCPI-252 : cashbacks proposés (> 0), du plus petit au plus grand
-        db.execute<{ valeur: number }>(sql`select distinct cashback as valeur from scpi_catalog
-          where cashback > 0 order by 1`),
         db.execute<Record<string, number | null>>(sql`
           select min(t.taux)::float8 as "tauxMin", max(t.taux)::float8 as "tauxMax",
                  min(p.prix)::float8 as "prixMin", max(p.prix)::float8 as "prixMax",
@@ -587,7 +584,6 @@ export function depotCatalogue(db: Db): DepotCatalogue {
         minimum: plage('minimum'),
         fraisGestion: plage('fraisGestion'),
         jouissance: plage('jouissance'),
-        cashback: cashbacks.rows.map((r) => r.valeur),
         frequences,
       };
     },

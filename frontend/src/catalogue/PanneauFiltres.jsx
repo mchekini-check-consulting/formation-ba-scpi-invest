@@ -9,17 +9,22 @@ import {
   CHOIX,
   FILTRES_VIDES,
   MODES,
+  AUCUN_CASHBACK,
   MODE_PAR_DEFAUT,
   NOMBRE_VISIBLE,
   OPTIONS,
   PLAGES,
+  POURCENTAGES_CASHBACK,
   basculer,
+  basculerTousCashbacks,
   changerPlage,
   formaterValeur,
   groupesActifs,
+  libelleCashback,
   pastilles,
   phraseRecherche,
   regle,
+  tousLesCashbacks,
   valeursVisibles,
 } from './filtres.js';
 
@@ -219,34 +224,32 @@ function CasesACocher({
   );
 }
 
-// SCPI-252 : boutons à choisir (cashback) : « Tous » (aucun filtre) puis un bouton par
-// valeur ; plusieurs boutons choisis -> au moins un (OU)
-function Boutons({ titre, unite, valeurs, choisies, onBasculer, onTous }) {
-  if (valeurs.length === 0) return null;
+// SCPI-252 : pastilles du cashback sur une ligne : « Aucun cashback », 1 à 5 %, puis
+// « Tous les cashbacks » (tous les pourcentages) ; plusieurs choix -> au moins un (OU) ;
+// aucun choix -> pas de filtre sur le cashback
+function PastillesCashback({ titre, choisies, onBasculer, onTous }) {
+  const bouton = (cle, libelle, choisi, onClick) => (
+    <button
+      key={cle}
+      type="button"
+      className="filtres__bouton"
+      aria-pressed={choisi}
+      onClick={onClick}
+    >
+      {libelle}
+    </button>
+  );
   return (
     <fieldset className="filtres__groupe">
       <legend className="filtres__titre">{titre}</legend>
       <p className="filtres__regle">Plusieurs choix : au moins un (OU)</p>
       <div className="filtres__boutons">
-        <button
-          type="button"
-          className="filtres__bouton"
-          aria-pressed={choisies.length === 0}
-          onClick={onTous}
-        >
-          Tous
-        </button>
-        {valeurs.map((valeur) => (
-          <button
-            key={valeur}
-            type="button"
-            className="filtres__bouton"
-            aria-pressed={choisies.includes(valeur)}
-            onClick={() => onBasculer(valeur)}
-          >
-            {formaterValeur(valeur, unite)}
-          </button>
-        ))}
+        {[AUCUN_CASHBACK, ...POURCENTAGES_CASHBACK].map((valeur) =>
+          bouton(valeur, libelleCashback(valeur), choisies.includes(valeur), () =>
+            onBasculer(valeur),
+          ),
+        )}
+        {bouton('tous', 'Tous les cashbacks', tousLesCashbacks(choisies), onTous)}
       </div>
     </fieldset>
   );
@@ -425,17 +428,12 @@ export function PanneauFiltres({ filtres, options, total, onChange, onFermer, re
                   />
                 ),
               )}
-              {CHOIX.filter((c) => c.boutons).map(({ cle, titre, unite }) => (
-                <Boutons
-                  key={cle}
-                  titre={titre}
-                  unite={unite}
-                  valeurs={valeursChoix(cle, options)}
-                  choisies={filtres[cle]}
-                  onBasculer={(valeur) => onChange(basculer(filtres, cle, valeur))}
-                  onTous={() => onChange({ ...filtres, [cle]: [] })}
-                />
-              ))}
+              <PastillesCashback
+                titre="Cashback"
+                choisies={filtres.cashback}
+                onBasculer={(valeur) => onChange(basculer(filtres, 'cashback', valeur))}
+                onTous={() => onChange(basculerTousCashbacks(filtres))}
+              />
               <CasesOptions filtres={filtres} onChange={onChange} />
             </>
           ) : (

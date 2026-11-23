@@ -414,6 +414,7 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
       'Frais de souscription (%)',
       'Frais de gestion (%)',
       'Délai de jouissance (mois)',
+      'Cashback',
       'Options',
     ]);
     // Investissement minimum : aucune donnée, pas de curseur
@@ -598,37 +599,57 @@ describe('Catalogue : filtres (US-10a, US-10b, US-10c)', () => {
     expect(maximum.value).toBe('4');
   });
 
-  it('SCPI-252 : boutons du cashback, « Tous » puis un par valeur proposée', async () => {
-    const { lister } = await ouvrir({
-      lireFiltres: vi.fn().mockResolvedValue({ ...OPTIONS, cashback: [2, 3, 4, 5] }),
-    });
+  it('SCPI-252 : pastilles du cashback, aucun, 1 à 5 %, puis « Tous les cashbacks »', async () => {
+    const { lister } = await ouvrir();
     const groupe = within(panneau()).getByRole('group', { name: 'Cashback' });
     const bouton = (nom) => within(groupe).getByRole('button', { name: nom });
+    const choisis = () =>
+      within(groupe)
+        .getAllByRole('button')
+        .filter((b) => b.getAttribute('aria-pressed') === 'true')
+        .map((b) => b.textContent.replaceAll(/\s/gu, ' '));
     expect(
       within(groupe)
         .getAllByRole('button')
-        .map((b) => b.textContent.replaceAll('\u00a0', ' ')),
-    ).toEqual(['Tous', '2 %', '3 %', '4 %', '5 %']);
-    expect(bouton('Tous').getAttribute('aria-pressed')).toBe('true');
+        .map((b) => b.textContent.replaceAll(/\s/gu, ' ')),
+    ).toEqual(['Aucun cashback', '1 %', '2 %', '3 %', '4 %', '5 %', 'Tous les cashbacks']);
+    // Au départ : aucun choix, tout le catalogue
+    expect(choisis()).toEqual([]);
 
-    // Seulement 5 %
+    // 3 % et 5 %
+    await act(async () => {
+      fireEvent.click(bouton(/^3/));
+    });
     await act(async () => {
       fireEvent.click(bouton(/^5/));
     });
-    expect(lister).toHaveBeenLastCalledWith(1, { ...FILTRES_VIDES, cashback: [5] }, TRI_PAR_DEFAUT);
-    expect(bouton(/^5/).getAttribute('aria-pressed')).toBe('true');
-    expect(bouton('Tous').getAttribute('aria-pressed')).toBe('false');
+    expect(lister).toHaveBeenLastCalledWith(
+      1,
+      { ...FILTRES_VIDES, cashback: [3, 5] },
+      TRI_PAR_DEFAUT,
+    );
+    expect(choisis()).toEqual(['3 %', '5 %']);
 
-    // « Tous » : plus de filtre sur le cashback
+    // Tous les cashbacks : tous les pourcentages ; recliqué : plus aucun
     await act(async () => {
-      fireEvent.click(bouton('Tous'));
+      fireEvent.click(bouton('Tous les cashbacks'));
+    });
+    expect(lister).toHaveBeenLastCalledWith(
+      1,
+      { ...FILTRES_VIDES, cashback: [1, 2, 3, 4, 5] },
+      TRI_PAR_DEFAUT,
+    );
+    expect(choisis()).toEqual(['1 %', '2 %', '3 %', '4 %', '5 %', 'Tous les cashbacks']);
+    await act(async () => {
+      fireEvent.click(bouton('Tous les cashbacks'));
     });
     expect(lister).toHaveBeenLastCalledWith(1, FILTRES_VIDES, TRI_PAR_DEFAUT);
-  });
 
-  it('SCPI-252 : aucun cashback proposé, pas de boutons', async () => {
-    await ouvrir();
-    expect(within(panneau()).queryByRole('group', { name: 'Cashback' })).toBeNull();
+    // Aucun cashback
+    await act(async () => {
+      fireEvent.click(bouton('Aucun cashback'));
+    });
+    expect(lister).toHaveBeenLastCalledWith(1, { ...FILTRES_VIDES, cashback: [0] }, TRI_PAR_DEFAUT);
   });
 
   it('fermeture : Échap, « Voir les SCPI », clic à côté ; focus rendu au bouton', async () => {

@@ -5,7 +5,7 @@ import { HttpError } from '../logging/http-error.js';
 //   categorie, pays, gerant, capitalisation : valeurs répétées (?categorie=Santé&categorie=Bureaux)
 //   tauxMin/tauxMax, prixMin/prixMax, fraisMin/fraisMax, minimumMin/minimumMax : nombres
 //   fraisGestionMin/fraisGestionMax, jouissanceMin/jouissanceMax : nombres
-//   cashback : valeurs répétées, en % (?cashback=4&cashback=5) ; SCPI sans cashback jamais retenues
+//   cashback : valeurs répétées, en % (?cashback=3&cashback=5) ; 0 = aucun cashback (SCPI-252)
 //   frequence : valeurs répétées (Mensuelle, Trimestrielle…)
 //   demembrement=oui, versementProgramme=oui : seulement les SCPI qui le proposent
 //   categorieMode, paysMode : tous | uniquement (absent : au-moins-un)
@@ -48,7 +48,8 @@ export type FiltresCatalogue = {
   fraisGestion: Plage;
   // délai de jouissance, en mois
   jouissance: Plage;
-  // cashbacks à la souscription choisis, en % (SCPI-252) : au moins un (OU)
+  // cashbacks à la souscription choisis, en % (SCPI-252) : au moins un (OU) ;
+  // 0 = aucun cashback (0 % ou non renseigné)
   cashback: number[];
   // fréquence de versement des loyers
   frequences: string[];
@@ -109,10 +110,10 @@ function plage(requete: Record<string, unknown>, nom: string): Plage {
   return { min, max };
 }
 
-// Cashbacks choisis : nombres strictement positifs, sans doublon ; autre valeur : 400
+// Cashbacks choisis : nombres positifs ou 0 (aucun cashback), sans doublon ; sinon 400
 function cashbacks(brut: unknown): number[] {
   const liste = valeurs(brut).map(Number);
-  if (liste.some((v) => !Number.isFinite(v) || v <= 0)) throw new HttpError(400, MESSAGE);
+  if (liste.some((v) => !Number.isFinite(v) || v < 0)) throw new HttpError(400, MESSAGE);
   return [...new Set(liste)];
 }
 

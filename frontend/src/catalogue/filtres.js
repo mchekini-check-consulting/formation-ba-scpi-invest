@@ -58,10 +58,35 @@ export const CHOIX = [
     titre: 'Fréquence de versement',
     court: 'Fréquence',
   },
-  // SCPI-252 : un bouton par cashback proposé dans le catalogue (en %), affichés après les
-  // curseurs ; un seul bouton -> exactement ce cashback ; SCPI sans cashback jamais retenues
-  { cle: 'cashback', parametre: 'cashback', titre: 'Cashback', unite: '%', boutons: true },
+  // SCPI-252 : pastilles du cashback (en %), affichées après les curseurs ; 0 = aucun
+  // cashback (0 % ou non renseigné) ; plusieurs choix -> au moins un (OU)
+  { cle: 'cashback', parametre: 'cashback', titre: 'Cashback', boutons: true },
 ];
+
+// SCPI-252 : choix du cashback, fixes (pas tirés des données) : aucun, puis 1 à 5 % ;
+// « Tous les cashbacks » = tous les pourcentages
+export const AUCUN_CASHBACK = 0;
+export const POURCENTAGES_CASHBACK = [1, 2, 3, 4, 5];
+
+export function libelleCashback(valeur) {
+  return valeur === AUCUN_CASHBACK ? 'Aucun cashback' : formaterValeur(valeur, '%');
+}
+
+export function tousLesCashbacks(choisis) {
+  return POURCENTAGES_CASHBACK.every((v) => choisis.includes(v));
+}
+
+// Bouton « Tous les cashbacks » : choisit tous les pourcentages, ou les retire tous
+// s'ils l'étaient déjà (« Aucun cashback » est gardé tel quel)
+export function basculerTousCashbacks(filtres) {
+  const sansPourcentage = filtres.cashback.filter((v) => v === AUCUN_CASHBACK);
+  return {
+    ...filtres,
+    cashback: tousLesCashbacks(filtres.cashback)
+      ? sansPourcentage
+      : [...sansPourcentage, ...POURCENTAGES_CASHBACK],
+  };
+}
 
 // Filtres à plage (curseurs min/max) : pas du curseur et unité
 export const PLAGES = [
@@ -190,22 +215,34 @@ function modeDe(filtres, mode) {
 // un par case « possible » (sans titre : une seule pastille qui se suffit)
 export function groupesActifs(filtres, options) {
   const liste = [];
-  for (const { cle, titre, court = titre, mode, unite } of CHOIX) {
+  for (const { cle, titre, court = titre, mode } of CHOIX) {
     if (filtres[cle].length === 0) continue;
     const libelle = (v) => {
       if (cle === 'capitalisations') return libelleCapitalisation(v, options);
-      return unite ? formaterValeur(v, unite) : v;
+      return cle === 'cashback' ? libelleCashback(v) : v;
     };
+    const pastillesValeurs = filtres[cle].map((valeur) => ({
+      id: `${cle}:${valeur}`,
+      libelle: libelle(valeur),
+      retirer: (f) => basculer(f, cle, valeur),
+    }));
+    // Tous les pourcentages de cashback choisis : une seule pastille « Tous les cashbacks »
+    const tous = cle === 'cashback' && tousLesCashbacks(filtres.cashback);
     liste.push({
       id: cle,
       titre,
       court,
       mode: modeDe(filtres, mode),
-      pastilles: filtres[cle].map((valeur) => ({
-        id: `${cle}:${valeur}`,
-        libelle: libelle(valeur),
-        retirer: (f) => basculer(f, cle, valeur),
-      })),
+      pastilles: tous
+        ? [
+            ...pastillesValeurs.filter((p) => p.id === `cashback:${AUCUN_CASHBACK}`),
+            {
+              id: 'cashback:tous',
+              libelle: 'Tous les cashbacks',
+              retirer: (f) => basculerTousCashbacks(f),
+            },
+          ]
+        : pastillesValeurs,
     });
   }
   for (const { cle, titre, unite } of PLAGES) {
