@@ -17,6 +17,7 @@ import {
 } from '../comparaison/service.js';
 import type { DepotTentativesConnexion } from '../comptes/service.js';
 import type { DepotFiche, LigneFiche } from '../fiche/service.js';
+import type { DepotFiscalite, SituationFamiliale } from '../fiscalite/service.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
 import type { DepotKyc, EtatKyc } from '../kyc/service.js';
@@ -26,6 +27,7 @@ import type { DepotOutilsImport } from '../outils/service.js';
 import {
   acceptationCgu,
   historiqueInformation,
+  informationFiscale,
   justificatif,
   kyc,
   kycPiece,
@@ -735,6 +737,39 @@ export function depotOutilsImport(db: Db): DepotOutilsImport {
           decote_demembrement: true,
         },
       });
+    },
+  };
+}
+
+// US-06 (SCPI-255) : informations fiscales, une ligne par utilisateur au plus
+export function depotFiscalite(db: Db): DepotFiscalite {
+  return {
+    async lire(utilisateurId) {
+      const [ligne] = await db
+        .select({
+          revenuNetImposable: informationFiscale.revenuNetImposable,
+          situationFamiliale: informationFiscale.situationFamiliale,
+          nombreEnfants: informationFiscale.nombreEnfants,
+        })
+        .from(informationFiscale)
+        .where(eq(informationFiscale.utilisateurId, utilisateurId));
+      return ligne
+        ? { ...ligne, situationFamiliale: ligne.situationFamiliale as SituationFamiliale }
+        : null;
+    },
+    async enregistrer(utilisateurId, informations) {
+      await db
+        .insert(informationFiscale)
+        .values({ utilisateurId, ...informations })
+        .onConflictDoUpdate({
+          target: informationFiscale.utilisateurId,
+          set: { ...informations, misAJourLe: new Date() },
+        });
+    },
+    async effacer(utilisateurId) {
+      await db
+        .delete(informationFiscale)
+        .where(eq(informationFiscale.utilisateurId, utilisateurId));
     },
   };
 }

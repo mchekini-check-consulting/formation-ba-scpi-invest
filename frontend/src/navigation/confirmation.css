@@ -1,5 +1,5 @@
-/* Fenêtre de confirmation de la déconnexion (ConfirmationDeconnexion.jsx), commune à la
-   barre de navigation et à l'en-tête des écrans KYC / formulaire investisseur */
+/* Fenêtre de confirmation (Confirmation.jsx) : déconnexion (barre de navigation, en-tête
+   des écrans KYC / formulaire investisseur) et effacement des informations fiscales */
 
 /* Voile sombre sur tout l'écran, fenêtre centrée */
 .confirmation {

@@ -251,6 +251,19 @@ export const historiqueInformation = pgTable(
   (t) => [index('historique_information_utilisateur_id_idx').on(t.utilisateurId)],
 );
 
+// US-06 « Renseigner mes informations fiscales » (SCPI-255) : situation fiscale du foyer,
+// une ligne par investisseur au plus. « Effacer mes informations » supprime la ligne
+// (données personnelles, sans historique). Lue par l'estimation fiscale (US-07).
+export const informationFiscale = pgTable('information_fiscale', {
+  id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+  utilisateurId: text('utilisateur_id').notNull().unique(),
+  // Revenu net imposable annuel du foyer, en euros entiers, sans plafond
+  revenuNetImposable: bigint('revenu_net_imposable', { mode: 'number' }).notNull(),
+  situationFamiliale: text('situation_familiale').notNull(), // seul, couple
+  nombreEnfants: integer('nombre_enfants').notNull(),
+  misAJourLe: horodatage('mis_a_jour_le').notNull().defaultNow(),
+});
+
 // ---- Catalogue SCPI (import CSV, src/csv/)
 
 export const frequence = pgEnum('frequence', [

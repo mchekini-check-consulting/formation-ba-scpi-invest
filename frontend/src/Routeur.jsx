@@ -9,6 +9,7 @@ import Catalogue from './catalogue/Catalogue.jsx';
 import Comparateur from './comparaison/Comparateur.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import Fiche from './fiche/Fiche.jsx';
+import InformationsFiscales from './fiscalite/InformationsFiscales.jsx';
 import { memoriserPage } from './connexion/destination.js';
 import Indicateurs from './Indicateurs.jsx';
 import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
@@ -38,7 +39,6 @@ const ECRANS_A_VENIR = [
   { chemin: '/versements/nouveau', titre: 'Programmer un versement', actif: 'versements' },
   // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
   { chemin: '/portefeuille', titre: 'Mon portefeuille', actif: 'portefeuille' },
-  { chemin: '/fiscalite', titre: 'Fiscalité', actif: 'fiscalite' },
 ];
 
 // Email pré-rempli transmis par l'adresse (?email=...)
@@ -145,6 +145,15 @@ export default function Routeur({ passer = formulairesPassables() }) {
           element={
             <ExigerKycComplete>
               <MiseAJourProfil />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Mes informations fiscales (US-06, SCPI-255) : « Infos fiscales » en bas du menu */}
+        <Route
+          path="/fiscalite"
+          element={
+            <ExigerKycComplete>
+              <InformationsFiscales />
             </ExigerKycComplete>
           }
         />
