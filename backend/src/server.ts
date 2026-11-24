@@ -10,6 +10,8 @@ import { creerCatalogueService } from './catalogue/service.js';
 import { routesComparaison } from './comparaison/routes.js';
 import { creerComparaisonService } from './comparaison/service.js';
 import { routesComptes } from './comptes/routes.js';
+import { routesFiche } from './fiche/routes.js';
+import { creerFicheService } from './fiche/service.js';
 import {
   decrirePlanification,
   demarrerImportNocturne,
@@ -24,6 +26,7 @@ import {
   depotTentativesConnexion,
   depotCatalogue,
   depotComparaison,
+  depotFiche,
   depotInformations,
   depotKyc,
   depotOutilsImport,
@@ -68,6 +71,8 @@ const adresses = creerAdressesService();
 const catalogue = creerCatalogueService(depotCatalogue(db));
 // US-04 : SCPI du comparateur
 const comparaison = creerComparaisonService(depotComparaison(db));
+// US-02 : fiche d'une SCPI
+const fiche = creerFicheService(depotFiche(db));
 // US-04c : fichiers des pièces dans R2 (dépôt indisponible, 503, sans les variables R2)
 const pieces = creerPiecesService(depotKyc(db), depotPieces(db), stockagePieces());
 // US-06 : mise à jour des informations personnelles (justificatifs dans R2, comme les pièces)
@@ -109,6 +114,8 @@ createApp(() => db.execute(sql`select 1`), logger, {
     // Avant le Catalogue : /scpis/comparables ne doit pas être pris pour une adresse /scpis/<id>
     routesComparaison(comparaison, fournisseur),
     routesCatalogue(catalogue, fournisseur),
+    // US-02 : après le Comparateur et le Catalogue (/scpis/filtres, /scpis/recherche...)
+    routesFiche(fiche, fournisseur),
     routesOutilsImport(outilsImport),
   ],
 }).listen(port, () => logger.info({ port }, 'backend démarré'));

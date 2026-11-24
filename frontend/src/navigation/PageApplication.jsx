@@ -9,6 +9,8 @@
 // Rappel de mise à jour du profil investisseur (US-05d, BandeauRappel.jsx) : affiché en
 // haut de chaque écran quand le profil a plus de 24 mois ou que le questionnaire a changé ;
 // sansRappel : écran de la mise à jour elle-même.
+// bandeau (facultatif) : en-tête propre à l'écran (fiche SCPI, US-02), affiché à la place du
+// titre ; il contient lui-même le titre de la page (<h1 id="titre-page">).
 import '../compte.css';
 import './navigation.css';
 import BandeauRappel from './BandeauRappel.jsx';
@@ -23,10 +25,11 @@ export default function PageApplication({
   chargerIdentite = lireIdentite,
   entete,
   sansRappel = false,
+  bandeau,
   children,
 }) {
   const identite = useIdentite(chargerIdentite);
-  const titrePage = (
+  const titrePage = bandeau ?? (
     <h1 id="titre-page" className="application__titre">
       {titre}
     </h1>

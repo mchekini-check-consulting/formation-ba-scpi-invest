@@ -22,9 +22,9 @@ import { FILTRES_VIDES, memoriserFiltres, pastilles, relireFiltres } from './fil
 import { BoutonFiltres, FiltresActifs, PanneauFiltres } from './PanneauFiltres.jsx';
 import { BarreRecherche, ResultatsRecherche } from './Recherche.jsx';
 import { useRecherche } from './useRecherche.js';
+import { memoriserEtat, relireEtat } from './etat.js';
 import { photosPage } from './photos.js';
 import MenuTri from './MenuTri.jsx';
-import { TRI_PAR_DEFAUT } from './tri.js';
 import './catalogue.css';
 import {
   SEGMENTS,
@@ -275,16 +275,22 @@ export default function Catalogue({
 }) {
   // Raccourci de test du poste : profil investisseur non exigé
   const [valide, setValide] = useState(passer);
-  const [page, setPage] = useState(1);
+  // US-02 : page, tri et recherche retrouvés au retour d'une fiche SCPI (etat.js)
+  const [etatInitial] = useState(relireEtat);
+  const [page, setPage] = useState(etatInitial.page);
   const [donnees, setDonnees] = useState(null);
   const [alerte, setAlerte] = useState('');
   const [filtres, setFiltres] = useState(relireFiltres);
-  const [tri, setTri] = useState(TRI_PAR_DEFAUT);
+  const [tri, setTri] = useState(etatInitial.tri);
   const [options, setOptions] = useState(null);
   const [panneauOuvert, setPanneauOuvert] = useState(false);
   const boutonFiltres = useRef(null);
   const filtre = pastilles(filtres, options).length > 0;
-  const [saisie, setSaisie] = useState('');
+  const [saisie, setSaisie] = useState(etatInitial.saisie);
+
+  useEffect(() => {
+    memoriserEtat({ page, tri, saisie });
+  }, [page, tri, saisie]);
   // US-12 : la recherche suit les filtres et le tri actifs
   const recherche = useRecherche(saisie, rechercher, filtres, tri);
   const sessionExpiree = recherche.erreur?.status === 401;

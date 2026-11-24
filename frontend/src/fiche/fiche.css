@@ -1,0 +1,601 @@
+/* Fiche SCPI (US-02) : maquette validée par le BA (bandeau bleu, cartes blanches,
+   graphiques et carte colorés). Couleurs propres à la fiche, polices de index.css. */
+
+.fiche {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Marges sur les côtés réduites au minimum, sur la fiche seulement */
+.application__contenu:has(.fiche__bandeau) {
+  --marge-x: 16px;
+}
+
+/* Largeur maximale de la fiche : quand on dézoome (ou sur un très grand écran), les blocs,
+   les graphiques et la carte ne s'étirent plus */
+.fiche,
+.fiche__bandeau {
+  max-width: 1480px;
+  margin-inline: auto;
+}
+
+.fiche__nc {
+  color: var(--discret);
+}
+
+/* --- Bandeau ------------------------------------------------------------- */
+
+.fiche__bandeau {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px 24px 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #193071 0%, #162c65 100%);
+  box-shadow: 0 12px 28px rgb(22 44 101 / 28%);
+  color: #fff;
+}
+
+.fiche__cercles {
+  position: absolute;
+  top: 50%;
+  left: 58%;
+  width: 400px;
+  height: 400px;
+  transform: translate(-50%, -66%);
+  opacity: 0.28;
+  fill: none;
+  stroke: #9fb8ff;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.compte a.fiche__retour {
+  position: relative;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 14px 0 6px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 14%);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+}
+
+/* Flèche du retour dans une pastille menthe, bien visible */
+.fiche__retour-fleche {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #5eead4;
+  color: #0f1f45;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.compte a.fiche__retour:hover {
+  background: rgb(255 255 255 / 24%);
+}
+
+.fiche__identite {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.fiche__nom {
+  display: flex;
+  flex: 1 1 380px;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fiche__gerant {
+  font-size: 13px;
+  font-weight: 500;
+  color: #b9c5e2;
+}
+
+.fiche__gerant strong {
+  font-weight: 800;
+  color: #fff;
+}
+
+.fiche__titre {
+  font-family: var(--serif);
+  font-size: clamp(24px, 2.2vw, 30px);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.fiche__pastilles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.fiche__pastilles li {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 12%);
+  color: #e3ebff;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.fiche__taux {
+  position: relative;
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-right: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.fiche__taux p {
+  position: relative;
+}
+
+.fiche__taux-valeur {
+  font-family: var(--serif);
+  font-size: 52px;
+  font-weight: 600;
+  line-height: 1;
+  color: #5eead4;
+}
+
+.fiche__taux-valeur.fiche__nc {
+  font-size: 20px;
+  color: #c9d6f2;
+}
+
+.fiche__actions {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.compte a.fiche__bouton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid #45598f;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+}
+
+.compte a.fiche__bouton:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+.compte a.fiche__bouton--principal {
+  padding: 0 18px;
+  border: 0;
+  background: linear-gradient(90deg, #5eead4, #38bdf8);
+  color: #0f1f45;
+  font-weight: 700;
+}
+
+.compte a.fiche__bouton--principal:hover {
+  background: linear-gradient(90deg, #7af0de, #5cc8fa);
+}
+
+/* --- Chiffres clés ------------------------------------------------------- */
+
+.fiche__chiffres {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.fiche__chiffre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgb(22 44 101 / 6%);
+}
+
+.fiche__chiffre dt,
+.fiche__chiffre-detail {
+  font-size: 12px;
+  color: var(--encre-douce);
+}
+
+.fiche__chiffre dd {
+  margin: 0;
+}
+
+.fiche__chiffre-valeur {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.fiche__chiffre-valeur.fiche__nc {
+  font-size: 14px;
+}
+
+.fiche__chiffre-icone {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  color: #fff;
+}
+
+.fiche__chiffre-icone .fiche__icone {
+  width: 18px;
+  height: 18px;
+}
+
+.fiche__chiffre--prix .fiche__chiffre-icone {
+  background: linear-gradient(135deg, #4a3fe0, #3d6ef0);
+  box-shadow: 0 8px 18px rgb(74 63 224 / 27%);
+}
+
+.fiche__chiffre--minimum .fiche__chiffre-icone {
+  background: linear-gradient(135deg, #0f9f8a, #38bdf8);
+  box-shadow: 0 8px 18px rgb(15 159 138 / 27%);
+}
+
+.fiche__chiffre--capitalisation .fiche__chiffre-icone {
+  background: linear-gradient(135deg, #ff9a3d, #e86a1a);
+  box-shadow: 0 8px 18px rgb(255 154 61 / 27%);
+}
+
+.fiche__chiffre--delai .fiche__chiffre-icone {
+  background: linear-gradient(135deg, #e0457a, #b5338a);
+  box-shadow: 0 8px 18px rgb(224 69 122 / 27%);
+}
+
+/* --- Cartes blanches, frais et conditions -------------------------------- */
+
+.fiche__carte-blanche {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px 20px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.fiche__frais {
+  background: #fbfaf7;
+}
+
+.fiche__titre-section {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: #000;
+}
+
+.fiche__entete-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fiche__entete-section p {
+  font-size: 12px;
+  color: var(--encre-douce);
+}
+
+.fiche__conditions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0 32px;
+  margin: 0;
+}
+
+.fiche__condition {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ligne);
+  font-size: 13px;
+}
+
+.fiche__condition dt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--encre-douce);
+}
+
+.fiche__condition dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* « Versements programmés non disponibles » : seule valeur assez longue pour passer à la ligne */
+.fiche__condition--versement dd {
+  max-width: 60%;
+  white-space: normal;
+}
+
+.fiche__condition-icone {
+  display: grid;
+  flex: 0 0 26px;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.fiche__condition-icone .fiche__icone {
+  width: 14px;
+  height: 14px;
+}
+
+.fiche__condition--souscription .fiche__condition-icone {
+  background: #ecebff;
+  color: #4a3fe0;
+}
+
+.fiche__condition--gestion .fiche__condition-icone {
+  background: #fff0e3;
+  color: #c2410c;
+}
+
+.fiche__condition--frequence .fiche__condition-icone {
+  background: #dcfaf4;
+  color: #0f766e;
+}
+
+.fiche__condition--reconstitution .fiche__condition-icone {
+  background: #e3edff;
+  color: #1d4ed8;
+}
+
+.fiche__condition--cashback .fiche__condition-icone {
+  background: #ffe6f0;
+  color: #be185d;
+}
+
+.fiche__condition--versement .fiche__condition-icone {
+  background: #f1e8ff;
+  color: #6d28d9;
+}
+
+/* --- Évolution ----------------------------------------------------------- */
+
+.fiche__historiques {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.fiche__historique {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.fiche__historique figcaption {
+  margin-bottom: 2px;
+  font-size: 13px;
+  color: var(--encre-douce);
+}
+
+.fiche__historique figcaption strong {
+  color: var(--encre);
+}
+
+.fiche__historique--taux {
+  background: linear-gradient(160deg, #e6fbf6, #f6f3ff);
+}
+
+.fiche__historique--prix {
+  background: linear-gradient(160deg, #f1edff, #fff);
+}
+
+.fiche__graphique {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  aspect-ratio: 560 / 210;
+}
+
+.fiche__valeur-seule {
+  padding: 12px 0;
+  color: var(--encre-douce);
+  text-align: center;
+  font-size: 13px;
+}
+
+.fiche__valeur-seule strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--encre);
+}
+
+.fiche__vide {
+  padding: 24px 0;
+  color: var(--discret);
+}
+
+/* --- Pays et secteurs ---------------------------------------------------- */
+
+.fiche__repartitions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  align-items: stretch;
+  gap: 20px;
+}
+
+/* Carte et camembert à la même hauteur : les deux listes commencent au même niveau */
+.fiche__zone-carte {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  aspect-ratio: 640 / 540;
+}
+
+.fiche__carte-blanche {
+  container-type: inline-size;
+}
+
+/* Carte des pays : toute la largeur du bloc, même hauteur que le camembert d'à côté */
+.fiche__zone-carte--pays {
+  max-width: none;
+  height: calc(min(380px, 100cqw) * 540 / 640);
+  aspect-ratio: auto;
+}
+
+.fiche__cadre-carte {
+  width: 100%;
+  height: 100%;
+}
+
+.fiche__carte {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+}
+
+.fiche__carte-nom {
+  font: 600 13px var(--sans);
+  fill: #45506a;
+}
+
+.fiche__carte-part {
+  font: 800 17px var(--sans);
+  fill: #0e1a33;
+}
+
+.fiche__camembert {
+  position: absolute;
+  inset: 0;
+}
+
+.fiche__parts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fiche__parts li {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: #f4f7fb;
+}
+
+.fiche__part-texte {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.fiche__part-texte strong {
+  white-space: nowrap;
+}
+
+.fiche__part-texte > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fiche__point {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.fiche__jauge {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e3e8f0;
+}
+
+.fiche__jauge span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+}
+
+/* --- Publicité et SCPI absente ------------------------------------------- */
+
+.fiche__publicite {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 1px dashed #d9b77a;
+  border-radius: 16px;
+  font-size: 13px;
+  background: #fff8ec;
+  line-height: 1.55;
+  color: #2c2a26;
+}
+
+.fiche__publicite-titre {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b4e16;
+}
+
+.fiche__absente {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.fiche__icone {
+  display: block;
+}

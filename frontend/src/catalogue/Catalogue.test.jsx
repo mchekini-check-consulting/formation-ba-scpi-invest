@@ -989,3 +989,36 @@ describe('Catalogue : minimum à investir et cashback sur la carte (SCPI-252)', 
     expect(carte('Sofidynamic').querySelector('.scpi__cashback')).toBeNull();
   });
 });
+
+describe('Catalogue : retour d’une fiche SCPI (US-02, règle 7)', () => {
+  it('scénario « retour au catalogue » : filtre « Santé » et page 2 retrouvés', async () => {
+    const { lister } = await afficher();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
+    });
+    sessionStorage.setItem(
+      'scpi-invest.catalogue.filtres',
+      JSON.stringify({ ...FILTRES_VIDES, categories: ['Santé'] }),
+    );
+    expect(lister).toHaveBeenLastCalledWith(2, FILTRES_VIDES, TRI_PAR_DEFAUT);
+    // Ouverture d'une fiche puis retour : le Catalogue est affiché à nouveau
+    cleanup();
+    const retour = await afficher();
+    expect(retour.lister).toHaveBeenCalledWith(
+      2,
+      { ...FILTRES_VIDES, categories: ['Santé'] },
+      TRI_PAR_DEFAUT,
+    );
+    expect(texte()).toContain('Page 2 sur 2');
+  });
+
+  it('tri et recherche retrouvés', async () => {
+    sessionStorage.setItem(
+      'scpi-invest.catalogue.etat',
+      JSON.stringify({ page: 1, tri: 'nom-asc', saisie: 'pier' }),
+    );
+    const { lister } = await afficher();
+    expect(lister).toHaveBeenCalledWith(1, FILTRES_VIDES, 'nom-asc');
+    expect(screen.getByRole('searchbox').value).toBe('pier');
+  });
+});

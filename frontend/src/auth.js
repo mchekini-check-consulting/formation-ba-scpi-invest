@@ -1,4 +1,5 @@
 import { apiBase } from './api.js';
+import { oublierEtat } from './catalogue/etat.js';
 import { oublierFiltres } from './catalogue/filtres.js';
 import { oublierRappelFerme } from './navigation/rappel.js';
 
@@ -177,6 +178,7 @@ export async function deconnecter(base = apiBase(), delaiMs = DELAI_DECONNEXION_
     memoriser(null);
     // Filtres du Catalogue gardés jusqu'à la déconnexion (US-10a)
     oublierFiltres();
+    oublierEtat();
     oublierRappelFerme();
   }
 }

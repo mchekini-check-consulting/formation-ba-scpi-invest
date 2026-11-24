@@ -381,6 +381,21 @@ export const TABLE_DECOTE_DEMEMBREMENT = pgTable(
   (table) => [index('scpi_decote_demembrement_scpi_id_idx').on(table.scpi_id)],
 );
 
+// US-02 : SCPI retirées du référentiel par un import (absentes du fichier), pour que la
+// fiche dise « n'est plus disponible » au lieu de « n'est pas disponible ».
+// scpi_id = ancien identifiant de la SCPI (pas de clé étrangère : la SCPI n'existe plus).
+// Vide pour les SCPI supprimées avant la création de cette table.
+export const TABLE_SCPI_SUPPRIMEE = pgTable(
+  'scpi_supprimee',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+    scpi_id: integer('scpi_id').notNull(),
+    nom: text('nom').notNull(),
+    supprimee_le: horodatage('supprimee_le').notNull().defaultNow(),
+  },
+  (t) => [index('scpi_supprimee_scpi_id_idx').on(t.scpi_id)],
+);
+
 // US-07a : une ligne par exécution de l'import (rapport d'exécution). La date du dernier
 // import réussi (US-08) = fin de la dernière ligne au statut "reussi".
 export const statutImport = pgEnum('statut_import', [
