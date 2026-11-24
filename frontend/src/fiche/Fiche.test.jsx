@@ -237,6 +237,8 @@ describe('Fiche SCPI (US-02)', () => {
       name: 'Communication à caractère promotionnel',
     });
     expect(bloc.textContent).toContain(IROKO.publicite);
+    // Placé sous le bandeau, avant les chiffres clés
+    expect(bloc.nextElementSibling).toBe(screen.getByLabelText('Chiffres clés'));
     cleanup();
     await afficher('/catalogue/12');
     expect(screen.queryByText('Communication à caractère promotionnel')).toBeNull();
