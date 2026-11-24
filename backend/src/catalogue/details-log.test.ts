@@ -19,7 +19,7 @@ describe('detailsCatalogue', () => {
         taux: { min: 4, max: 6 },
         prix: { min: 200, max: null },
         frais: { min: null, max: 10 },
-        cashback: [4, 5],
+        cashback: [0, 5],
       },
       { critere: 'nom', sens: 'asc' },
     );
@@ -31,7 +31,7 @@ describe('detailsCatalogue', () => {
       taux: '4 à 6',
       prix: '≥ 200',
       frais: '≤ 10',
-      cashback: '4,5',
+      cashback: '0,5',
       tri: 'nom-asc',
     });
   });
