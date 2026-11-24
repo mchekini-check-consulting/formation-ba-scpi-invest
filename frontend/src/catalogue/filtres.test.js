@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   FILTRES_VIDES,
   basculer,
+  basculerTousCashbacks,
   groupesActifs,
   changerPlage,
   memoriserFiltres,
@@ -45,12 +46,26 @@ describe('filtres du Catalogue (US-10)', () => {
     });
   });
 
-  it('SCPI-252 : cashbacks choisis, en %, une pastille par valeur', () => {
-    const filtres = { ...FILTRES_VIDES, cashback: [4, 5] };
-    expect(new URLSearchParams(parametresFiltres(filtres)).getAll('cashback')).toEqual(['4', '5']);
+  it('SCPI-252 : cashbacks choisis, 0 = aucun cashback, une pastille par choix', () => {
+    const filtres = { ...FILTRES_VIDES, cashback: [0, 5] };
+    expect(new URLSearchParams(parametresFiltres(filtres)).getAll('cashback')).toEqual(['0', '5']);
     const liste = pastilles(filtres, OPTIONS);
-    expect(liste.map((p) => p.libelle.replaceAll(/\s/gu, ' '))).toEqual(['4 %', '5 %']);
+    expect(liste.map((p) => p.libelle.replaceAll(/\s/gu, ' '))).toEqual(['Aucun cashback', '5 %']);
     expect(liste[0].retirer(filtres).cashback).toEqual([5]);
+    expect(
+      phraseRecherche(filtres, OPTIONS)[0]
+        .map((m) => m.liaison ?? m)
+        .join(''),
+    ).toMatch(/^Cashback : Aucun cashback ou\s5\s%$/u);
+  });
+
+  it('SCPI-252 : « Tous les cashbacks » = 1 à 5 %, une seule pastille', () => {
+    const tous = basculerTousCashbacks({ ...FILTRES_VIDES, cashback: [0, 3] });
+    expect(tous.cashback).toEqual([0, 1, 2, 3, 4, 5]);
+    const liste = pastilles(tous, OPTIONS);
+    expect(liste.map((p) => p.libelle)).toEqual(['Aucun cashback', 'Tous les cashbacks']);
+    expect(liste[1].retirer(tous).cashback).toEqual([0]);
+    expect(basculerTousCashbacks(tous).cashback).toEqual([0]);
   });
 
   it('nouveaux filtres : fréquence, frais de gestion, jouissance, cases « possible »', () => {

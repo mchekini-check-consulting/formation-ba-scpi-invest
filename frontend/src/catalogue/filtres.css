@@ -300,7 +300,7 @@
   box-shadow: 0 1px 3px rgb(15 31 69 / 15%);
 }
 
-/* SCPI-252 : boutons du cashback (Tous, 2 %, 3 %…), le choisi en couleur */
+/* SCPI-252 : pastilles du cashback (Aucun, 1 %…, Tous), la choisie en couleur */
 .filtres__boutons {
   display: flex;
   flex-wrap: wrap;

@@ -148,7 +148,7 @@ describe('Catalogue (e2e)', () => {
     ]);
   });
 
-  it('SCPI-252 : filtre du cashback, SCPI sans cashback (0 ou absent) exclues', async () => {
+  it('SCPI-252 : filtre du cashback, aucun cashback = 0 % ou non renseigné', async () => {
     const db = createDb(pool);
     await pool.query('delete from scpi_catalog');
     await importScpis(
@@ -164,13 +164,23 @@ describe('Catalogue (e2e)', () => {
     const noms = async (requete: Record<string, string | string[]>) =>
       (await service.lister(undefined, requete)).scpis.map((s) => s.nom);
 
-    // Un seul bouton : exactement ce cashback ; plusieurs : au moins un (OU)
+    // Un seul choix : exactement ce cashback ; plusieurs : au moins un (OU)
     expect(await noms({ cashback: '5' })).toEqual(['Transitions Europe']);
     expect(await noms({ cashback: ['2', '4'] })).toEqual(['Comète', 'Osmo Energie']);
-    // Aucune SCPI à ce cashback
     expect(await noms({ cashback: '3' })).toEqual([]);
-    // Boutons du panneau : cashbacks proposés (> 0) seulement, triés
-    expect((await service.filtres()).cashback).toEqual([2, 4, 5]);
+    // Aucun cashback : 0 % ou non renseigné
+    expect(await noms({ cashback: '0' })).toEqual(['Iroko Zen', 'Sofidynamic']);
+    expect(await noms({ cashback: ['0', '5'] })).toEqual([
+      'Transitions Europe',
+      'Iroko Zen',
+      'Sofidynamic',
+    ]);
+    // Tous les cashbacks (1 à 5 %) : SCPI sans cashback exclues
+    expect(await noms({ cashback: ['1', '2', '3', '4', '5'] })).toEqual([
+      'Transitions Europe',
+      'Comète',
+      'Osmo Energie',
+    ]);
   });
 
   it('US-10 : filtres combinés, valeurs du panneau, donnée manquante jamais égale à 0', async () => {
@@ -278,8 +288,6 @@ describe('Catalogue (e2e)', () => {
       minimum: { min: 1000, max: 5000 },
       fraisGestion: { min: 8, max: 15 },
       jouissance: { min: 0, max: 6 },
-      // aucun cashback proposé dans ces données : pas de bouton
-      cashback: [],
       frequences: ['Mensuelle', 'Trimestrielle'],
       capitalisations: expect.any(Array),
       anneeTaux: new Date().getFullYear() - 1,
