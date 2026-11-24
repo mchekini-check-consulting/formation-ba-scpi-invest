@@ -16,6 +16,7 @@ import {
   type LigneComparable,
 } from '../comparaison/service.js';
 import type { DepotTentativesConnexion } from '../comptes/service.js';
+import type { DepotFiche, LigneFiche } from '../fiche/service.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
 import type { DepotKyc, EtatKyc } from '../kyc/service.js';
@@ -34,6 +35,7 @@ import {
   tentativeConnexion,
   TABLE_IMPORT_RAPPORT,
   TABLE_SCPI_CATALOG,
+  TABLE_SCPI_SUPPRIMEE,
 } from './schema.js';
 
 // Accès aux données (testé par test/*.e2e-test.ts sur une vraie base)
@@ -655,6 +657,57 @@ export function depotComparaison(db: Db): DepotComparaison {
         ) t on true
         order by c.nom, c.id`);
       return resultat.rows;
+    },
+  };
+}
+
+// US-02 : fiche d'une SCPI avec ses historiques et ses répartitions. IBAN et BIC jamais
+// lus. Une donnée absente reste null, jamais 0.
+export function depotFiche(db: Db): DepotFiche {
+  return {
+    async lire(id: number): Promise<LigneFiche | null> {
+      const resultat = await db.execute<LigneFiche>(sql`
+        select c.id,
+               c.nom,
+               c.gerant,
+               c.capitalisation,
+               c.minimum_souscription as minimum,
+               c.frais_souscription as "fraisSouscription",
+               c.frais_gestion as "fraisGestion",
+               c.delai_jouissance as "delaiJouissance",
+               c.frequence::text as frequence,
+               c.cashback,
+               c.versement_programme as "versementProgramme",
+               c.publicite,
+               coalesce((select json_agg(json_build_object('annee', p.annee,
+                                                           'valeur', p.prix::float8))
+                         from scpi_prix_part p where p.scpi_id = c.id), '[]') as prix,
+               coalesce((select json_agg(json_build_object('annee', t.annee,
+                                                           'valeur', t.taux::float8))
+                         from scpi_taux_distribution t
+                         where t.scpi_id = c.id and t.annee is not null), '[]') as taux,
+               coalesce((select json_agg(json_build_object('annee', v.annee,
+                                                           'valeur', v.valeur::float8))
+                         from scpi_valeur_recon v where v.scpi_id = c.id), '[]')
+                 as "valeursReconstitution",
+               coalesce((select json_agg(json_build_object('libelle', l.pays,
+                                                           'part', l.pourcentage::float8))
+                         from scpi_localisation l where l.scpi_id = c.id), '[]') as pays,
+               coalesce((select json_agg(json_build_object('libelle', s.secteur::text,
+                                                           'part', s.pourcentage::float8))
+                         from scpi_secteurs s where s.scpi_id = c.id), '[]') as secteurs
+        from scpi_catalog c
+        where c.id = ${id}`);
+      return resultat.rows[0] ?? null;
+    },
+
+    async estSupprimee(id: number): Promise<boolean> {
+      const [ligne] = await db
+        .select({ id: TABLE_SCPI_SUPPRIMEE.id })
+        .from(TABLE_SCPI_SUPPRIMEE)
+        .where(eq(TABLE_SCPI_SUPPRIMEE.scpi_id, id))
+        .limit(1);
+      return ligne !== undefined;
     },
   };
 }

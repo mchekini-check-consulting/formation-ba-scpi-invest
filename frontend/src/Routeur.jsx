@@ -8,6 +8,7 @@ import { EVENEMENT_SESSION_EXPIREE } from './auth.js';
 import Catalogue from './catalogue/Catalogue.jsx';
 import Comparateur from './comparaison/Comparateur.jsx';
 import Connexion from './connexion/Connexion.jsx';
+import Fiche from './fiche/Fiche.jsx';
 import { memoriserPage } from './connexion/destination.js';
 import Indicateurs from './Indicateurs.jsx';
 import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
@@ -29,7 +30,6 @@ import Profil from './profil/Profil.jsx';
 // Adresses définitives des écrans du sprint 2 (convention C1), en attente de leur US ;
 // actif : entrée du menu marquée sélectionnée
 const ECRANS_A_VENIR = [
-  { chemin: '/catalogue/:id', titre: 'Détails' },
   { chemin: '/simulation', titre: 'Simuler', actif: 'simulation' },
   { chemin: '/investir/:id', titre: 'Investir' },
   // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
@@ -109,6 +109,15 @@ export default function Routeur({ passer = formulairesPassables() }) {
           element={
             <ExigerKycComplete>
               <Catalogue />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Fiche d'une SCPI (US-02), ouverte par « En savoir plus » du Catalogue */}
+        <Route
+          path="/catalogue/:id"
+          element={
+            <ExigerKycComplete>
+              <Fiche />
             </ExigerKycComplete>
           }
         />

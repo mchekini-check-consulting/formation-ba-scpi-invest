@@ -174,7 +174,19 @@ describe('import du catalogue (e2e)', () => {
   });
 
   it('SCPI en base absentes du fichier : supprimées avec leurs valeurs', async () => {
+    const avant = await catalogue();
     const resultat = await importScpis(db, lignes(scpi('A')));
+
+    // US-02 : identifiant, nom et date du jour de chaque SCPI retirée
+    const { rows: supprimees } = await pool.query(
+      `select scpi_id, nom, supprimee_le::date = current_date as aujourdhui
+       from scpi_supprimee order by nom`,
+    );
+    expect(supprimees).toEqual(
+      avant
+        .filter((s) => s.nom !== 'A')
+        .map((s) => ({ scpi_id: s.id, nom: s.nom, aujourdhui: true })),
+    );
 
     expect(resultat).toEqual(bilan({ lues: 1, inchangees: 1, supprimees: 2 }));
     expect((await catalogue()).map((s) => s.nom)).toEqual(['A']);

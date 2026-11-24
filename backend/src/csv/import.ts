@@ -7,6 +7,7 @@ import {
   TABLE_LOCALISATION,
   TABLE_PRIX_PART,
   TABLE_SECTEURS,
+  TABLE_SCPI_SUPPRIMEE,
   TABLE_VALEUR_RECONSTITUTION,
 } from '../db/schema.js';
 import type { RejetImport } from '../db/schema.js';
@@ -170,6 +171,10 @@ export async function importScpis(db: Db, rows: Lignes): Promise<BilanImport> {
 
     const absentes = [...existantes.values()].filter((s) => !presentes.has(s.nom));
     if (absentes.length > 0) {
+      // US-02 : trace de chaque SCPI retirée (identifiant, nom, date du jour)
+      await tx
+        .insert(TABLE_SCPI_SUPPRIMEE)
+        .values(absentes.map((s) => ({ scpi_id: s.id, nom: s.nom })));
       await tx.delete(TABLE_SCPI_CATALOG).where(
         inArray(
           TABLE_SCPI_CATALOG.id,
