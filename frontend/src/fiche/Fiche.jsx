@@ -475,11 +475,11 @@ export default function Fiche({
       {!fiche && !absente && !alerte && <p className="compte__texte">Chargement…</p>}
       {fiche && (
         <div className="fiche">
+          <Publicite texte={fiche.publicite} />
           <ChiffresCles fiche={fiche} />
           <FraisEtConditions fiche={fiche} />
           <Evolution fiche={fiche} />
           <Repartitions fiche={fiche} chargerMonde={chargerMonde} />
-          <Publicite texte={fiche.publicite} />
         </div>
       )}
     </PageApplication>
