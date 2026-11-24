@@ -27,11 +27,11 @@ import { CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
 import { formulairesPassables } from './outils/passerFormulaires.js';
 import ImportCatalogue from './outils/ImportCatalogue.jsx';
 import Profil from './profil/Profil.jsx';
+import Simulation from './simulation/Simulation.jsx';
 
 // Adresses définitives des écrans du sprint 2 (convention C1), en attente de leur US ;
 // actif : entrée du menu marquée sélectionnée
 const ECRANS_A_VENIR = [
-  { chemin: '/simulation', titre: 'Simuler', actif: 'simulation' },
   { chemin: '/investir/:id', titre: 'Investir' },
   // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
   { chemin: '/demandes/:id', titre: 'Suivi de ma demande' },
@@ -127,6 +127,15 @@ export default function Routeur({ passer = formulairesPassables() }) {
           element={
             <ExigerKycComplete>
               <Comparateur />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Simulation (US-08) : lignes pré-remplies par ?scpi=<id>:<parts>,… (C1) */}
+        <Route
+          path="/simulation"
+          element={
+            <ExigerKycComplete>
+              <Simulation />
             </ExigerKycComplete>
           }
         />

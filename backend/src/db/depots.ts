@@ -23,6 +23,7 @@ import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
 import type { DepotKyc, EtatKyc } from '../kyc/service.js';
 import type { DepotInformations, Justificatif, LigneHistorique } from '../informations/service.js';
 import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.js';
+import type { DepotSimulation, LigneSimulable } from '../simulation/service.js';
 import type { DepotOutilsImport } from '../outils/service.js';
 import {
   acceptationCgu,
@@ -653,6 +654,33 @@ export function depotComparaison(db: Db): DepotComparaison {
           select d.taux, d.annee from scpi_taux_distribution d where d.scpi_id = c.id
           order by d.annee desc nulls last limit 1
         ) t on true
+        order by c.nom, c.id`);
+      return resultat.rows;
+    },
+  };
+}
+
+// US-08 : SCPI de la simulation, triées par nom : prix de part le plus récent, dernier taux
+// de distribution connu, minimum, délai de jouissance et décotes de démembrement
+export function depotSimulation(db: Db): DepotSimulation {
+  return {
+    async lister(): Promise<LigneSimulable[]> {
+      const resultat = await db.execute<LigneSimulable>(sql`
+        select c.id,
+               c.nom,
+               (select p.prix::float8 from scpi_prix_part p where p.scpi_id = c.id
+                order by p.annee desc limit 1) as "prixPart",
+               (select d.taux::float8 from scpi_taux_distribution d where d.scpi_id = c.id
+                order by d.annee desc nulls last limit 1) as "tauxDistribution",
+               c.minimum_souscription as minimum,
+               c.delai_jouissance as "delaiJouissance",
+               c.demembrement,
+               coalesce((select json_agg(json_build_object('duree', x.duree,
+                                                           'partNuePropriete', x.decote)
+                                         order by x.duree)
+                         from scpi_decote_demembrement x where x.scpi_id = c.id), '[]')
+                 as decotes
+        from scpi_catalog c
         order by c.nom, c.id`);
       return resultat.rows;
     },

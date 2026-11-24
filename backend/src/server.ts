@@ -14,6 +14,8 @@ import { routesFiche } from './fiche/routes.js';
 import { creerFicheService } from './fiche/service.js';
 import { routesFiscalite } from './fiscalite/routes.js';
 import { creerFiscaliteService } from './fiscalite/service.js';
+import { routesSimulation } from './simulation/routes.js';
+import { creerSimulationService } from './simulation/service.js';
 import {
   decrirePlanification,
   demarrerImportNocturne,
@@ -36,6 +38,7 @@ import {
   depotPieces,
   depotProfils,
   depotQuestionnaires,
+  depotSimulation,
   secretDesSessions,
 } from './db/depots.js';
 import { createDb, createPool } from './db/index.js';
@@ -74,6 +77,8 @@ const adresses = creerAdressesService();
 const catalogue = creerCatalogueService(depotCatalogue(db));
 // US-04 : SCPI du comparateur
 const comparaison = creerComparaisonService(depotComparaison(db));
+// US-08 (SCPI-257) : SCPI de la simulation
+const simulation = creerSimulationService(depotSimulation(db));
 // US-02 : fiche d'une SCPI
 const fiche = creerFicheService(depotFiche(db));
 // US-04c : fichiers des pièces dans R2 (dépôt indisponible, 503, sans les variables R2)
@@ -117,8 +122,9 @@ createApp(() => db.execute(sql`select 1`), logger, {
     routesQuestionnaire(questionnaires, fournisseur),
     routesInformations(informations, fournisseur),
     routesFiscalite(fiscalite, fournisseur),
-    // Avant le Catalogue : /scpis/comparables ne doit pas être pris pour une adresse /scpis/<id>
+    // Avant le Catalogue : /scpis/comparables et /scpis/simulables ne doivent pas être pris pour une adresse /scpis/<id>
     routesComparaison(comparaison, fournisseur),
+    routesSimulation(simulation, fournisseur),
     routesCatalogue(catalogue, fournisseur),
     // US-02 : après le Comparateur et le Catalogue (/scpis/filtres, /scpis/recherche...)
     routesFiche(fiche, fournisseur),

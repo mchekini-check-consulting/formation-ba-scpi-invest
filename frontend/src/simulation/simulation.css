@@ -1,0 +1,262 @@
+/* Simulation (US-08) : couleurs de compte.css (variables de .compte) et de index.css */
+
+/* Saisie à gauche, résultat à droite ; l'un sous l'autre sur un écran étroit */
+.simulation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .simulation {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.simulation__saisie,
+.simulation__resultat {
+  padding: 18px 20px 20px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-m);
+  background: #fff;
+}
+
+/* Le résultat reste visible pendant la saisie d'une longue simulation */
+.simulation__resultat {
+  position: sticky;
+  top: 16px;
+}
+
+.simulation__entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.simulation__titre {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--encre);
+}
+
+.simulation__entete .simulation__titre {
+  margin: 0;
+}
+
+.simulation__lignes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.simulation__ligne {
+  padding: 14px;
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  background: var(--cadre);
+}
+
+/* Champs d'une ligne côte à côte, la croix de retrait à droite */
+.simulation__champs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.simulation__champ {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.simulation__champ--scpi {
+  flex: 1 1 220px;
+}
+
+.simulation__champ--parts {
+  min-width: 0;
+  width: 120px;
+}
+
+.simulation__champ--duree {
+  min-width: 140px;
+}
+
+.simulation__champ label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--encre-douce);
+}
+
+.simulation__champ input,
+.simulation__champ select {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--bordure-champ);
+  border-radius: 14px;
+  background: #fff;
+  font: inherit;
+  color: var(--encre);
+}
+
+.simulation__champ select:disabled {
+  background: var(--papier);
+  color: var(--discret);
+}
+
+.simulation__retirer {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border: 1px solid var(--bordure-champ);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--encre-douce);
+  cursor: pointer;
+}
+
+.simulation__retirer:hover {
+  border-color: var(--rouge);
+  color: var(--rouge);
+}
+
+.simulation__retirer svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+/* Repères de la SCPI choisie : prix de part, minimum, délai de jouissance */
+.simulation__reperes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin: 12px 0 0;
+}
+
+.simulation__reperes div {
+  display: flex;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bleu-ciel);
+  font-size: 13px;
+}
+
+.simulation__reperes dt {
+  color: var(--encre-douce);
+}
+
+.simulation__reperes dt::after {
+  content: ' :';
+}
+
+.simulation__reperes dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--bleu);
+}
+
+.simulation__infos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13.5px;
+  color: var(--encre-douce);
+}
+
+.simulation__avertissement {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--erreur);
+}
+
+.simulation__ajouter {
+  padding: 10px 16px;
+  border: 1.5px dashed var(--bleu-vif);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--bleu);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.simulation__ajouter:hover {
+  background: var(--bleu-ciel);
+}
+
+.simulation__chiffres {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+.simulation__chiffres div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.simulation__chiffres dt {
+  color: var(--encre-douce);
+}
+
+.simulation__chiffres dd {
+  margin: 0;
+  font-weight: 800;
+  color: var(--encre);
+  white-space: nowrap;
+}
+
+/* Cumul sur la durée : chiffre principal, mis en avant */
+.simulation__chiffres .simulation__cumul {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 14px;
+  background: var(--bleu-ciel);
+}
+
+.simulation__cumul dd {
+  font-size: 24px;
+  color: var(--bleu);
+}
+
+.simulation__aide {
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  color: var(--discret);
+}
+
+.simulation__mention {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--discret);
+}
