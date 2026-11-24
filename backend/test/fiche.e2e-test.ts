@@ -61,20 +61,22 @@ describe('Fiche SCPI (e2e)', () => {
       .id;
 
   it('fiche complète lue en base, sans IBAN ni BIC', async () => {
-    await importScpis(
-      db,
-      lignes(
-        scpi('Pierval Santé'),
-        scpi('Vide', {
-          prix_part: '',
-          localisation: '',
-          secteurs: '',
-          taux_distribution: '',
-          valeur_reconstitution: '',
-          publicite: '',
-          minimum_souscription: '',
-        }),
-      ),
+    await importScpis(db, lignes(scpi('Pierval Santé'), scpi('Vide')));
+    // L'import refuse les données obligatoires vides : on vide donc la SCPI « Vide » en base,
+    // comme pour une ancienne SCPI dont les informations seraient absentes.
+    const idVide = await idDe('Vide');
+    for (const table of [
+      'scpi_taux_distribution',
+      'scpi_localisation',
+      'scpi_secteurs',
+      'scpi_prix_part',
+      'scpi_valeur_recon',
+    ]) {
+      await pool.query(`delete from ${table} where scpi_id = $1`, [idVide]);
+    }
+    await pool.query(
+      'update scpi_catalog set minimum_souscription = null, publicite = null where id = $1',
+      [idVide],
     );
     const annee = new Date().getFullYear() - 1;
     const fiche = await creerFicheService(depotFiche(db)).lire(String(await idDe('Pierval Santé')));
