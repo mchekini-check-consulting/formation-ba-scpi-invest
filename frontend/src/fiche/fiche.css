@@ -12,12 +12,13 @@
   --marge-x: 16px;
 }
 
-/* Largeur maximale de la fiche : quand on dézoome (ou sur un très grand écran), les blocs,
-   les graphiques et la carte ne s'étirent plus */
+/* La fiche occupe toute la largeur disponible à côté du menu, quelle que soit la taille
+   de l'écran : jamais de défilement horizontal ni de vide à côté du menu. */
 .fiche,
 .fiche__bandeau {
-  max-width: 1480px;
-  margin-inline: auto;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
 }
 
 .fiche__nc {
@@ -191,7 +192,9 @@
 }
 
 .compte a.fiche__bouton:hover {
-  background: rgb(255 255 255 / 10%);
+  border-color: #fff;
+  background: #fff;
+  color: #0f1f45;
 }
 
 .compte a.fiche__bouton--principal {
@@ -211,7 +214,8 @@
 .fiche__chiffres {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  column-gap: min(90px, 5%); /* jusqu'à environ 2,4 cm entre les indicateurs */
+  row-gap: 12px;
   margin: 0;
 }
 
@@ -318,7 +322,7 @@
 
 .fiche__conditions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(max(280px, 30%), 1fr)); /* 3 colonnes au plus */
   gap: 0 32px;
   margin: 0;
 }
