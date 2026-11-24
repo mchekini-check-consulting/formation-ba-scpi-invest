@@ -1,0 +1,385 @@
+/* Écran « Mes informations fiscales » (US-06, InformationsFiscales.jsx), maquette D :
+   carte blanche du formulaire (une ligne par information) et, à droite, le récapitulatif
+   « Votre foyer fiscal » sur fond bleu. Sur petit écran, le récapitulatif passe dessous. */
+
+.fiscalite__intro {
+  margin: 12px 0 0;
+  max-width: 640px;
+  color: var(--encre-douce);
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.fiscalite {
+  display: grid;
+  grid-template-columns: minmax(0, 680px) 320px;
+  gap: 24px;
+  /* Les deux panneaux ont la même hauteur : la carte s'étire jusqu'au bas du récapitulatif */
+  align-items: stretch;
+  margin-top: 32px;
+}
+
+/* ---- Carte du formulaire ---- */
+.fiscalite__carte {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--r-m);
+  background: #fff;
+  box-shadow:
+    0 1px 0 var(--ligne),
+    0 24px 48px -28px rgb(15 31 69 / 25%);
+}
+
+.fiscalite__ligne {
+  /* Hauteur en plus répartie entre les lignes, le pied reste en bas */
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: center;
+  padding: 24px 32px;
+}
+
+.fiscalite__ligne + .fiscalite__ligne {
+  border-top: 1px solid var(--papier);
+}
+
+.fiscalite__libelle {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.fiscalite__aide {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--discret);
+}
+
+.fiscalite__erreur {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--erreur);
+}
+
+.fiscalite__erreur:empty {
+  display: none;
+}
+
+.fiscalite__erreur::before {
+  content: '!';
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--erreur);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Revenu : champ blanc à contour, unité à droite */
+.fiscalite__saisie {
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ligne);
+  border-radius: 14px;
+  background: #fff;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.fiscalite__saisie:focus-within {
+  border-color: var(--bleu-vif);
+  box-shadow: 0 0 0 4px rgb(59 111 212 / 15%);
+}
+
+.fiscalite__saisie--invalide {
+  border-color: var(--erreur);
+  box-shadow: 0 0 0 4px rgb(179 38 30 / 10%);
+}
+
+.fiscalite__saisie input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--encre);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fiscalite__saisie input::placeholder {
+  color: #b8bdc9;
+  font-weight: 500;
+}
+
+.fiscalite__unite {
+  margin-left: 8px;
+  color: var(--discret);
+  font-weight: 600;
+}
+
+/* Situation familiale : deux segments, un seul choisi */
+.fiscalite__segments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--sable);
+}
+
+.fiscalite__segments button {
+  min-height: 46px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--encre-douce);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fiscalite__segments button[aria-pressed='true'] {
+  background: #fff;
+  color: var(--encre);
+  box-shadow: 0 2px 8px rgb(15 31 69 / 12%);
+}
+
+/* Enfants : compteur − / + */
+.fiscalite__compteur {
+  display: inline-flex;
+  align-items: center;
+  min-height: 54px;
+  border: 1.5px solid var(--ligne);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.fiscalite__compteur button {
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--bleu);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.fiscalite__compteur button:hover:not(:disabled) {
+  background: var(--papier);
+}
+
+.fiscalite__compteur button:disabled {
+  color: #c9cdd6;
+  cursor: default;
+}
+
+.fiscalite__compteur output {
+  min-width: 54px;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.fiscalite__segments button:focus-visible,
+.fiscalite__compteur button:focus-visible,
+.fiscalite__pied button:focus-visible {
+  outline: 3px solid var(--bleu-pied);
+  outline-offset: 2px;
+}
+
+/* Pied de la carte : mention, « Effacer », « Enregistrer » */
+.fiscalite__pied {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 32px;
+  border-top: 1px solid var(--ligne);
+  background: var(--cadre);
+}
+
+.fiscalite__confidentialite {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 auto 0 0;
+  font-size: 13px;
+  color: var(--encre-douce);
+}
+
+.fiscalite__confidentialite svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.fiscalite__effacer,
+.fiscalite__enregistrer {
+  min-height: 52px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fiscalite__effacer {
+  padding: 0 8px;
+  background: transparent;
+  color: var(--erreur);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.fiscalite__enregistrer {
+  padding: 0 30px;
+  background: var(--nuit);
+  color: #fff;
+}
+
+.fiscalite__enregistrer:hover:not(:disabled) {
+  background: var(--bleu);
+}
+
+.fiscalite__pied button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ---- Récapitulatif « Votre foyer fiscal » ---- */
+.fiscalite__recap {
+  padding: 28px;
+  border-radius: var(--r-m);
+  background: linear-gradient(#193071 0%, #162c65 100%);
+  color: #fff;
+  box-shadow: 0 24px 48px -28px rgb(30 58 138 / 55%);
+}
+
+.fiscalite__recap-titre {
+  margin: 0 0 18px;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.fiscalite__recap-valeurs {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.fiscalite__recap-valeurs dt {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #dce7fb;
+}
+
+.fiscalite__recap-valeurs dd {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fiscalite__parts {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid rgb(255 255 255 / 25%);
+}
+
+.fiscalite__parts strong {
+  font-family: var(--serif);
+  font-size: 44px;
+  font-weight: 600;
+  color: var(--ocre);
+}
+
+.fiscalite__recap-note {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #dce7fb;
+}
+
+/* ---- Messages sous la carte ---- */
+.fiscalite__message {
+  max-width: 680px;
+  margin: 16px 0 0;
+}
+
+.fiscalite__message--succes {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #e6f2e7;
+  color: #1f5a23;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.fiscalite__message--succes::before {
+  content: '✓';
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--succes);
+  color: #fff;
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+  .fiscalite {
+    grid-template-columns: minmax(0, 680px);
+  }
+}
+
+@media (max-width: 700px) {
+  .fiscalite__ligne {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .fiscalite__pied {
+    flex-wrap: wrap;
+    padding: 20px;
+  }
+
+  .fiscalite__enregistrer {
+    flex: 1;
+  }
+}
