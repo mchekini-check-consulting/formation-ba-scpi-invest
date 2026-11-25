@@ -10,6 +10,8 @@ import { creerCatalogueService } from './catalogue/service.js';
 import { routesComparaison } from './comparaison/routes.js';
 import { creerComparaisonService } from './comparaison/service.js';
 import { routesComptes } from './comptes/routes.js';
+import { routesDemandes } from './demandes/routes.js';
+import { creerDemandesService } from './demandes/service.js';
 import { routesFiche } from './fiche/routes.js';
 import { creerFicheService } from './fiche/service.js';
 import { routesFiscalite } from './fiscalite/routes.js';
@@ -28,6 +30,7 @@ import {
   depotTentativesConnexion,
   depotCatalogue,
   depotComparaison,
+  depotDemandes,
   depotFiche,
   depotFiscalite,
   depotInformations,
@@ -82,6 +85,8 @@ const pieces = creerPiecesService(depotKyc(db), depotPieces(db), stockagePieces(
 const informations = creerInformationsService(depotInformations(db), stockagePieces(), fournisseur);
 // US-06 (SCPI-255) : informations fiscales du foyer
 const fiscalite = creerFiscaliteService(depotFiscalite(db));
+// US-11 (SCPI-259) : demandes d'investissement (dossiers)
+const demandes = creerDemandesService(depotDemandes(db));
 
 // US-07a : import du catalogue au démarrage puis chaque nuit à 2h (désactivé sans les variables R2)
 const tacheImport = demarrerImportNocturne(pool, db);
@@ -117,6 +122,7 @@ createApp(() => db.execute(sql`select 1`), logger, {
     routesQuestionnaire(questionnaires, fournisseur),
     routesInformations(informations, fournisseur),
     routesFiscalite(fiscalite, fournisseur),
+    routesDemandes(demandes, fournisseur),
     // Avant le Catalogue : /scpis/comparables ne doit pas être pris pour une adresse /scpis/<id>
     routesComparaison(comparaison, fournisseur),
     routesCatalogue(catalogue, fournisseur),
