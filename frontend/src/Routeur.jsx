@@ -10,6 +10,8 @@ import Comparateur from './comparaison/Comparateur.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import Fiche from './fiche/Fiche.jsx';
 import InformationsFiscales from './fiscalite/InformationsFiscales.jsx';
+import Investir from './investir/Investir.jsx';
+import SuiviDemande from './investir/SuiviDemande.jsx';
 import { memoriserPage } from './connexion/destination.js';
 import Indicateurs from './Indicateurs.jsx';
 import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
@@ -32,9 +34,6 @@ import Profil from './profil/Profil.jsx';
 // actif : entrée du menu marquée sélectionnée
 const ECRANS_A_VENIR = [
   { chemin: '/simulation', titre: 'Simuler', actif: 'simulation' },
-  { chemin: '/investir/:id', titre: 'Investir' },
-  // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
-  { chemin: '/demandes/:id', titre: 'Suivi de ma demande' },
   // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
   { chemin: '/versements/nouveau', titre: 'Programmer un versement', actif: 'versements' },
   // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
@@ -118,6 +117,24 @@ export default function Routeur({ passer = formulairesPassables() }) {
           element={
             <ExigerKycComplete>
               <Fiche />
+            </ExigerKycComplete>
+          }
+        />
+        {/* Demande d'investissement (US-11) : ouverte par « Investir » (Catalogue, Fiche,
+            Comparateur), puis suivi du dossier créé */}
+        <Route
+          path="/investir/:id"
+          element={
+            <ExigerKycComplete>
+              <Investir />
+            </ExigerKycComplete>
+          }
+        />
+        <Route
+          path="/demandes/:id"
+          element={
+            <ExigerKycComplete>
+              <SuiviDemande />
             </ExigerKycComplete>
           }
         />
