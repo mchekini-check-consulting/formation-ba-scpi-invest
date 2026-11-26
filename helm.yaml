@@ -42,6 +42,18 @@ applications:
           prod: https://bf34dc064589166d409f8c98a44d39ea.r2.cloudflarestorage.com/scpi/scpi.csv
       - key: CSV_ARCHIVE_DELETE_SOURCE
         value: {dev: false, qualif: false, preprod: false, prod: false}
+      # Kafka partagé de la plateforme (interface : https://kafka.dev.check-consulting.net).
+      # Vide : envoi Kafka désactivé dans cet environnement (le backend fonctionne).
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        value:
+          dev: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092
+          qualif: ""
+          preprod: ""
+          prod: ""
+      - key: KAFKA_TOPIC_TEST
+        value: scpi.outils.test.v1
+      - key: KAFKA_TOPIC_DOSSIER
+        value: scpi.souscription.dossier.v1
     # Variables S3 : toutes les clés du Secret backend-s3 du namespace (créé hors
     # de ce dépôt). optional : le pod démarre aussi là où le Secret n'existe pas.
     envFrom:
