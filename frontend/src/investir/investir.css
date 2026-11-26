@@ -1,0 +1,334 @@
+/* Écrans « Investir » et « Suivi de ma demande » (US-11) : maquette validée par le BA, sur
+   le modèle de la Fiche (fiche.css : bandeau, chiffres clés, cartes blanches, lignes). */
+
+/* --- Montant dans le bandeau (à la place du taux de la Fiche) ----------- */
+
+.investir__total {
+  align-items: flex-end;
+}
+
+.fiche__pastilles li.investir__statut {
+  background: #5eead4;
+  color: #0f1f45;
+  font-weight: 700;
+}
+
+/* --- Rappel et colonnes -------------------------------------------------- */
+
+.investir__chiffres {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.investir__colonnes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  align-items: stretch;
+  gap: 20px;
+}
+
+.investir__demande {
+  gap: 18px;
+  padding: 18px 24px;
+}
+
+/* --- Nombre de parts ----------------------------------------------------- */
+
+.investir__parts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.investir__parts label,
+.investir__types legend {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.investir__parts input {
+  width: 200px;
+  max-width: 100%;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border: 1.5px solid var(--bordure-champ);
+  border-radius: 12px;
+  background: #fff;
+  font: 700 18px var(--sans);
+  color: var(--encre);
+}
+
+.investir__parts input:focus-visible {
+  outline: 2px solid var(--bleu-vif);
+  outline-offset: 2px;
+}
+
+.investir__parts input[aria-invalid='true'] {
+  border-color: var(--erreur);
+}
+
+.investir__erreur {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fbe9e5;
+  color: var(--erreur);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.investir__aide {
+  font-size: 12.5px;
+  color: var(--encre-douce);
+}
+
+/* Jauge du minimum, comme les parts des répartitions de la Fiche */
+.investir__jauge {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #f4f7fb;
+  font-size: 12.5px;
+}
+
+.investir__jauge p {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.investir__atteint {
+  color: #0f766e;
+}
+
+.investir__atteint--non {
+  color: var(--erreur);
+}
+
+.investir__barre {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e3e8f0;
+}
+
+.investir__barre span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #0f9f8a, #38bdf8);
+  transition: width 0.2s ease;
+}
+
+.investir__barre span.investir__barre--non {
+  background: linear-gradient(90deg, #e8913a, #d65745);
+}
+
+/* --- Type d'investissement : trois tuiles -------------------------------- */
+
+.investir__types {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.investir__types legend {
+  margin-bottom: 10px;
+  padding: 0;
+}
+
+.investir__tuiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.investir__tuile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1.5px solid var(--ligne);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.investir__tuile:has(input:focus-visible) {
+  outline: 2px solid var(--bleu-vif);
+  outline-offset: 2px;
+}
+
+.investir__tuile--choisie {
+  border-color: var(--bleu);
+  background: linear-gradient(160deg, #e6fbf6, #f6f3ff);
+}
+
+.investir__tuile-haut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.investir__tuile-haut input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--bleu);
+}
+
+.investir__tuile-icone {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+}
+
+.investir__tuile-icone .fiche__icone {
+  width: 18px;
+  height: 18px;
+}
+
+.investir__tuile--pleine_propriete .investir__tuile-icone {
+  background: linear-gradient(135deg, #4a3fe0, #3d6ef0);
+  color: #fff;
+}
+
+.investir__tuile--nue_propriete .investir__tuile-icone {
+  background: #fff0e3;
+  color: #c2410c;
+}
+
+.investir__tuile--usufruit .investir__tuile-icone {
+  background: #ffe6f0;
+  color: #be185d;
+}
+
+.investir__tuile strong {
+  font-size: 15px;
+}
+
+.investir__tuile-texte {
+  font-size: 12.5px;
+  color: var(--encre-douce);
+}
+
+/* --- Récapitulatif ------------------------------------------------------- */
+
+.investir__recap {
+  padding: 18px 24px;
+}
+
+.investir__lignes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.investir__lignes .fiche__condition {
+  padding: 8px 0;
+}
+
+.investir__montant {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 6px 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.investir__montant strong {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--bleu);
+}
+
+.investir__valider {
+  align-self: flex-end;
+  margin-top: auto;
+  min-height: 44px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5eead4, #38bdf8);
+  color: #0f1f45;
+  font: 700 15px var(--sans);
+  cursor: pointer;
+}
+
+.investir__valider:hover:not(:disabled) {
+  background: linear-gradient(90deg, #7af0de, #5cc8fa);
+}
+
+.investir__valider:focus-visible {
+  outline: 2px solid var(--bleu);
+  outline-offset: 2px;
+}
+
+.investir__valider:disabled {
+  background: #d9dde6;
+  color: #5a6379;
+  cursor: not-allowed;
+}
+
+/* --- Suivi de ma demande ------------------------------------------------- */
+
+.investir__transmise {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: #dcfaf4;
+  color: #0b4f49;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.investir__transmise > span {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0f9f8a;
+  color: #fff;
+}
+
+.investir__transmise .fiche__icone {
+  width: 18px;
+  height: 18px;
+}
+
+/* Résumé du dossier : une ligne par information, libellé à gauche, valeur à droite, avec
+   un espace de chaque côté de la carte (maquette du BA). Sur petit écran, pas d'espace. */
+.investir__dossier {
+  box-sizing: border-box;
+  width: auto;
+  padding: 18px 24px;
+}
+
+/* Même espace de chaque côté pour le message vert et la carte du dossier */
+.investir__transmise,
+.investir__dossier {
+  margin: 0 80px;
+}
+
+@media (max-width: 960px) {
+  .investir__transmise,
+  .investir__dossier {
+    margin: 0;
+  }
+}
+
+.investir__dossier .fiche__condition {
+  font-size: 14px;
+}

@@ -1,6 +1,7 @@
 import {
   bigint,
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -263,6 +264,55 @@ export const informationFiscale = pgTable('information_fiscale', {
   nombreEnfants: integer('nombre_enfants').notNull(),
   misAJourLe: horodatage('mis_a_jour_le').notNull().defaultNow(),
 });
+
+// US-11 « Saisir ma demande d'investissement » (SCPI-259), données EN-02 (SCPI-249) :
+// dossier d'investissement, une ligne par demande. Créé au statut demande_envoyee par
+// POST /demandes ; les champs suivants (accusé de réception, refus, paiement, jouissance)
+// restent vides jusqu'aux US-12 à 16. Statuts dans l'ordre du parcours (C2) ; refusee
+// arrête le parcours. scpi_id sans clé étrangère : un import peut retirer la SCPI du
+// catalogue, le dossier reste (scpi_nom garde son nom). Montants en euros.
+export const statutDossier = pgEnum('statut_dossier', [
+  'demande_envoyee',
+  'demande_recue',
+  'acceptee_attente_paiement',
+  'refusee',
+  'investissement_actif',
+]);
+
+export const typeInvestissement = pgEnum('type_investissement', [
+  'pleine_propriete',
+  'nue_propriete',
+  'usufruit',
+]);
+
+export const modeInvestissement = pgEnum('mode_investissement', ['ponctuel', 'programme']);
+
+export const dossierInvestissement = pgTable(
+  'dossier_investissement',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+    utilisateurId: text('utilisateur_id').notNull(),
+    scpiId: integer('scpi_id').notNull(),
+    scpiNom: text('scpi_nom').notNull(),
+    nombreParts: integer('nombre_parts').notNull(),
+    // prix de part au moment de la demande
+    prixPart: numeric('prix_part', { precision: 10, scale: 2, mode: 'number' }).notNull(),
+    montant: numeric('montant', { precision: 14, scale: 2, mode: 'number' }).notNull(),
+    type: typeInvestissement('type').notNull(),
+    mode: modeInvestissement('mode').notNull().default('ponctuel'),
+    statut: statutDossier('statut').notNull().default('demande_envoyee'),
+    demandeLe: horodatage('demande_le').notNull().defaultNow(),
+    accuseReceptionLe: horodatage('accuse_reception_le'),
+    motifRefus: text('motif_refus'),
+    ibanPaiement: text('iban_paiement'),
+    bicPaiement: text('bic_paiement'),
+    referenceVirement: text('reference_virement'),
+    paiementLe: horodatage('paiement_le'),
+    jouissanceLe: date('jouissance_le', { mode: 'string' }),
+    modifieLe: horodatage('modifie_le').notNull().defaultNow(),
+  },
+  (t) => [index('dossier_investissement_utilisateur_id_idx').on(t.utilisateurId)],
+);
 
 // ---- Catalogue SCPI (import CSV, src/csv/)
 

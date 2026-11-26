@@ -16,6 +16,7 @@ import {
   type LigneComparable,
 } from '../comparaison/service.js';
 import type { DepotTentativesConnexion } from '../comptes/service.js';
+import type { ConditionsScpi, DepotDemandes } from '../demandes/service.js';
 import type { DepotFiche, LigneFiche } from '../fiche/service.js';
 import type { DepotFiscalite, SituationFamiliale } from '../fiscalite/service.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
@@ -26,6 +27,7 @@ import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.
 import type { DepotOutilsImport } from '../outils/service.js';
 import {
   acceptationCgu,
+  dossierInvestissement,
   historiqueInformation,
   informationFiscale,
   justificatif,
@@ -770,6 +772,64 @@ export function depotFiscalite(db: Db): DepotFiscalite {
       await db
         .delete(informationFiscale)
         .where(eq(informationFiscale.utilisateurId, utilisateurId));
+    },
+  };
+}
+
+// US-11 (SCPI-259) : dossiers d'investissement. Conditions de la SCPI lues au moment de la
+// demande (prix de part de l'année la plus récente) ; un dossier n'est lu que par son
+// investisseur (cloisonnement, EN-02 règle 3). Société de gestion lue dans le catalogue
+// (null si la SCPI en a été retirée depuis).
+export function depotDemandes(db: Db): DepotDemandes {
+  return {
+    async kycComplet(utilisateurId) {
+      const [ligne] = await db
+        .select({ id: kyc.id })
+        .from(kyc)
+        .where(and(eq(kyc.utilisateurId, utilisateurId), eq(kyc.statut, 'complete')));
+      return ligne !== undefined;
+    },
+    async conditions(scpiId) {
+      const resultat = await db.execute<ConditionsScpi>(sql`
+        select c.id,
+               c.nom,
+               c.minimum_souscription::float8 as minimum,
+               (select p.prix::float8 from scpi_prix_part p
+                 where p.scpi_id = c.id order by p.annee desc limit 1) as "prixPart"
+        from scpi_catalog c
+        where c.id = ${scpiId}`);
+      return resultat.rows[0] ?? null;
+    },
+    async creer(dossier) {
+      const [ligne] = await db
+        .insert(dossierInvestissement)
+        .values(dossier)
+        .returning({ id: dossierInvestissement.id });
+      return ligne.id;
+    },
+    async lire(utilisateurId, id) {
+      const [ligne] = await db
+        .select({
+          id: dossierInvestissement.id,
+          scpiId: dossierInvestissement.scpiId,
+          scpiNom: dossierInvestissement.scpiNom,
+          gerant: TABLE_SCPI_CATALOG.gerant,
+          nombreParts: dossierInvestissement.nombreParts,
+          prixPart: dossierInvestissement.prixPart,
+          montant: dossierInvestissement.montant,
+          type: dossierInvestissement.type,
+          statut: dossierInvestissement.statut,
+          demandeLe: dossierInvestissement.demandeLe,
+        })
+        .from(dossierInvestissement)
+        .leftJoin(TABLE_SCPI_CATALOG, eq(TABLE_SCPI_CATALOG.id, dossierInvestissement.scpiId))
+        .where(
+          and(
+            eq(dossierInvestissement.id, id),
+            eq(dossierInvestissement.utilisateurId, utilisateurId),
+          ),
+        );
+      return ligne ?? null;
     },
   };
 }
