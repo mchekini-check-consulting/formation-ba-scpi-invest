@@ -82,3 +82,52 @@ export function partsInitiales(fiche) {
 export function formaterDate(iso) {
   return new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris' }).format(new Date(iso));
 }
+
+// US-16 (SCPI-264), règle 2 : étapes du parcours C2, dans l'ordre. Un dossier refusé
+// s'arrête à « Refusée », juste après « Demande reçue ».
+const PARCOURS = [
+  'demande_envoyee',
+  'demande_recue',
+  'acceptee_attente_paiement',
+  'investissement_actif',
+];
+const PARCOURS_REFUSE = ['demande_envoyee', 'demande_recue', 'refusee'];
+
+// Frise du suivi : chaque étape avec son état, franchie, en_cours (le statut du dossier)
+// ou a_venir. Statut inconnu : toutes les étapes à venir.
+export function etapesFrise(statut) {
+  const etapes = statut === 'refusee' ? PARCOURS_REFUSE : PARCOURS;
+  const courante = etapes.indexOf(statut);
+  return etapes.map((id, i) => {
+    let etat = 'a_venir';
+    if (courante >= 0 && i < courante) etat = 'franchie';
+    else if (i === courante) etat = 'en_cours';
+    return { id, libelle: libelleStatut(id), etat };
+  });
+}
+
+// Maquette F (choix du BA) : carte « Prochaine étape », un texte par statut ; consignes
+// numérotées seulement quand l'investisseur a quelque chose à faire (virement).
+export const PROCHAINE_ETAPE = {
+  demande_envoyee:
+    'Votre demande a été transmise à la SCPI. Elle vous confirmera sa réception, puis vous informera par mail de sa décision.',
+  demande_recue:
+    'La SCPI a bien reçu votre demande et l’étudie. Vous serez informé par mail de sa décision.',
+  acceptee_attente_paiement:
+    'Votre demande a été acceptée par la SCPI. Faites le virement indiqué : dès sa réception, votre investissement deviendra actif.',
+  refusee:
+    'La SCPI n’a pas accepté votre demande. Vous pouvez choisir une autre SCPI dans le catalogue.',
+  investissement_actif: 'Votre investissement est actif : vos parts vous appartiennent.',
+};
+
+export const CONSIGNES_VIREMENT = [
+  'Faites un virement depuis votre banque vers l’IBAN de la SCPI.',
+  'Indiquez la référence du virement dans son libellé.',
+  'À réception, votre investissement devient actif.',
+];
+
+export const texteProchaineEtape = (statut) => PROCHAINE_ETAPE[statut] ?? '';
+
+// Message vert de l'écran simple, pour une demande reçue (date de l'accusé de réception)
+export const messageDemandeRecue = (date) =>
+  `La SCPI a bien reçu votre demande le ${date}. Elle l’analyse et vous informera par mail de sa décision.`;

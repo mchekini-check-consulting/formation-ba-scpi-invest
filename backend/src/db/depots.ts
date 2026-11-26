@@ -823,6 +823,13 @@ export function depotDemandes(db: Db): DepotDemandes {
           type: dossierInvestissement.type,
           statut: dossierInvestissement.statut,
           demandeLe: dossierInvestissement.demandeLe,
+          // US-16 : informations de suivi
+          accuseReceptionLe: dossierInvestissement.accuseReceptionLe,
+          motifRefus: dossierInvestissement.motifRefus,
+          ibanPaiement: dossierInvestissement.ibanPaiement,
+          bicPaiement: dossierInvestissement.bicPaiement,
+          referenceVirement: dossierInvestissement.referenceVirement,
+          jouissanceLe: dossierInvestissement.jouissanceLe,
         })
         .from(dossierInvestissement)
         .leftJoin(TABLE_SCPI_CATALOG, eq(TABLE_SCPI_CATALOG.id, dossierInvestissement.scpiId))

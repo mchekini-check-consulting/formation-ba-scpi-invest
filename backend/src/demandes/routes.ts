@@ -8,7 +8,9 @@ import type { DemandesService } from './service.js';
 //                        demande_envoyee) ; 400 { message, erreurs } si saisie invalide ou
 //                        minimum non atteint ; 403 KYC non validé ; 404 SCPI absente ;
 //                        422 prix de part inconnu
-//   GET  /demandes/:id  -> dossier de l'investisseur ; 404 « Cette demande est introuvable. »
+//   GET  /demandes/:id  -> dossier de l’investisseur, avec son suivi (US-16 : accusé de
+//                        réception, paiement, motif de refus ou date de jouissance selon le
+//                        statut) ; 404 « Cette demande est introuvable. »
 // Valeurs saisies : jamais dans les logs.
 export function routesDemandes(service: DemandesService, fournisseur: FournisseurIdentite): Router {
   const routeur = Router();
