@@ -45,15 +45,43 @@ export type NouveauDossier = {
   type: TypeInvestissement;
 };
 
-export type LigneDossier = Omit<NouveauDossier, 'utilisateurId'> & {
-  id: number;
-  gerant: string | null;
-  statut: StatutDossier;
-  demandeLe: Date;
+// Informations de suivi (US-16), remplies au fil du parcours (US-12 à 15)
+export type SuiviDossier = {
+  accuseReceptionLe: Date | null;
+  motifRefus: string | null;
+  ibanPaiement: string | null;
+  bicPaiement: string | null;
+  referenceVirement: string | null;
+  jouissanceLe: string | null;
 };
 
-// Dossier renvoyé à l'écran : numéro affiché « D-<id> », date en ISO
-export type Dossier = Omit<LigneDossier, 'demandeLe'> & { numero: string; demandeLe: string };
+export type LigneDossier = Omit<NouveauDossier, 'utilisateurId'> &
+  SuiviDossier & {
+    id: number;
+    gerant: string | null;
+    statut: StatutDossier;
+    demandeLe: Date;
+  };
+
+// Virement attendu pour un dossier accepté, en attente de paiement (US-16)
+export type Paiement = {
+  iban: string | null;
+  bic: string | null;
+  montant: number;
+  reference: string | null;
+};
+
+// Dossier renvoyé à l'écran : numéro affiché « D-<id> », dates en ISO. US-16 (règle 3) :
+// seules les informations utiles au statut sont renvoyées (paiement si accepté, motif si
+// refusé, date de jouissance si actif) ; les autres restent à null.
+export type Dossier = Omit<LigneDossier, keyof SuiviDossier | 'demandeLe'> & {
+  numero: string;
+  demandeLe: string;
+  accuseReceptionLe: string | null;
+  motifRefus: string | null;
+  paiement: Paiement | null;
+  jouissanceLe: string | null;
+};
 
 export type DepotDemandes = {
   // true si le KYC de cet utilisateur est validé (statut « complete »)
@@ -127,7 +155,32 @@ export function numeroDossier(id: number): string {
 }
 
 export function versDossier(ligne: LigneDossier): Dossier {
-  return { ...ligne, numero: numeroDossier(ligne.id), demandeLe: ligne.demandeLe.toISOString() };
+  const {
+    accuseReceptionLe,
+    motifRefus,
+    ibanPaiement,
+    bicPaiement,
+    referenceVirement,
+    jouissanceLe,
+    ...dossier
+  } = ligne;
+  return {
+    ...dossier,
+    numero: numeroDossier(ligne.id),
+    demandeLe: ligne.demandeLe.toISOString(),
+    accuseReceptionLe: accuseReceptionLe?.toISOString() ?? null,
+    motifRefus: ligne.statut === 'refusee' ? motifRefus : null,
+    paiement:
+      ligne.statut === 'acceptee_attente_paiement'
+        ? {
+            iban: ibanPaiement,
+            bic: bicPaiement,
+            montant: ligne.montant,
+            reference: referenceVirement,
+          }
+        : null,
+    jouissanceLe: ligne.statut === 'investissement_actif' ? jouissanceLe : null,
+  };
 }
 
 // Couche service des demandes d'investissement (US-11)

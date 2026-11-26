@@ -46,6 +46,26 @@ const ICONES = {
     </>
   ),
   valide: <path d="M5 12l5 5L19 7" />,
+  // Suivi de ma demande (US-16)
+  suite: <path d="M5 12h14M13 6l6 6-6 6" />,
+  virement: (
+    <>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" />
+    </>
+  ),
+  dossier: (
+    <>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6M8 13h8M8 17h5" />
+    </>
+  ),
+  alerte: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v6M12 16.5h.01" />
+    </>
+  ),
 };
 
 export function Icone({ nom }) {

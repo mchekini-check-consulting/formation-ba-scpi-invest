@@ -106,6 +106,10 @@ describe('demandes d’investissement (e2e)', () => {
       type: 'pleine_propriete',
       statut: 'demande_envoyee',
       demandeLe: expect.any(String),
+      accuseReceptionLe: null,
+      motifRefus: null,
+      paiement: null,
+      jouissanceLe: null,
     });
     const relu = await request(app)
       .get(`/demandes/${cree.body.id}`)
@@ -174,5 +178,39 @@ describe('demandes d’investissement (e2e)', () => {
       .set('Authorization', luc)
       .expect(404);
     expect(vu.body.message).toBe('Cette demande est introuvable.');
+  });
+
+  it('US-16 : suivi d’un dossier accepté, avec les coordonnées du virement', async () => {
+    const ines = await creerCompte('ines@exemple.fr');
+    const cree = await request(app)
+      .post('/demandes')
+      .set('Authorization', ines)
+      .send({ scpiId, nombreParts: 5, type: 'pleine_propriete' })
+      .expect(201);
+    // Étapes franchies par la SCPI partenaire (US-13 à 15), simulées en base
+    await pool.query(
+      `update dossier_investissement set statut = 'acceptee_attente_paiement',
+         accuse_reception_le = '2026-11-13T09:30:00Z', iban_paiement = 'FR7630006000011234567890189',
+         bic_paiement = 'AGRIFRPP', reference_virement = 'SIP-COME-20261113-4HX8QA'
+       where id = $1`,
+      [cree.body.id],
+    );
+
+    const suivi = await request(app)
+      .get(`/demandes/${cree.body.id}`)
+      .set('Authorization', ines)
+      .expect(200);
+    expect(suivi.body).toMatchObject({
+      statut: 'acceptee_attente_paiement',
+      accuseReceptionLe: '2026-11-13T09:30:00.000Z',
+      motifRefus: null,
+      paiement: {
+        iban: 'FR7630006000011234567890189',
+        bic: 'AGRIFRPP',
+        montant: 1000,
+        reference: 'SIP-COME-20261113-4HX8QA',
+      },
+      jouissanceLe: null,
+    });
   });
 });

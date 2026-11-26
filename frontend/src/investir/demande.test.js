@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   chiffresSeulement,
+  etapesFrise,
+  texteProchaineEtape,
   evaluer,
   formaterDate,
   libelleStatut,
@@ -87,5 +89,38 @@ describe('règles de saisie de l’écran Investir (US-11)', () => {
     expect(libelleStatut('autre')).toBe('autre');
     expect(formaterDate('2026-11-24T10:00:00.000Z')).toBe('24/11/2026');
     expect(espaces(messageMinimum(FICHE))).toContain('1 000 €, soit 5 parts');
+  });
+});
+
+describe('frise du suivi (US-16, règle 2)', () => {
+  const etats = (statut) => etapesFrise(statut).map((e) => `${e.id}:${e.etat}`);
+
+  it('parcours normal : étapes avant le statut franchies, après à venir', () => {
+    expect(etats('demande_recue')).toEqual([
+      'demande_envoyee:franchie',
+      'demande_recue:en_cours',
+      'acceptee_attente_paiement:a_venir',
+      'investissement_actif:a_venir',
+    ]);
+  });
+
+  it('dossier refusé : la frise s’arrête à « Refusée »', () => {
+    expect(etapesFrise('refusee').map((e) => e.libelle)).toEqual([
+      'Demande envoyée',
+      'Demande reçue',
+      'Refusée',
+    ]);
+    expect(etats('refusee').at(-1)).toBe('refusee:en_cours');
+  });
+
+  it('statut inconnu : toutes les étapes à venir', () => {
+    expect(etapesFrise('autre').every((e) => e.etat === 'a_venir')).toBe(true);
+  });
+});
+
+describe('textes du suivi (US-16, maquette F)', () => {
+  it('un texte Prochaine étape par statut, vide si inconnu', () => {
+    expect(texteProchaineEtape('acceptee_attente_paiement')).toContain('acceptée');
+    expect(texteProchaineEtape('autre')).toBe('');
   });
 });

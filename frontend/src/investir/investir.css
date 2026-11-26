@@ -308,27 +308,395 @@
   height: 18px;
 }
 
-/* Résumé du dossier : une ligne par information, libellé à gauche, valeur à droite, avec
-   un espace de chaque côté de la carte (maquette du BA). Sur petit écran, pas d'espace. */
-.investir__dossier {
+/* --- Suivi de ma demande (US-16, maquette F choisie par le BA) -------------------
+   Frise pleine largeur, puis trois cartes : « Prochaine étape », la carte du statut au
+   centre (plus large), « Votre dossier ». Sur petit écran, les cartes s'empilent. */
+
+.suivi__carte {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   box-sizing: border-box;
-  width: auto;
-  padding: 18px 24px;
+  min-width: 0;
+  padding: 24px 28px;
+  border-radius: 18px;
+  background: #fff;
 }
 
-/* Même espace de chaque côté pour le message vert et la carte du dossier */
-.investir__transmise,
-.investir__dossier {
+.suivi__titre {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--encre);
+}
+
+.suivi__cartes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+@media (max-width: 960px) {
+  .suivi__cartes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Pastille d'icône en haut de chaque carte */
+.suivi__tuile {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.suivi__tuile .fiche__icone {
+  width: 22px;
+  height: 22px;
+}
+
+.suivi__tuile--bleu {
+  background: var(--bleu-ciel);
+  color: var(--bleu);
+}
+
+.suivi__tuile--vert {
+  background: #dcfaf4;
+  color: #0b4f49;
+}
+
+.suivi__tuile--sable {
+  background: var(--papier);
+  color: var(--encre-douce);
+}
+
+.suivi__surtitre {
+  margin: 0;
+  color: #0b4f49;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.suivi__texte {
+  margin: 0;
+  color: var(--encre-douce);
+  line-height: 1.5;
+}
+
+/* Consignes numérotées du virement */
+.suivi__consignes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--papier);
+  font-size: 14px;
+  line-height: 1.4;
+  list-style: none;
+}
+
+.suivi__consignes li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.suivi__numero {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bleu-ciel);
+  color: var(--bleu);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Montant à virer, mis en avant */
+.suivi__montant {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #dcfaf4;
+  color: #0b4f49;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.suivi__montant strong {
+  color: var(--encre);
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 600;
+}
+
+/* Coordonnées du virement, chacune avec son bouton « Copier » */
+.suivi__coordonnees {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.suivi__coordonnee {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--papier);
+}
+
+.suivi__coordonnee > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.suivi__coordonnee dt,
+.suivi__ligne dt {
+  color: var(--encre-douce);
+  font-size: 13px;
+}
+
+.suivi__coordonnee dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.suivi__copier {
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--bleu-vif);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--bleu);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.suivi__copier:hover {
+  background: var(--bleu-ciel);
+}
+
+.suivi__note {
+  margin: 0;
+  color: var(--encre-douce);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Lignes libellé / valeur (dossier, motif, date de jouissance) */
+.suivi__lignes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: 14px;
+}
+
+.suivi__ligne {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--papier);
+}
+
+.suivi__ligne:last-child {
+  border-bottom: 0;
+}
+
+.suivi__ligne dt {
+  font-size: 14px;
+}
+
+.suivi__ligne dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* --- Frise du suivi (US-16) ----------------------------------------------- */
+
+.investir__suivi {
+  gap: 20px;
+  padding: 24px 32px 28px;
+}
+
+.investir__frise {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.investir__etape {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+  text-align: center;
+}
+
+/* Trait vers l'étape suivante, plein si l'étape est franchie */
+.investir__etape:not(:last-child)::after {
+  position: absolute;
+  top: 16px;
+  left: calc(50% + 21px);
+  width: calc(100% - 42px);
+  height: 3px;
+  background: var(--ligne);
+  content: '';
+}
+
+.investir__etape--franchie:not(:last-child)::after {
+  background: #0f9f8a;
+}
+
+.investir__etape-point {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 34px;
+  height: 34px;
+  border: 2px solid #c9c2b4;
+  border-radius: 50%;
+  background: #fff;
+  color: #fff;
+}
+
+.investir__etape-point .fiche__icone {
+  width: 18px;
+  height: 18px;
+}
+
+.investir__etape--franchie .investir__etape-point {
+  border-color: #0f9f8a;
+  background: #0f9f8a;
+}
+
+.investir__etape--en_cours .investir__etape-point {
+  border: 9px solid var(--bleu-vif);
+}
+
+.investir__etape-libelle {
+  color: var(--encre);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.investir__etape--en_cours .investir__etape-libelle {
+  font-weight: 700;
+}
+
+.investir__etape--a_venir .investir__etape-libelle {
+  color: var(--encre-douce);
+  font-weight: 400;
+}
+
+.investir__etape-detail {
+  color: var(--encre-douce);
+  font-size: 13px;
+}
+
+.investir__etape--en_cours .investir__etape-detail {
+  color: var(--bleu);
+  font-weight: 700;
+}
+
+.investir__etape--refusee.investir__etape--en_cours .investir__etape-point {
+  border-color: var(--erreur);
+}
+
+.investir__etape--refusee.investir__etape--en_cours .investir__etape-detail {
+  color: var(--erreur);
+}
+
+/* Petit écran : étapes l'une sous l'autre */
+@media (max-width: 640px) {
+  .investir__frise {
+    grid-auto-flow: row;
+    gap: 12px;
+  }
+
+  .investir__etape {
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .investir__etape:not(:last-child)::after {
+    display: none;
+  }
+
+  .investir__etape-detail {
+    margin-left: auto;
+  }
+}
+
+/* Écran simple (demande envoyée ou reçue, ou juste après la validation) : message vert et
+   dossier en pleine largeur, avec un espace de chaque côté (maquette du BA à l'US-11) */
+.suivi--simple > * {
   margin: 0 80px;
 }
 
 @media (max-width: 960px) {
-  .investir__transmise,
-  .investir__dossier {
+  .suivi--simple > * {
     margin: 0;
   }
 }
 
-.investir__dossier .fiche__condition {
-  font-size: 14px;
+/* Message de l'écran simple : texte et, pour un refus, lien vers le catalogue */
+.investir__transmise {
+  flex-wrap: wrap;
+}
+
+.investir__transmise p {
+  flex: 1 1 300px;
+  margin: 0;
+}
+
+.suivi__message--refus {
+  background: #fbe3df;
+  color: #7a1d17;
+}
+
+.suivi__message--refus > span {
+  background: var(--erreur);
+}
+
+.suivi__message-lien {
+  margin-left: auto;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #fff;
+  color: #7a1d17;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.suivi__message-lien:hover {
+  text-decoration: underline;
 }
