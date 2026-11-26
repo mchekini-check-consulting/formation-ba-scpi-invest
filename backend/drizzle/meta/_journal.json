@@ -113,6 +113,20 @@
       "when": 1795560509703,
       "tag": "0015_dossier_investissement",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795696004605,
+      "tag": "0016_code_scpi_transmission",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795696879247,
+      "tag": "0017_transmission_dossier",
+      "breakpoints": true
     }
   ]
 }

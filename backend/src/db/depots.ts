@@ -25,8 +25,11 @@ import type { DepotKyc, EtatKyc } from '../kyc/service.js';
 import type { DepotInformations, Justificatif, LigneHistorique } from '../informations/service.js';
 import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.js';
 import type { DepotOutilsImport } from '../outils/service.js';
+import type { DossierATransmettre } from '../transmission/message.js';
+import type { DepotTransmission } from '../transmission/service.js';
 import {
   acceptationCgu,
+  authUser,
   dossierInvestissement,
   historiqueInformation,
   informationFiscale,
@@ -830,6 +833,97 @@ export function depotDemandes(db: Db): DepotDemandes {
           ),
         );
       return ligne ?? null;
+    },
+  };
+}
+
+// US-12 : dossiers à transmettre à la SCPI partenaire (src/transmission/). Dossier
+// ponctuel, « Demande envoyée », pas encore transmis, SCPI avec un code.
+const A_TRANSMETTRE = sql`d.transmis_le is null
+  and d.statut = 'demande_envoyee'
+  and d.mode = 'ponctuel'`;
+
+type LigneATransmettre = Omit<
+  DossierATransmettre,
+  'email' | 'reponsesKyc' | 'profil' | 'pieces'
+> & { utilisateurId: string };
+
+export function depotTransmission(db: Db): DepotTransmission {
+  return {
+    async transmettreProchain(publier) {
+      return db.transaction(async (tx) => {
+        // skip locked : un dossier pris par un autre serveur est ignoré ; celui-ci reste
+        // verrouillé jusqu'à la fin de la transaction (publication + transmis_le)
+        const { rows } = await tx.execute<LigneATransmettre>(sql`
+          select d.id::float8 as id,
+                 d.id_message as "idMessage",
+                 c.code as "codeScpi",
+                 d.nombre_parts as "nombreParts",
+                 d.prix_part::float8 as "prixPart",
+                 d.montant::float8 as montant,
+                 d.type,
+                 d.demande_le as "demandeLe",
+                 d.utilisateur_id as "utilisateurId"
+          from dossier_investissement d
+          join scpi_catalog c on c.id = d.scpi_id
+          where ${A_TRANSMETTRE} and c.code is not null
+          order by d.demande_le, d.id
+          limit 1
+          for update of d skip locked`);
+        const ligne = rows[0];
+        if (!ligne) return false;
+        const { utilisateurId, ...dossier } = ligne;
+
+        const [compte] = await tx
+          .select({ email: authUser.email })
+          .from(authUser)
+          .where(eq(authUser.id, utilisateurId));
+        const [formulaire] = await tx
+          .select({ reponses: kyc.reponses })
+          .from(kyc)
+          .where(eq(kyc.utilisateurId, utilisateurId));
+        // Profil investisseur validé le plus récent (une ligne par validation, US-05d)
+        const [profil] = await tx
+          .select({
+            profil: profilInvestisseur.profil,
+            score: profilInvestisseur.score,
+            versionQuestionnaire: profilInvestisseur.versionQuestionnaire,
+            valideLe: profilInvestisseur.valideLe,
+          })
+          .from(profilInvestisseur)
+          .where(eq(profilInvestisseur.utilisateurId, utilisateurId))
+          .orderBy(desc(profilInvestisseur.valideLe), desc(profilInvestisseur.id))
+          .limit(1);
+        const pieces = await tx
+          .select({ type: kycPiece.type, nomFichier: kycPiece.nomFichier })
+          .from(kycPiece)
+          .where(eq(kycPiece.utilisateurId, utilisateurId))
+          .orderBy(asc(kycPiece.id));
+
+        await publier({
+          ...dossier,
+          demandeLe: new Date(dossier.demandeLe),
+          email: compte?.email ?? '',
+          reponsesKyc: formulaire?.reponses ?? {},
+          profil: profil ?? null,
+          pieces,
+        });
+        // Heure réelle de la publication (now() donnerait le début de la transaction, avant
+        // une éventuelle attente du retour de Kafka)
+        await tx
+          .update(dossierInvestissement)
+          .set({ transmisLe: sql`clock_timestamp()` })
+          .where(eq(dossierInvestissement.id, dossier.id));
+        return true;
+      });
+    },
+    async enAttenteSansCode() {
+      const { rows } = await db.execute<{ n: number }>(sql`
+        select count(*)::int as n
+        from dossier_investissement d
+        left join scpi_catalog c on c.id = d.scpi_id
+        where ${A_TRANSMETTRE} and c.code is null`);
+      return rows[0]?.n ?? 0;
     },
   };
 }

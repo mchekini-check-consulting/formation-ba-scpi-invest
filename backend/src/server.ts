@@ -31,6 +31,7 @@ import {
   depotCatalogue,
   depotComparaison,
   depotDemandes,
+  depotTransmission,
   depotFiche,
   depotFiscalite,
   depotInformations,
@@ -55,6 +56,8 @@ import { topics } from './kafka/config.js';
 import { creerCanalKafka } from './kafka/producteur.js';
 import { routesOutilsKafka } from './outils/kafka-routes.js';
 import { creerOutilsKafkaService } from './outils/kafka-service.js';
+import { demarrerTransmission } from './transmission/planification.js';
+import { creerTransmissionService } from './transmission/service.js';
 import { logger } from './logging/logger.js';
 import { migrate } from './migrate.js';
 import { routesOutilsImport } from './outils/routes.js';
@@ -123,6 +126,11 @@ const outilsKafka = creerOutilsKafkaService({
   topic: topics().test,
   pod: process.env.HOSTNAME ?? null,
 });
+
+// US-12 (SCPI-260) : dossiers « Demande envoyée » transmis à la SCPI partenaire toutes les
+// minutes (désactivé sans Kafka)
+const transmission = creerTransmissionService(depotTransmission(db), kafka, topics().dossier);
+demarrerTransmission(kafka, () => transmission.transmettre());
 
 const port = Number(process.env.PORT ?? 8080);
 createApp(() => db.execute(sql`select 1`), logger, {

@@ -12,6 +12,7 @@ import {
   entierStrictementPositif,
   euros,
   messageMinimum,
+  numeroDossier,
   verifier,
   type ConditionsScpi,
   type DepotDemandes,
@@ -210,6 +211,12 @@ describe('créer une demande', () => {
         type: 'usufruit',
       }),
     ).rejects.toThrow('Dossier créé introuvable');
+  });
+});
+
+describe('numéro de dossier', () => {
+  it('D- suivi de l’identifiant (US-12 : idDossier)', () => {
+    expect(numeroDossier(1041)).toBe('D-1041');
   });
 });
 

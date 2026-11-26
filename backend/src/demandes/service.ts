@@ -121,8 +121,13 @@ export function verifier(
   return { saisie: { scpiId, nombreParts, type } };
 }
 
+// Numéro du dossier vu par l'investisseur et envoyé à la SCPI partenaire (US-12 : idDossier)
+export function numeroDossier(id: number): string {
+  return `D-${id}`;
+}
+
 export function versDossier(ligne: LigneDossier): Dossier {
-  return { ...ligne, numero: `D-${ligne.id}`, demandeLe: ligne.demandeLe.toISOString() };
+  return { ...ligne, numero: numeroDossier(ligne.id), demandeLe: ligne.demandeLe.toISOString() };
 }
 
 // Couche service des demandes d'investissement (US-11)
