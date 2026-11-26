@@ -1,0 +1,435 @@
+/* Écran de test « Boîte de réception de la SCPI » (dev), maquette « B · Boîte de
+   réception ». Charte commune dans index.css ; tout sous .boite-scpi. */
+
+.boite-scpi__corps {
+  display: grid;
+  gap: 16px;
+}
+
+.boite-scpi__entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.boite-scpi__entete h1 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 28px;
+  margin: 8px 0 4px;
+}
+
+.boite-scpi__aide {
+  color: var(--encre-douce);
+  margin: 0;
+}
+
+.boite-scpi__resume {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.boite-scpi__chiffres-entete {
+  display: flex;
+  gap: 18px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--encre-douce);
+}
+
+.boite-scpi__chiffres-entete div {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.boite-scpi__chiffres-entete dd {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--encre);
+}
+
+.boite-scpi__chiffres-entete dd.boite-scpi__mono {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  color: var(--encre-douce);
+}
+
+.boite-scpi__etat {
+  font-weight: 600;
+}
+
+.boite-scpi__etat::before {
+  content: '● ';
+}
+
+.boite-scpi__etat--on {
+  color: var(--vert);
+}
+
+.boite-scpi__etat--ko {
+  color: var(--rouge);
+}
+
+.boite-scpi__etat--off {
+  color: var(--discret);
+}
+
+.boite-scpi__boite {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  border: 1px solid var(--ligne);
+  border-radius: var(--r-l);
+  overflow: hidden;
+  background: #fff;
+  min-height: 600px;
+}
+
+.boite-scpi__liste {
+  border-right: 1px solid var(--ligne);
+  background: var(--papier);
+  overflow: auto;
+  max-height: 80vh;
+}
+
+.boite-scpi__recherche {
+  padding: 12px;
+  border-bottom: 1px solid var(--ligne);
+}
+
+.boite-scpi__recherche input {
+  width: 100%;
+  font: 14px var(--sans);
+  border: 1px solid var(--ligne);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #fff;
+}
+
+.boite-scpi__element {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--ligne);
+  background: transparent;
+  font: 14px var(--sans);
+  color: var(--encre);
+  cursor: pointer;
+}
+
+.boite-scpi__element:hover {
+  background: #ebe6db;
+}
+
+.boite-scpi__element--actif {
+  background: #fff;
+  box-shadow: inset 4px 0 0 var(--bleu);
+}
+
+.boite-scpi__haut {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.boite-scpi__haut b {
+  font-size: 15px;
+}
+
+.boite-scpi__bas {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--encre-douce);
+}
+
+.boite-scpi__lecture {
+  padding: 22px 26px;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.boite-scpi__titre {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ligne);
+}
+
+.boite-scpi__titre h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 26px;
+  margin: 0;
+}
+
+.boite-scpi__meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 13px;
+  color: var(--encre-douce);
+  margin: 6px 0 0;
+}
+
+.boite-scpi__mono {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+}
+
+.boite-scpi__actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.boite-scpi .btn--vert {
+  background: var(--vert);
+  color: #fff;
+}
+
+.boite-scpi .btn--rouge {
+  background: var(--rouge);
+  color: #fff;
+}
+
+.boite-scpi .btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}
+
+/* Info-bulle d'un bouton inactif (un bouton désactivé ne reçoit pas le survol) */
+.boite-scpi__bientot {
+  position: relative;
+  display: inline-flex;
+}
+
+.boite-scpi__bientot::after {
+  content: attr(data-info);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--nuit);
+  color: #fff;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 5;
+}
+
+.boite-scpi__bientot:hover::after {
+  opacity: 1;
+}
+
+.boite-scpi .badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.boite-scpi .badge--recu {
+  background: var(--bleu-ciel);
+  color: var(--bleu);
+}
+
+.boite-scpi .badge--doublon {
+  background: #fde3cc;
+  color: #8a4410;
+}
+
+.boite-scpi .badge--invalide {
+  background: #f8d7d3;
+  color: var(--erreur);
+}
+
+.boite-scpi .badge--code {
+  background: var(--sable);
+  color: var(--encre);
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.boite-scpi__chiffres {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.boite-scpi__chiffre {
+  background: var(--papier);
+  border-radius: 14px;
+  padding: 10px 14px;
+}
+
+.boite-scpi__chiffre span {
+  font-size: 12px;
+  color: var(--discret);
+}
+
+.boite-scpi__chiffre b {
+  display: block;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 22px;
+}
+
+.boite-scpi__details {
+  background: #fff;
+  border: 1px solid var(--ligne);
+  border-radius: var(--r-m);
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.boite-scpi__details-barre {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.boite-scpi__onglets {
+  display: inline-flex;
+  background: var(--papier);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.boite-scpi__onglets button {
+  font: 600 13px var(--sans);
+  border: 0;
+  background: transparent;
+  padding: 5px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--encre-douce);
+}
+
+.boite-scpi__onglets button.actif {
+  background: #fff;
+  color: var(--encre);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+}
+
+.boite-scpi__grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.boite-scpi__bloc {
+  background: var(--papier);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.boite-scpi__bloc h4 {
+  margin: 0 0 6px;
+  font: 700 11px var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--discret);
+}
+
+.boite-scpi__bloc dl {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.boite-scpi__bloc dl div {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) 1fr;
+  gap: 10px;
+}
+
+.boite-scpi__bloc dt {
+  color: var(--encre-douce);
+}
+
+.boite-scpi__bloc dd {
+  margin: 0;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.boite-scpi__masque {
+  color: var(--discret);
+  letter-spacing: 0.15em;
+}
+
+.boite-scpi__vide {
+  color: var(--discret);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.boite-scpi__json {
+  background: var(--nuit);
+  color: #dfe6f6;
+  border-radius: 14px;
+  padding: 14px;
+  font:
+    12px/1.5 ui-monospace,
+    Menlo,
+    monospace;
+  overflow: auto;
+  max-height: 460px;
+  margin: 0;
+}
+
+.boite-scpi__avertissement {
+  font-size: 12px;
+  color: #8a4410;
+  background: #fdf1e3;
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin: 0;
+}
+
+.boite-scpi__info {
+  color: var(--encre-douce);
+  padding: 12px 16px;
+  margin: 0;
+}
+
+.boite-scpi__erreur {
+  color: var(--erreur);
+  background: #fbe9e7;
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin: 0;
+}
+
+@media (max-width: 1000px) {
+  .boite-scpi__boite {
+    grid-template-columns: 1fr;
+  }
+
+  .boite-scpi__chiffres {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

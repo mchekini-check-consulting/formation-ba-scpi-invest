@@ -9,6 +9,11 @@ export default defineConfig({
     port: 5173,
     // Appels au backend en local : /api -> backend lancé sur le poste (src/api.js : apiBase)
     proxy: {
+      // Backend societe-gestion (SCPI simulée, port 8081) : avant /api, plus général
+      '/api/societe-gestion': {
+        target: 'http://localhost:8081',
+        rewrite: (path) => path.replace(/^\/api\/societe-gestion/, ''),
+      },
       '/api': {
         // BACKEND_URL : autre backend local (tests de bout en bout, playwright.config.ts)
         target: process.env.BACKEND_URL ?? 'http://localhost:8080',

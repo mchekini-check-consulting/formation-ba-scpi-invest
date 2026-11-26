@@ -12,6 +12,12 @@ describe('lien du pied de page vers l’import du catalogue', () => {
     expect(lien.textContent).toContain('dev');
   });
 
+  it('dev : lien vers la boîte de réception de la SCPI', () => {
+    render(<LienOutilsPied visible />);
+    const lien = screen.getByRole('link', { name: /Boîte de la SCPI/ });
+    expect(lien.getAttribute('href')).toBe('/outils/societe-gestion');
+  });
+
   it('qualif, preprod, prod : rien', () => {
     const { container } = render(<LienOutilsPied visible={false} />);
     expect(container.innerHTML).toBe('');

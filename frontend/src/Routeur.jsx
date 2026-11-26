@@ -25,7 +25,8 @@ import Contact from './legal/Contact.jsx';
 import MentionsLegales from './legal/MentionsLegales.jsx';
 import PageBientot from './navigation/PageBientot.jsx';
 import { CHEMIN_MISE_A_JOUR } from './navigation/rappel.js';
-import { CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
+import BoiteScpi from './outils/BoiteScpi.jsx';
+import { CHEMIN_BOITE_SCPI, CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
 import { formulairesPassables } from './outils/passerFormulaires.js';
 import ImportCatalogue from './outils/ImportCatalogue.jsx';
 import Profil from './profil/Profil.jsx';
@@ -189,6 +190,8 @@ export default function Routeur({ passer = formulairesPassables() }) {
         <Route path="/indicateurs" element={<Indicateurs />} />
         {/* Outil de test de l'import du catalogue (dev et poste uniquement, sans connexion) */}
         <Route path={CHEMIN_IMPORT_CATALOGUE} element={<ImportCatalogue />} />
+        {/* Boîte de réception de la SCPI simulée (societe-gestion ; dev et poste uniquement) */}
+        <Route path={CHEMIN_BOITE_SCPI} element={<BoiteScpi />} />
         {/* Pages légales du pied de page (US-01b) */}
         <Route path="/mentions-legales" element={<MentionsLegales />} />
         <Route path="/contact" element={<Contact />} />

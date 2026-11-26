@@ -16,3 +16,5 @@ export function outilsDeTestVisibles(hostname = location.hostname) {
 }
 
 export const CHEMIN_IMPORT_CATALOGUE = '/outils/import-catalogue';
+// Boîte de réception de la SCPI simulée (backend societe-gestion, US-12)
+export const CHEMIN_BOITE_SCPI = '/outils/societe-gestion';
