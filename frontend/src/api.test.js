@@ -19,4 +19,13 @@ describe('apiBase', () => {
   it('par défaut : host de la page (localhost en test)', () => {
     expect(apiBase()).toBe('/api');
   });
+
+  it('autre backend (societe-gestion) : son préfixe, en local comme en ligne', () => {
+    expect(apiBase('localhost', 'societe-gestion')).toBe('/api/societe-gestion');
+    expect(
+      apiBase('frontend.formation-ba-scpi-invest.dev.check-consulting.net', 'societe-gestion'),
+    ).toBe('https://gateway.formation-ba-scpi-invest.dev.check-consulting.net/societe-gestion');
+    // Nommer le backend principal ne change rien
+    expect(apiBase('localhost', 'backend')).toBe('/api');
+  });
 });

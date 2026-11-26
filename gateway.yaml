@@ -17,9 +17,15 @@ gatewayConfig: |
         rule: "PathPrefix(`/backend`)"
         service: backend
         middlewares: [backend-strip, cors]
+      societe-gestion:
+        rule: "PathPrefix(`/societe-gestion`)"
+        service: societe-gestion
+        middlewares: [societe-gestion-strip, cors]
     middlewares:
       backend-strip:
         stripPrefix: {prefixes: ["/backend"]}
+      societe-gestion-strip:
+        stripPrefix: {prefixes: ["/societe-gestion"]}
       cors:
         headers:
           accessControlAllowOriginList:
@@ -31,3 +37,5 @@ gatewayConfig: |
     services:
       backend:
         loadBalancer: {servers: [{url: "http://backend:80"}]}
+      societe-gestion:
+        loadBalancer: {servers: [{url: "http://societe-gestion:80"}]}

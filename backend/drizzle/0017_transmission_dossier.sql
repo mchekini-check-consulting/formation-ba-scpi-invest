@@ -1,0 +1,2 @@
+ALTER TABLE "dossier_investissement" ADD COLUMN "id_message" uuid DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+CREATE INDEX "dossier_investissement_a_transmettre_idx" ON "dossier_investissement" USING btree ("demande_le") WHERE transmis_le is null;

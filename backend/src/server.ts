@@ -31,6 +31,7 @@ import {
   depotCatalogue,
   depotComparaison,
   depotDemandes,
+  depotTransmission,
   depotFiche,
   depotFiscalite,
   depotInformations,
@@ -51,6 +52,12 @@ import { creerPiecesService } from './kyc/pieces-service.js';
 import { routesKyc } from './kyc/routes.js';
 import { creerKycService } from './kyc/service.js';
 import { stockagePieces } from './kyc/stockage.js';
+import { topics } from './kafka/config.js';
+import { creerCanalKafka } from './kafka/producteur.js';
+import { routesOutilsKafka } from './outils/kafka-routes.js';
+import { creerOutilsKafkaService } from './outils/kafka-service.js';
+import { demarrerTransmission } from './transmission/planification.js';
+import { creerTransmissionService } from './transmission/service.js';
 import { logger } from './logging/logger.js';
 import { migrate } from './migrate.js';
 import { routesOutilsImport } from './outils/routes.js';
@@ -111,6 +118,20 @@ const outilsImport = creerOutilsImportService({
   pod: process.env.HOSTNAME ?? null,
 });
 
+// Canal d'envoi Kafka (src/kafka/) : actif seulement si KAFKA_BOOTSTRAP_SERVERS est
+// renseignée (helm.yaml : dev). Connexion au premier envoi. Utilisé par l'US-12.
+const kafka = creerCanalKafka();
+const outilsKafka = creerOutilsKafkaService({
+  canal: kafka,
+  topic: topics().test,
+  pod: process.env.HOSTNAME ?? null,
+});
+
+// US-12 (SCPI-260) : dossiers « Demande envoyée » transmis à la SCPI partenaire toutes les
+// minutes (désactivé sans Kafka)
+const transmission = creerTransmissionService(depotTransmission(db), kafka, topics().dossier);
+demarrerTransmission(kafka, () => transmission.transmettre());
+
 const port = Number(process.env.PORT ?? 8080);
 createApp(() => db.execute(sql`select 1`), logger, {
   auth: betterAuth,
@@ -129,5 +150,6 @@ createApp(() => db.execute(sql`select 1`), logger, {
     // US-02 : après le Comparateur et le Catalogue (/scpis/filtres, /scpis/recherche...)
     routesFiche(fiche, fournisseur),
     routesOutilsImport(outilsImport),
+    routesOutilsKafka(outilsKafka),
   ],
 }).listen(port, () => logger.info({ port }, 'backend démarré'));

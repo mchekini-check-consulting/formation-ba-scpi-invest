@@ -10,11 +10,12 @@ déploiement, vérification du déploiement.
 
 ## Architecture
 
-| Composant                  | Dossier                      | Stack                                              | Port dans l'image | En local                                                                      |
-| -------------------------- | ---------------------------- | -------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------- |
-| backend(s) `type: backend` | `<name>/` (ex. `backend/`)   | Node / Express / TypeScript / Drizzle (npm, `tsx`) | 8080              | `PORT=<port> npm run dev`, port 8080 pour `backend/`, suivant pour les autres |
-| gateway `type: gateway`    | — (fourni par la plateforme) | Traefik, routes dans `gateway.yaml`                | 80                | pas de gateway : relais du serveur de dev du frontend                         |
-| frontend `type: frontend`  | `frontend/`                  | React / Vite / React Router                        | 8080              | http://localhost:5173 (`npm run dev`)                                         |
+| Composant                  | Dossier                      | Stack                                                         | Port dans l'image | En local                                                                      |
+| -------------------------- | ---------------------------- | ------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------- |
+| backend(s) `type: backend` | `<name>/` (ex. `backend/`)   | Node / Express / TypeScript / Drizzle (npm, `tsx`)            | 8080              | `PORT=<port> npm run dev`, port 8080 pour `backend/`, suivant pour les autres |
+| backend `societe-gestion`  | `societe-gestion/`           | idem ; SCPI partenaire simulée (lit Kafka, outil de test dev) | 8080              | `npm run dev` → 8081, base `docker compose up -d` → 5434                      |
+| gateway `type: gateway`    | — (fourni par la plateforme) | Traefik, routes dans `gateway.yaml`                           | 80                | pas de gateway : relais du serveur de dev du frontend                         |
+| frontend `type: frontend`  | `frontend/`                  | React / Vite / React Router                                   | 8080              | http://localhost:5173 (`npm run dev`)                                         |
 
 URLs, identiques dans les 4 environnements (`dev`, `qualif`, `preprod`, `prod`) :
 

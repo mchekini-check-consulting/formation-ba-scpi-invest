@@ -13,8 +13,9 @@ import {
   text,
   timestamp,
   unique,
+  uuid,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 // Schéma Drizzle : une table par export (pgTable). Après une modification :
 //   npm run db:generate   ->  nouveau fichier SQL dans drizzle/, appliqué au démarrage
@@ -302,6 +303,12 @@ export const dossierInvestissement = pgTable(
     mode: modeInvestissement('mode').notNull().default('ponctuel'),
     statut: statutDossier('statut').notNull().default('demande_envoyee'),
     demandeLe: horodatage('demande_le').notNull().defaultNow(),
+    // US-12 (RG4) : date de transmission à la SCPI partenaire (publication Kafka) ;
+    // vide tant que le dossier n'est pas transmis (RG3 : publié une seule fois)
+    transmisLe: horodatage('transmis_le'),
+    // US-12 : idMessage du message Kafka, fixé à la création du dossier : identique à
+    // chaque nouvelle tentative, la SCPI reconnaît un doublon (règle C3)
+    idMessage: uuid('id_message').notNull().defaultRandom(),
     accuseReceptionLe: horodatage('accuse_reception_le'),
     motifRefus: text('motif_refus'),
     ibanPaiement: text('iban_paiement'),
@@ -311,7 +318,13 @@ export const dossierInvestissement = pgTable(
     jouissanceLe: date('jouissance_le', { mode: 'string' }),
     modifieLe: horodatage('modifie_le').notNull().defaultNow(),
   },
-  (t) => [index('dossier_investissement_utilisateur_id_idx').on(t.utilisateurId)],
+  (t) => [
+    index('dossier_investissement_utilisateur_id_idx').on(t.utilisateurId),
+    // US-12 : dossiers encore à transmettre à la SCPI (lus toutes les minutes)
+    index('dossier_investissement_a_transmettre_idx')
+      .on(t.demandeLe)
+      .where(sql`transmis_le is null`),
+  ],
 );
 
 // ---- Catalogue SCPI (import CSV, src/csv/)
@@ -364,6 +377,10 @@ export const TABLE_SCPI_CATALOG = pgTable('scpi_catalog', {
   // US-07a : empreinte sha256 des valeurs converties de la ligne CSV ; même empreinte au
   // prochain import = SCPI inchangée, rien n'est écrit. Vide pour les SCPI importées avant.
   empreinte: text(),
+  // Code de la SCPI (4 lettres majuscules, unique), généré à l'import à partir du nom
+  // (src/csv/code-scpi.ts) et jamais modifié ensuite : même nom, même code. Utilisé dans
+  // les échanges avec la SCPI partenaire (US-12). Vide pour les SCPI pas encore réimportées.
+  code: text().unique(),
 });
 
 export const TABLE_TAUX_DISTRIBUTION = pgTable(

@@ -42,6 +42,18 @@ applications:
           prod: https://bf34dc064589166d409f8c98a44d39ea.r2.cloudflarestorage.com/scpi/scpi.csv
       - key: CSV_ARCHIVE_DELETE_SOURCE
         value: {dev: false, qualif: false, preprod: false, prod: false}
+      # Kafka partagé de la plateforme (interface : https://kafka.dev.check-consulting.net).
+      # Vide : envoi Kafka désactivé dans cet environnement (le backend fonctionne).
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        value:
+          dev: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092
+          qualif: ""
+          preprod: ""
+          prod: ""
+      - key: KAFKA_TOPIC_TEST
+        value: scpi.outils.test.v1
+      - key: KAFKA_TOPIC_DOSSIER
+        value: scpi.souscription.dossier.v1
     # Variables S3 : toutes les clés du Secret backend-s3 du namespace (créé hors
     # de ce dépôt). optional : le pod démarre aussi là où le Secret n'existe pas.
     envFrom:
@@ -79,3 +91,36 @@ applications:
       enabled: true
       path: /
       stripPrefix: false
+  - name: societe-gestion
+    type: backend
+    image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-scpi-invest/societe-gestion
+    # SCPI partenaire simulée (outil de test, EN-04) : lit les dossiers publiés par
+    # backend sur Kafka (US-12). Exposé par le gateway :
+    #   https://gateway.formation-ba-scpi-invest.<env>.check-consulting.net/societe-gestion/...
+    # Écrit par Kargo (dev automatique ; qualif/preprod/prod : promotion par clic).
+    # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
+    # remplace tout jusqu'à la fin de la ligne.
+    tag:
+      dev: ""
+      qualif: ""
+      preprod: ""
+      prod: ""
+    containerPort: 8080
+    replicas: {dev: 1, qualif: 1, preprod: 2, prod: 2}
+    service:
+      port: 80
+    # Base PostgreSQL societe_gestion : créée et sauvegardée automatiquement
+    database:
+      name: societe_gestion
+    envList:
+      - key: LOG_LEVEL
+        value: {dev: debug, qualif: info, preprod: info, prod: warn}
+      # Kafka partagé de la plateforme : dev seulement (vide : lecture désactivée)
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        value:
+          dev: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092
+          qualif: ""
+          preprod: ""
+          prod: ""
+      - key: KAFKA_TOPIC_DOSSIER
+        value: scpi.souscription.dossier.v1

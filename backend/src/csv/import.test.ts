@@ -14,7 +14,7 @@ import { FichierInvalide, importScpis, numeroter, type BilanImport } from './imp
 
 // Fausse base : enregistre chaque écriture (opération + table + valeurs) ; les SCPI déjà
 // en base sont passées en paramètre ; une SCPI ajoutée reçoit l'id 1, 2, ...
-type Existante = { id: number; nom: string; empreinte: string | null };
+type Existante = { id: number; nom: string; empreinte: string | null; code?: string | null };
 
 function fausseBase(existantes: Existante[] = []) {
   const ecritures: { op: 'insert' | 'update' | 'delete'; table: unknown; valeurs?: unknown }[] = [];
@@ -130,6 +130,7 @@ describe('importScpis', () => {
 
     expect(resultat).toEqual(bilan({ ajoutees: 1 }));
     const insertions = base.insertions;
+    expect(insertions[0].valeurs).toMatchObject({ code: 'TREU' });
     expect(insertions.map((i) => i.table)).toEqual([
       TABLE_SCPI_CATALOG,
       TABLE_TAUX_DISTRIBUTION,
@@ -349,12 +350,52 @@ describe('importScpis', () => {
 
   it('SCPI en base avec la même empreinte : inchangée, aucune écriture', async () => {
     const ligne = ligneCsv({ Nom: 'A', prix_part: '200' });
-    const base = fausseBase([{ id: 7, nom: 'A', empreinte: empreinte(convertirLigne(ligne)) }]);
+    const base = fausseBase([
+      { id: 7, nom: 'A', empreinte: empreinte(convertirLigne(ligne)), code: 'AXXX' },
+    ]);
 
     const resultat = await importScpis(base.db, lignes(ligne));
 
     expect(resultat).toEqual(bilan({ inchangees: 1 }));
     expect(base.ecritures).toEqual([]);
+  });
+
+  describe('code SCPI', () => {
+    it('SCPI inchangée sans code (importée avant le code) : seul le code est écrit', async () => {
+      const ligne = ligneCsv({ Nom: 'Iroko Zen' });
+      const base = fausseBase([
+        { id: 7, nom: 'Iroko Zen', empreinte: empreinte(convertirLigne(ligne)), code: null },
+      ]);
+
+      const resultat = await importScpis(base.db, lignes(ligne));
+
+      expect(resultat).toEqual(bilan({ inchangees: 1 }));
+      expect(base.ecritures).toEqual([
+        { op: 'update', table: TABLE_SCPI_CATALOG, valeurs: { code: 'IRZE' } },
+      ]);
+    });
+
+    it('SCPI mise à jour : garde son code, même si la règle en donnerait un autre', async () => {
+      const base = fausseBase([{ id: 7, nom: 'Iroko Zen', empreinte: 'ancienne', code: 'ABCD' }]);
+
+      await importScpis(base.db, lignes(ligneCsv({ Nom: 'Iroko Zen' })));
+
+      expect(base.ecritures[0]).toMatchObject({ op: 'update', valeurs: { code: 'ABCD' } });
+    });
+
+    it('nouvelle SCPI : code libre, différent de ceux déjà en base', async () => {
+      const base = fausseBase([{ id: 7, nom: 'Epargne Pierre', empreinte: null, code: 'EPPI' }]);
+
+      await importScpis(
+        base.db,
+        lignes(ligneCsv({ Nom: 'Epargne Pierre' }), ligneCsv({ Nom: 'Epargne Pierre Europe' })),
+      );
+
+      const codes = base.ecritures
+        .filter((e) => e.table === TABLE_SCPI_CATALOG)
+        .map((e) => (e.valeurs as { code: string }).code);
+      expect(codes).toEqual(['EPPI', 'EPPE']);
+    });
   });
 
   it('SCPI en base avec une autre empreinte : fiche mise à jour, valeurs remplacées', async () => {
