@@ -3,6 +3,7 @@
 //   GET /messages -> { kafka: { active, connecte, topic, groupe, erreur }, compteurs,
 //                      messages : [{ partition, offset, cle, recuLe, doublon, invalide,
 //                                    message, brut }] } (plus récent d'abord)
+//   POST /accuses  -> accusé de réception envoyé à SCPI Invest (US-13)
 // Ouvert sans connexion ; ailleurs qu'en dev, le backend répond 404.
 import { apiBase } from '../api.js';
 
@@ -14,6 +15,25 @@ export async function lireMessages(base = apiBase(location.hostname, BACKEND)) {
     throw new Error(`La société de gestion ne répond pas (${reponse.status}).`);
   }
   return reponse.json();
+}
+
+// US-13 : la SCPI envoie l'accusé de réception d'un dossier à SCPI Invest
+//   POST /accuses { idDossier, variante: normal | doublon | invalide } -> 201 { message }
+export async function envoyerAccuse(
+  idDossier,
+  variante = 'normal',
+  base = apiBase(location.hostname, BACKEND),
+) {
+  const reponse = await fetch(`${base}/accuses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idDossier, variante }),
+  });
+  const corps = await reponse.json().catch(() => ({}));
+  if (!reponse.ok) {
+    throw new Error(corps.message ?? `La société de gestion ne répond pas (${reponse.status}).`);
+  }
+  return corps.message;
 }
 
 // ---- Affichage (BoiteScpi.jsx) --------------------------------------------------------

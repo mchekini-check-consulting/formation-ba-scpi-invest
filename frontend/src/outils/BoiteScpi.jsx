@@ -1,13 +1,14 @@
 // Écran de test « Boîte de réception de la SCPI » (dev et poste uniquement, maquette
 // « B · Boîte de réception ») : les messages que SCPI Invest publie vers la SCPI partenaire
 // (topic scpi.souscription.dossier.v1, US-12), tels que la société de gestion simulée
-// (backend societe-gestion) les lit dans Kafka. Seul « Détails » fonctionne : l'accusé de
-// réception (US-13) et la décision (US-14) viendront plus tard.
+// (backend societe-gestion) les lit dans Kafka. « Accusé de réception » (US-13) renvoie
+// l'accusé à SCPI Invest (avec deux variantes pour tester les règles C3 : doublon,
+// message invalide) ; la décision (US-14) viendra plus tard.
 // Les messages contiennent le KYC : identité, coordonnées et email masqués par défaut.
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { EnTete, LienInterne } from '../MiseEnPage.jsx';
-import { date, euros, lireMessages, MASQUE, masquer } from './boiteScpi.js';
+import { date, envoyerAccuse, euros, lireMessages, MASQUE, masquer } from './boiteScpi.js';
 import { outilsDeTestVisibles } from './environnement.js';
 import './boite-scpi.css';
 import './outils.css';
@@ -43,7 +44,11 @@ const LIBELLES = {
 };
 const cle = (m) => `${m.partition}-${m.offset}`;
 
-export default function BoiteScpi({ lire = lireMessages, visible = outilsDeTestVisibles() }) {
+export default function BoiteScpi({
+  lire = lireMessages,
+  envoyer = envoyerAccuse,
+  visible = outilsDeTestVisibles(),
+}) {
   useEffect(() => {
     document.title = 'SCPI Invest+ · Boîte de réception de la SCPI (dev)';
   }, []);
@@ -52,7 +57,7 @@ export default function BoiteScpi({ lire = lireMessages, visible = outilsDeTestV
     <div className="cadre outils boite-scpi">
       <EnTete actions={false} />
       {visible ? (
-        <Boite lire={lire} />
+        <Boite lire={lire} envoyer={envoyer} />
       ) : (
         <section className="outils__ferme">
           <h1 className="titre-section">Outil indisponible dans cet environnement</h1>
@@ -66,7 +71,7 @@ export default function BoiteScpi({ lire = lireMessages, visible = outilsDeTestV
   );
 }
 
-function Boite({ lire }) {
+function Boite({ lire, envoyer }) {
   const requete = useQuery({ queryKey: ['outils', 'boite-scpi'], queryFn: () => lire() });
   const [recherche, setRecherche] = useState('');
   const [choisi, setChoisi] = useState(null);
@@ -140,7 +145,7 @@ function Boite({ lire }) {
             ))}
           </nav>
           <section className="boite-scpi__lecture">
-            {ouvert ? <Lecture key={cle(ouvert)} m={ouvert} /> : null}
+            {ouvert ? <Lecture key={cle(ouvert)} m={ouvert} envoyer={envoyer} /> : null}
           </section>
         </div>
       )}
@@ -218,9 +223,27 @@ function Bientot({ libelle, classe, us }) {
   );
 }
 
-function Lecture({ m }) {
+const RESULTATS = {
+  normal: 'Accusé de réception envoyé',
+  doublon: 'Doublon envoyé (même idMessage) : SCPI Invest doit l’ignorer',
+  invalide: 'Message invalide envoyé (sans dateReception) : SCPI Invest doit le rejeter',
+};
+
+function Lecture({ m, envoyer }) {
   const [details, setDetails] = useState(true);
   const msg = m.message;
+  const idDossier = typeof msg?.idDossier === 'string' ? msg.idDossier : null;
+  const accuse = useMutation({ mutationFn: (variante) => envoyer(idDossier, variante) });
+  const bouton = (variante, libelle, classe) => (
+    <button
+      type="button"
+      className={`btn ${classe}`}
+      disabled={!idDossier || accuse.isPending}
+      onClick={() => accuse.mutate(variante)}
+    >
+      {libelle}
+    </button>
+  );
   return (
     <>
       <div className="boite-scpi__titre">
@@ -245,11 +268,27 @@ function Lecture({ m }) {
           <button type="button" className="btn btn--bleu" onClick={() => setDetails((d) => !d)}>
             {details ? 'Masquer les détails' : 'Détails'}
           </button>
-          <Bientot libelle="Accusé de réception" classe="btn--clair" us="US-13" />
+          {bouton('normal', 'Accusé de réception', 'btn--clair')}
           <Bientot libelle="Accepter" classe="btn--vert" us="US-14" />
           <Bientot libelle="Refuser" classe="btn--rouge" us="US-14" />
         </div>
       </div>
+      <div className="boite-scpi__tests-c3">
+        <span>Tester les règles C3 :</span>
+        {bouton('doublon', 'Renvoyer le dernier accusé (doublon)', 'btn--lien')}
+        {bouton('invalide', 'Accusé invalide', 'btn--lien')}
+      </div>
+      {accuse.isSuccess && (
+        <p className="boite-scpi__succes" role="status">
+          {RESULTATS[accuse.variables]} — idMessage{' '}
+          <span className="boite-scpi__mono">{accuse.data.idMessage}</span>
+        </p>
+      )}
+      {accuse.isError && (
+        <p className="boite-scpi__erreur" role="alert">
+          {accuse.error.message}
+        </p>
+      )}
       {m.invalide ? (
         <pre className="boite-scpi__json">{m.brut}</pre>
       ) : (

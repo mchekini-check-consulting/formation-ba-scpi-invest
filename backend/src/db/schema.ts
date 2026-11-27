@@ -327,6 +327,17 @@ export const dossierInvestissement = pgTable(
   ],
 );
 
+// US-13 (SCPI-261), règle commune C3 : idMessage des messages reçus de la SCPI partenaire
+// déjà traités. Écrit dans la même transaction que leur effet sur le dossier : un message
+// dont l'idMessage est déjà là est un doublon, ignoré. Les messages invalides n'y sont pas
+// (rien n'est modifié, ils partent sur le topic d'erreur).
+export const messageRecu = pgTable('message_recu', {
+  // texte : C3 n'impose pas le format UUID à la SCPI
+  idMessage: text('id_message').primaryKey(),
+  topic: text('topic').notNull(),
+  traiteLe: horodatage('traite_le').notNull().defaultNow(),
+});
+
 // ---- Catalogue SCPI (import CSV, src/csv/)
 
 export const frequence = pgEnum('frequence', [
