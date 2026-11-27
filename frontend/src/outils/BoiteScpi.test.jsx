@@ -78,11 +78,11 @@ const DONNEES = {
   ],
 };
 
-function afficher(lire = vi.fn().mockResolvedValue(DONNEES), visible = true) {
+function afficher(lire = vi.fn().mockResolvedValue(DONNEES), visible = true, envoyer = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <BoiteScpi lire={lire} visible={visible} />
+      <BoiteScpi lire={lire} envoyer={envoyer} visible={visible} />
     </QueryClientProvider>,
   );
   return lire;
@@ -106,9 +106,9 @@ describe('boîte de réception de la SCPI (dev)', () => {
     expect(screen.getByText('doublon : même idMessage déjà reçu')).toBeTruthy();
   });
 
-  it('Accusé, Accepter, Refuser : visibles mais inactifs, avec l’US à venir', async () => {
+  it('Accepter, Refuser : visibles mais inactifs, avec l’US à venir', async () => {
     afficher();
-    for (const nom of ['Accusé de réception', 'Accepter', 'Refuser']) {
+    for (const nom of ['Accepter', 'Refuser']) {
       const bouton = await screen.findByRole('button', { name: nom });
       expect(bouton.disabled).toBe(true);
     }
@@ -116,6 +116,44 @@ describe('boîte de réception de la SCPI (dev)', () => {
       'Disponible avec l’US-14',
     );
     expect(screen.getByRole('button', { name: 'Masquer les détails' }).disabled).toBe(false);
+  });
+
+  // US-13
+  it('Accusé de réception : envoyé pour le dossier ouvert, avec son idMessage', async () => {
+    const envoyer = vi.fn().mockResolvedValue({ idMessage: 'acc-1', idDossier: 'D-1041' });
+    afficher(undefined, true, envoyer);
+    fireEvent.click(await screen.findByRole('button', { name: 'Accusé de réception' }));
+    expect(await screen.findByRole('status')).toHaveProperty(
+      'textContent',
+      'Accusé de réception envoyé — idMessage acc-1',
+    );
+    expect(envoyer).toHaveBeenCalledWith('D-1041', 'normal');
+  });
+
+  it.each([
+    ['Renvoyer le dernier accusé (doublon)', 'doublon', 'Doublon envoyé'],
+    ['Accusé invalide', 'invalide', 'Message invalide envoyé'],
+  ])('« %s » : variante %s', async (nom, variante, texte) => {
+    const envoyer = vi.fn().mockResolvedValue({ idMessage: 'acc-1' });
+    afficher(undefined, true, envoyer);
+    fireEvent.click(await screen.findByRole('button', { name: nom }));
+    expect((await screen.findByRole('status')).textContent).toContain(texte);
+    expect(envoyer).toHaveBeenCalledWith('D-1041', variante);
+  });
+
+  it('envoi refusé : message de la société de gestion affiché', async () => {
+    const envoyer = vi.fn().mockRejectedValue(new Error('Aucun accusé déjà envoyé.'));
+    afficher(undefined, true, envoyer);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Renvoyer le dernier accusé (doublon)' }),
+    );
+    expect((await screen.findByRole('alert')).textContent).toBe('Aucun accusé déjà envoyé.');
+  });
+
+  it('message illisible : pas d’accusé possible', async () => {
+    afficher();
+    fireEvent.click(await screen.findByText('message illisible'));
+    expect(screen.getByRole('button', { name: 'Accusé de réception' }).disabled).toBe(true);
   });
 
   it('détails : données personnelles masquées par défaut, puis affichées sur demande', async () => {
