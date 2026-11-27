@@ -1,30 +1,27 @@
-// Suivi d'une demande (/demandes/<id>) : US-11 (SCPI-259) puis US-16 (SCPI-264). Ouvert
-// après « Valider ma demande » avec le message « Votre demande a été transmise… », puis
-// rouvrable par son adresse. Écran adapté à l'étape (choix du BA) :
-//   - juste après la validation : bandeau, message vert et dossier ;
-//   - demande envoyée, reçue, refusée ou investissement actif : la même chose avec la frise
-//     (règle 2) ; message selon le statut : accusé de réception, motif du refus avec un
-//     lien vers le catalogue, date de jouissance (règle 3) (maquettes K et M) ;
-//   - acceptée, en attente de paiement : maquette F, frise et trois cartes « Prochaine
-//     étape », virement (montant, IBAN, BIC, référence, boutons Copier), dossier.
-// Dossier (règle 1) : ordre choisi par le BA à l'US-11.
+// Suivi d'une demande (/demandes/<id>) : US-11 (SCPI-259), US-16 (SCPI-264) puis sa
+// correction. Ouvert après « Valider ma demande », puis rouvrable par son adresse.
+// Un seul écran pour toutes les étapes (maquettes validées par le BA, style de la Fiche) :
+// frise (règle 2), puis trois cartes :
+//   - « Prochaine étape » : ce qui va se passer, texte et étapes numérotées selon le statut ;
+//   - au centre, la carte du statut : les faits du dossier (dates, montant, motif du refus,
+//     coordonnées du virement avec boutons Copier, date de jouissance) (règle 3) ;
+//   - « Votre dossier » (règle 1) : ordre choisi par le BA à l'US-11.
 // Statut lu au chargement de la page (règle 4). Dossier inexistant ou d'un autre
 // investisseur : « Cette demande est introuvable. » (règle 5).
 import { useEffect, useState } from 'react';
-import { useLocation, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { deconnecter } from '../auth.js';
 import { LienInterne } from '../MiseEnPage.jsx';
 import PageApplication from '../navigation/PageApplication.jsx';
 import { formaterEuros, NON_COMMUNIQUE } from '../utils/format.js';
 import { lireDemande } from './api.js';
 import {
-  CONSIGNES_VIREMENT,
+  AUCUNE_ACTION,
+  consignesProchaineEtape,
   etapesFrise,
   formaterDate,
   libelleStatut,
   libelleType,
-  MESSAGE_TRANSMISE,
-  messageDemandeRecue,
   texteProchaineEtape,
 } from './demande.js';
 import { Bandeau, Icone } from './Elements.jsx';
@@ -47,6 +44,8 @@ function dateEtape(id, dossier) {
   if (id === 'demande_recue') return dossier.accuseReceptionLe;
   return null;
 }
+
+const dateOuNc = (iso) => (iso ? formaterDate(iso) : NON_COMMUNIQUE);
 
 // Règle 2 : étapes franchies, étape en cours, étapes à venir
 function Frise({ dossier }) {
@@ -88,12 +87,63 @@ function Tuile({ nom, ton }) {
   );
 }
 
-function Lignes({ lignes }) {
+// En-tête d'une carte : tuile en dégradé (comme les chiffres clés de la Fiche), surtitre
+// éventuel et titre
+function Entete({ id, icone, ton, surtitre, titre }) {
   return (
-    <dl className="suivi__lignes">
-      {lignes.map(([libelle, valeur]) => (
-        <div key={libelle} className="suivi__ligne">
-          <dt>{libelle}</dt>
+    <div className="suivi__entete">
+      <Tuile nom={icone} ton={ton} />
+      <div>
+        {surtitre && <p className={`suivi__surtitre suivi__surtitre--${ton}`}>{surtitre}</p>}
+        <h2 id={id} className="suivi__titre">
+          {titre}
+        </h2>
+      </div>
+    </div>
+  );
+}
+
+function ProchaineEtape({ statut }) {
+  return (
+    <section className="suivi__carte" aria-labelledby="prochaine-etape">
+      <Entete id="prochaine-etape" icone="suite" ton="violet" titre="Prochaine étape" />
+      <p className="suivi__texte">{texteProchaineEtape(statut)}</p>
+      <ol className="suivi__consignes">
+        {consignesProchaineEtape(statut).map((consigne, i) => (
+          <li key={consigne}>
+            <span className="suivi__numero" aria-hidden="true">
+              {i + 1}
+            </span>
+            {consigne}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function Montant({ libelle, valeur, ton }) {
+  return (
+    <p className={`suivi__montant suivi__montant--${ton}`}>
+      <span>{libelle}</span>
+      <strong>{formaterEuros(valeur)}</strong>
+    </p>
+  );
+}
+
+// Lignes de faits de la carte du statut : petite icône colorée, libellé, valeur (comme les
+// conditions de la Fiche)
+function Faits({ faits }) {
+  return (
+    <dl className="suivi__faits">
+      {faits.map(([icone, ton, libelle, valeur]) => (
+        <div key={libelle} className="suivi__fait">
+          <dt>
+            <span className={`suivi__fait-icone suivi__fait-icone--${ton}`} aria-hidden="true">
+              <Icone nom={icone} />
+            </span>
+            {libelle}
+          </dt>
           <dd>{valeur}</dd>
         </div>
       ))}
@@ -101,32 +151,8 @@ function Lignes({ lignes }) {
   );
 }
 
-function ProchaineEtape({ statut }) {
-  return (
-    <section className="suivi__carte" aria-labelledby="prochaine-etape">
-      <Tuile nom="suite" ton="bleu" />
-      <h2 id="prochaine-etape" className="suivi__titre">
-        Prochaine étape
-      </h2>
-      <p className="suivi__texte">{texteProchaineEtape(statut)}</p>
-      {statut === 'acceptee_attente_paiement' && (
-        <ol className="suivi__consignes">
-          {CONSIGNES_VIREMENT.map((consigne, i) => (
-            <li key={consigne}>
-              <span className="suivi__numero" aria-hidden="true">
-                {i + 1}
-              </span>
-              {consigne}
-            </li>
-          ))}
-        </ol>
-      )}
-    </section>
-  );
-}
-
-// Règle 3, dossier accepté : montant à virer, IBAN, BIC et référence, chacun copiable
-function CarteVirement({ paiement, copier }) {
+// Coordonnées du virement, chacune copiable
+function Coordonnees({ paiement, copier }) {
   const [copie, setCopie] = useState('');
   const coordonnees = [
     ['IBAN', paiement.iban, 'Copier l’IBAN'],
@@ -142,91 +168,162 @@ function CarteVirement({ paiement, copier }) {
   }
 
   return (
-    <section className="suivi__carte suivi__carte--large" aria-labelledby="carte-statut">
-      <Tuile nom="virement" ton="vert" />
-      <p className="suivi__surtitre">Ce qui est attendu de vous</p>
-      <h2 id="carte-statut" className="suivi__titre">
-        Effectuez votre virement
-      </h2>
-      <p className="suivi__montant">
-        <span>Montant à virer</span>
-        <strong>{formaterEuros(paiement.montant)}</strong>
-      </p>
-      <dl className="suivi__coordonnees">
-        {coordonnees.map(([libelle, valeur, action]) => (
-          <div key={libelle} className="suivi__coordonnee">
-            <div>
-              <dt>{libelle}</dt>
-              <dd>{valeur ?? NON_COMMUNIQUE}</dd>
-            </div>
-            {valeur && (
-              <button
-                type="button"
-                className="suivi__copier"
-                aria-label={action}
-                onClick={() => copierValeur(libelle, valeur)}
-              >
-                {copie === libelle ? 'Copié' : 'Copier'}
-              </button>
-            )}
+    <dl className="suivi__coordonnees">
+      {coordonnees.map(([libelle, valeur, action]) => (
+        <div key={libelle} className="suivi__coordonnee">
+          <div>
+            <dt>{libelle}</dt>
+            <dd>{valeur ?? NON_COMMUNIQUE}</dd>
           </div>
-        ))}
-      </dl>
-      <p className="suivi__note">
-        Indiquez la référence dans le libellé du virement. Le statut passera à « Investissement
-        actif » quand la SCPI aura reçu votre paiement.
-      </p>
-    </section>
+          {valeur && (
+            <button
+              type="button"
+              className="suivi__copier"
+              aria-label={action}
+              onClick={() => copierValeur(libelle, valeur)}
+            >
+              {copie === libelle ? 'Copié' : 'Copier'}
+            </button>
+          )}
+        </div>
+      ))}
+    </dl>
   );
 }
 
-// Message de l'écran simple (règle 3), vert sauf pour un refus (maquettes K et M)
-function MessageStatut({ dossier, transmise }) {
-  if (!transmise && dossier.statut === 'refusee') {
-    return (
-      <div className="investir__transmise suivi__message--refus" role="status">
-        <span aria-hidden="true">
-          <Icone nom="alerte" />
-        </span>
-        <p>
-          La SCPI n’a pas accepté votre demande. Motif :{' '}
-          <strong>{dossier.motifRefus ?? NON_COMMUNIQUE}</strong>.
-        </p>
-        <LienInterne to="/catalogue" className="suivi__message-lien">
-          Choisir une autre SCPI →
-        </LienInterne>
-      </div>
-    );
-  }
-  let message = MESSAGE_TRANSMISE;
-  let date = null;
-  if (!transmise && dossier.statut === 'investissement_actif') {
-    message = 'Votre investissement est actif : vos parts vous appartiennent.';
-    if (dossier.jouissanceLe) date = formaterDate(dossier.jouissanceLe);
-  } else if (!transmise && dossier.statut === 'demande_recue' && dossier.accuseReceptionLe) {
-    message = messageDemandeRecue(formaterDate(dossier.accuseReceptionLe));
+const FAIT_ENVOYEE = (dossier) => [
+  'valide',
+  'turquoise',
+  'Envoyée à la SCPI',
+  formaterDate(dossier.demandeLe),
+];
+
+// Règle 3 : la carte du centre, selon le statut
+function CarteStatut({ dossier, copier }) {
+  const entete = { id: 'carte-statut' };
+  let corps;
+  switch (dossier.statut) {
+    case 'demande_recue':
+      Object.assign(entete, {
+        icone: 'loupe',
+        ton: 'bleu',
+        surtitre: 'Où en est votre demande',
+        titre: 'La SCPI étudie votre demande',
+      });
+      corps = (
+        <>
+          <Montant libelle="Montant demandé" valeur={dossier.montant} ton="bleu" />
+          <Faits
+            faits={[
+              FAIT_ENVOYEE(dossier),
+              ['valide', 'turquoise', 'Reçue par la SCPI', dateOuNc(dossier.accuseReceptionLe)],
+              ['horloge', 'bleu', 'Décision de la SCPI', 'En cours d’étude'],
+            ]}
+          />
+          <p className="suivi__note">{AUCUNE_ACTION}</p>
+        </>
+      );
+      break;
+    case 'acceptee_attente_paiement': {
+      const paiement = dossier.paiement ?? {
+        montant: dossier.montant,
+        iban: null,
+        bic: null,
+        reference: null,
+      };
+      Object.assign(entete, {
+        icone: 'virement',
+        ton: 'turquoise',
+        surtitre: 'Ce qui est attendu de vous',
+        titre: 'Effectuez votre virement',
+      });
+      corps = (
+        <>
+          <Montant libelle="Montant à virer" valeur={paiement.montant} ton="turquoise" />
+          <Coordonnees paiement={paiement} copier={copier} />
+        </>
+      );
+      break;
+    }
+    case 'refusee':
+      Object.assign(entete, {
+        icone: 'alerte',
+        ton: 'rose',
+        surtitre: 'Décision de la SCPI',
+        titre: 'Votre demande n’a pas été acceptée',
+      });
+      corps = (
+        <>
+          <p className="suivi__motif">
+            <span>Motif du refus</span>
+            <strong>{dossier.motifRefus ?? NON_COMMUNIQUE}</strong>
+          </p>
+          <Faits faits={[['virement', 'orange', 'Virement à faire', 'Aucun']]} />
+          <LienInterne to="/catalogue" className="suivi__bouton">
+            Choisir une autre SCPI →
+          </LienInterne>
+        </>
+      );
+      break;
+    case 'investissement_actif':
+      Object.assign(entete, {
+        icone: 'valide',
+        ton: 'turquoise',
+        surtitre: 'Votre investissement',
+        titre: 'Votre investissement est actif',
+      });
+      corps = (
+        <>
+          <Montant libelle="Montant investi" valeur={dossier.montant} ton="turquoise" />
+          <Faits
+            faits={[
+              ['virement', 'turquoise', 'Paiement reçu par la SCPI', 'Oui'],
+              ['usufruit', 'violet', 'Date d’entrée en jouissance', dateOuNc(dossier.jouissanceLe)],
+              ['pleine_propriete', 'bleu', 'Parts détenues', dossier.nombreParts],
+            ]}
+          />
+        </>
+      );
+      break;
+    default:
+      // Demande envoyée (et statut inconnu de l'écran : rien de plus n'est affirmé)
+      Object.assign(entete, {
+        icone: 'envoi',
+        ton: 'bleu',
+        surtitre: 'Où en est votre demande',
+        titre:
+          dossier.statut === 'demande_envoyee'
+            ? 'Votre demande a été transmise'
+            : libelleStatut(dossier.statut),
+      });
+      corps = (
+        <>
+          <Montant libelle="Montant demandé" valeur={dossier.montant} ton="bleu" />
+          {dossier.statut === 'demande_envoyee' && (
+            <>
+              <Faits
+                faits={[
+                  FAIT_ENVOYEE(dossier),
+                  ['horloge', 'bleu', 'Accusé de réception', 'En attente'],
+                ]}
+              />
+              <p className="suivi__note">{AUCUNE_ACTION}</p>
+            </>
+          )}
+        </>
+      );
   }
   return (
-    <div className="investir__transmise" role="status">
-      <span aria-hidden="true">
-        <Icone nom="valide" />
-      </span>
-      <p>
-        {message}
-        {date && (
-          <>
-            {' '}
-            Date d’entrée en jouissance : <strong>{date}</strong>.
-          </>
-        )}
-      </p>
-    </div>
+    <section className="suivi__carte suivi__carte--large" aria-labelledby="carte-statut">
+      <Entete {...entete} />
+      {corps}
+    </section>
   );
 }
 
 // Règle 1 : le dossier (ordre choisi par le BA à l'US-11), avec l'accusé de réception s'il
 // est connu
-function Dossier({ dossier, simple = false }) {
+function Dossier({ dossier }) {
   const lignes = [
     ['Numéro de dossier', dossier.numero],
     ['Prix de part', formaterEuros(dossier.prixPart)],
@@ -242,20 +339,17 @@ function Dossier({ dossier, simple = false }) {
   }
   return (
     <section className="suivi__carte" aria-labelledby="dossier">
-      {!simple && <Tuile nom="dossier" ton="sable" />}
-      <h2 id="dossier" className="suivi__titre">
-        Votre dossier
-      </h2>
-      <Lignes lignes={lignes} />
+      <Entete id="dossier" icone="dossier" ton="orange" titre="Votre dossier" />
+      <dl className="suivi__lignes">
+        {lignes.map(([libelle, valeur]) => (
+          <div key={libelle} className="suivi__ligne">
+            <dt>{libelle}</dt>
+            <dd>{valeur}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
-}
-
-// Écran adapté à l'étape (choix du BA) : écran complet (maquette F : frise et trois cartes)
-// seulement quand l'investisseur a un virement à faire. Sinon écran simple : message et
-// dossier, avec la frise sauf juste après « Valider ma demande ».
-function ecranComplet(dossier, transmise) {
-  return !transmise && dossier.statut === 'acceptee_attente_paiement' && dossier.paiement;
 }
 
 export default function SuiviDemande({
@@ -266,7 +360,6 @@ export default function SuiviDemande({
   copier = copierTexte,
 }) {
   const { id } = useParams();
-  const transmise = useLocation().state?.transmise === true;
   const [etat, setEtat] = useState({ id: null, dossier: null, erreur: '' });
 
   useEffect(() => {
@@ -295,7 +388,7 @@ export default function SuiviDemande({
       gerant={dossier.gerant}
       titre={`Suivi de ma demande · ${dossier.scpiNom}`}
       pastille={libelleStatut(dossier.statut)}
-      pastilleClasse="investir__statut"
+      pastilleClasse={`investir__statut investir__statut--${dossier.statut}`}
       montant={dossier.montant}
     />
   );
@@ -318,19 +411,12 @@ export default function SuiviDemande({
         </div>
       )}
       {!dossier && !erreur && <p className="compte__texte">Chargement…</p>}
-      {dossier && !ecranComplet(dossier, transmise) && (
-        <div className="fiche investir suivi--simple">
-          {!transmise && <Frise dossier={dossier} />}
-          <MessageStatut dossier={dossier} transmise={transmise} />
-          <Dossier dossier={dossier} simple />
-        </div>
-      )}
-      {dossier && ecranComplet(dossier, transmise) && (
+      {dossier && (
         <div className="fiche investir">
           <Frise dossier={dossier} />
           <div className="suivi__cartes">
             <ProchaineEtape statut={dossier.statut} />
-            <CarteVirement paiement={dossier.paiement} copier={copier} />
+            <CarteStatut dossier={dossier} copier={copier} />
             <Dossier dossier={dossier} />
           </div>
         </div>

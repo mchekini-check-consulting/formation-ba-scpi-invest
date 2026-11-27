@@ -32,8 +32,6 @@ export const PRIX_INCONNU =
 // Refus du backend (403) : KYC pas encore validé, la demande n'est pas enregistrée
 export const KYC_NON_VALIDE =
   'Votre KYC doit être validé avant de pouvoir investir. Complétez-le pour envoyer votre demande.';
-export const MESSAGE_TRANSMISE =
-  'Votre demande a été transmise à la SCPI. Vous serez informé par mail de sa décision.';
 
 export const libelleType = (id) => TYPES.find((t) => t.id === id)?.libelle ?? id;
 export const libelleStatut = (id) => STATUTS[id] ?? id;
@@ -106,28 +104,53 @@ export function etapesFrise(statut) {
   });
 }
 
-// Maquette F (choix du BA) : carte « Prochaine étape », un texte par statut ; consignes
-// numérotées seulement quand l'investisseur a quelque chose à faire (virement).
+// Carte « Prochaine étape » (correction de l'US-16, maquettes validées par le BA) : ce qui
+// va se passer, un texte et des étapes numérotées par statut. La carte du centre donne les
+// faits du dossier (dates, montant, motif, coordonnées) : les deux ne se répètent pas.
 export const PROCHAINE_ETAPE = {
-  demande_envoyee:
-    'Votre demande a été transmise à la SCPI. Elle vous confirmera sa réception, puis vous informera par mail de sa décision.',
-  demande_recue:
-    'La SCPI a bien reçu votre demande et l’étudie. Vous serez informé par mail de sa décision.',
-  acceptee_attente_paiement:
-    'Votre demande a été acceptée par la SCPI. Faites le virement indiqué : dès sa réception, votre investissement deviendra actif.',
-  refusee:
-    'La SCPI n’a pas accepté votre demande. Vous pouvez choisir une autre SCPI dans le catalogue.',
-  investissement_actif: 'Votre investissement est actif : vos parts vous appartiennent.',
+  demande_envoyee: {
+    texte: 'La SCPI va confirmer la réception de votre demande, puis l’étudier.',
+    consignes: [
+      'La SCPI confirme la réception de votre demande.',
+      'Elle étudie votre dossier.',
+      'Vous recevez sa décision par mail.',
+    ],
+  },
+  demande_recue: {
+    texte: 'Vous serez informé par mail de la décision de la SCPI.',
+    consignes: [
+      'La SCPI étudie votre dossier.',
+      'Vous recevez sa décision par mail.',
+      'Si elle accepte, les coordonnées du virement s’affichent sur cet écran.',
+    ],
+  },
+  acceptee_attente_paiement: {
+    texte:
+      'Votre demande a été acceptée par la SCPI. Faites le virement indiqué : dès sa réception, votre investissement deviendra actif.',
+    consignes: [
+      'Faites un virement depuis votre banque vers l’IBAN de la SCPI.',
+      'Indiquez la référence du virement dans son libellé.',
+      'À réception, votre investissement devient actif.',
+    ],
+  },
+  refusee: {
+    texte: 'Cette demande est close. Vous pouvez investir dans une autre SCPI.',
+    consignes: [
+      'Lisez le motif du refus indiqué par la SCPI.',
+      'Choisissez une autre SCPI dans le catalogue.',
+      'Envoyez une nouvelle demande.',
+    ],
+  },
+  investissement_actif: {
+    texte: 'Cette demande est terminée : il n’y a plus rien à faire.',
+    consignes: [
+      'Vos parts sont à votre nom depuis la date d’entrée en jouissance.',
+      'Vous pouvez investir dans une autre SCPI du catalogue.',
+    ],
+  },
 };
 
-export const CONSIGNES_VIREMENT = [
-  'Faites un virement depuis votre banque vers l’IBAN de la SCPI.',
-  'Indiquez la référence du virement dans son libellé.',
-  'À réception, votre investissement devient actif.',
-];
+export const texteProchaineEtape = (statut) => PROCHAINE_ETAPE[statut]?.texte ?? '';
+export const consignesProchaineEtape = (statut) => PROCHAINE_ETAPE[statut]?.consignes ?? [];
 
-export const texteProchaineEtape = (statut) => PROCHAINE_ETAPE[statut] ?? '';
-
-// Message vert de l'écran simple, pour une demande reçue (date de l'accusé de réception)
-export const messageDemandeRecue = (date) =>
-  `La SCPI a bien reçu votre demande le ${date}. Elle l’analyse et vous informera par mail de sa décision.`;
+export const AUCUNE_ACTION = 'Aucune action de votre part n’est nécessaire pour le moment.';
