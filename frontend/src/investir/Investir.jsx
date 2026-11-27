@@ -5,7 +5,7 @@
 //   - nombre de parts (chiffres seulement), jauge du minimum, type d'investissement ;
 //   - récapitulatif mis à jour pendant la saisie, montant dans le bandeau ;
 //   - « Valider ma demande » (inactif tant que la saisie est refusée) crée le dossier puis
-//     ouvre son suivi (/demandes/<id>) avec le message « Votre demande a été transmise… ».
+//     ouvre son suivi (/demandes/<id>), au statut « Demande envoyée ».
 // Les règles sont refaites par le backend (backend/src/demandes/service.ts).
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';

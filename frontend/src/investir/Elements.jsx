@@ -60,6 +60,20 @@ const ICONES = {
       <path d="M14 2v6h6M8 13h8M8 17h5" />
     </>
   ),
+  // Correction de l'US-16 : carte du statut et ses lignes de faits
+  envoi: <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z" />,
+  loupe: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </>
+  ),
+  horloge: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </>
+  ),
   alerte: (
     <>
       <circle cx="12" cy="12" r="9" />

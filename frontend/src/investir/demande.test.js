@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   chiffresSeulement,
+  consignesProchaineEtape,
   etapesFrise,
+  STATUTS,
   texteProchaineEtape,
   evaluer,
   formaterDate,
@@ -118,9 +120,20 @@ describe('frise du suivi (US-16, règle 2)', () => {
   });
 });
 
-describe('textes du suivi (US-16, maquette F)', () => {
+describe('textes du suivi (correction de l’US-16)', () => {
   it('un texte Prochaine étape par statut, vide si inconnu', () => {
     expect(texteProchaineEtape('acceptee_attente_paiement')).toContain('acceptée');
     expect(texteProchaineEtape('autre')).toBe('');
+  });
+
+  it('des étapes numérotées pour chaque statut, aucune si inconnu', () => {
+    for (const statut of Object.keys(STATUTS)) {
+      expect(texteProchaineEtape(statut)).not.toBe('');
+      expect(consignesProchaineEtape(statut).length).toBeGreaterThan(0);
+    }
+    expect(consignesProchaineEtape('acceptee_attente_paiement')[1]).toBe(
+      'Indiquez la référence du virement dans son libellé.',
+    );
+    expect(consignesProchaineEtape('autre')).toEqual([]);
   });
 });
