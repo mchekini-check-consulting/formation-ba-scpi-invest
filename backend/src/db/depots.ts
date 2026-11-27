@@ -25,6 +25,7 @@ import type { DepotKyc, EtatKyc } from '../kyc/service.js';
 import type { DepotInformations, Justificatif, LigneHistorique } from '../informations/service.js';
 import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.js';
 import type { DepotOutilsImport } from '../outils/service.js';
+import type { DepotPortefeuille, LigneInvestissement } from '../portefeuille/service.js';
 import type { DossierATransmettre } from '../transmission/message.js';
 import type { DepotAccuseReception } from '../reception/accuse-service.js';
 import type { DepotTransmission } from '../transmission/service.js';
@@ -842,6 +843,37 @@ export function depotDemandes(db: Db): DepotDemandes {
           ),
         );
       return ligne ?? null;
+    },
+  };
+}
+
+// US-20 (SCPI-267) : dossiers de l'investisseur pour son portefeuille (et seulement les
+// siens, EN-02 règle 3), avec la société de gestion (null si la SCPI a été retirée du
+// catalogue) et le dernier taux de distribution connu de la SCPI (revenus mensuels, C6)
+export function depotPortefeuille(db: Db): DepotPortefeuille {
+  return {
+    async investissements(utilisateurId) {
+      const { rows } = await db.execute<LigneInvestissement>(sql`
+        select d.id::float8 as id,
+               d.scpi_id as "scpiId",
+               d.scpi_nom as "scpiNom",
+               c.gerant,
+               d.nombre_parts as "nombreParts",
+               d.montant::float8 as montant,
+               d.type,
+               d.mode,
+               d.statut,
+               d.demande_le as "demandeLe",
+               d.jouissance_le::text as "jouissanceLe",
+               d.reference_virement as "referenceVirement",
+               d.motif_refus as "motifRefus",
+               (select t.taux::float8 from scpi_taux_distribution t
+                 where t.scpi_id = d.scpi_id
+                 order by t.annee desc nulls last, t.id desc limit 1) as "tauxDistribution"
+        from dossier_investissement d
+        left join scpi_catalog c on c.id = d.scpi_id
+        where d.utilisateur_id = ${utilisateurId}`);
+      return rows.map((ligne) => ({ ...ligne, demandeLe: new Date(ligne.demandeLe) }));
     },
   };
 }
