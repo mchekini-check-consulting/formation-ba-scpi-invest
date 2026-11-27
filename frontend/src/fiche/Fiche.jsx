@@ -6,7 +6,11 @@
 // SCPI absente du référentiel : message « n'est plus / pas disponible » et lien vers le
 // Catalogue. « Retour au catalogue » retrouve la recherche, les filtres, le tri et la page
 // (gardés par le Catalogue : catalogue/etat.js et filtres.js).
-import { useEffect, useMemo, useState } from 'react';
+// Chargement : l'écran attend la fiche (useSuspenseQuery). Ouvert depuis le Catalogue
+// (navigation dans startTransition, main.jsx), le Catalogue reste affiché jusqu'à ce que
+// la fiche soit prête : pas d'écran « Fiche SCPI » vide avant la fiche complète.
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router';
 import { deconnecter } from '../auth.js';
 import { LienInterne } from '../MiseEnPage.jsx';
@@ -431,30 +435,29 @@ export default function Fiche({
   chargerIdentite,
 }) {
   const { id } = useParams();
-  const [etat, setEtat] = useState({ id: null, fiche: null, absente: null, alerte: '' });
+  // Les erreurs deviennent un résultat (pas d'exception) : messages affichés par l'écran
+  const { data: resultat } = useSuspenseQuery({
+    queryKey: ['fiche', id],
+    queryFn: () =>
+      lire(id)
+        .then((fiche) => ({ fiche }))
+        .catch((err) => {
+          if (err.status === 401) return { connexion: true };
+          if (err.status === 404) return { absente: err.message };
+          return { alerte: err.message };
+        }),
+  });
+  const { fiche, absente, alerte, connexion } = resultat;
 
   useEffect(() => {
-    let actif = true;
-    lire(id)
-      .then((fiche) => actif && setEtat({ id, fiche, absente: null, alerte: '' }))
-      .catch((err) => {
-        if (!actif) return;
-        if (err.status === 401) allerA('/connexion');
-        else if (err.status === 404) setEtat({ id, fiche: null, absente: err.message, alerte: '' });
-        else setEtat({ id, fiche: null, absente: null, alerte: err.message });
-      });
-    return () => {
-      actif = false;
-    };
-  }, [id, lire, allerA]);
+    if (connexion) allerA('/connexion');
+  }, [connexion, allerA]);
 
   async function quitter() {
     await seDeconnecter();
     allerA('/');
   }
 
-  const aJour = etat.id === id;
-  const { fiche, absente, alerte } = aJour ? etat : { fiche: null, absente: null, alerte: '' };
   let bandeau;
   if (fiche) bandeau = <Bandeau fiche={fiche} />;
   else if (absente) bandeau = <Absente message={absente} />;
@@ -472,7 +475,6 @@ export default function Fiche({
           {alerte}
         </p>
       )}
-      {!fiche && !absente && !alerte && <p className="compte__texte">Chargement…</p>}
       {fiche && (
         <div className="fiche">
           <Publicite texte={fiche.publicite} />
