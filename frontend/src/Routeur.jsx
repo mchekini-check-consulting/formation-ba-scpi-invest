@@ -30,6 +30,7 @@ import BoiteScpi from './outils/BoiteScpi.jsx';
 import { CHEMIN_BOITE_SCPI, CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
 import { formulairesPassables } from './outils/passerFormulaires.js';
 import ImportCatalogue from './outils/ImportCatalogue.jsx';
+import Portefeuille from './portefeuille/Portefeuille.jsx';
 import Profil from './profil/Profil.jsx';
 
 // Adresses définitives des écrans du sprint 2 (convention C1), en attente de leur US ;
@@ -38,8 +39,6 @@ const ECRANS_A_VENIR = [
   { chemin: '/simulation', titre: 'Simuler', actif: 'simulation' },
   // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
   { chemin: '/versements/nouveau', titre: 'Programmer un versement', actif: 'versements' },
-  // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
-  { chemin: '/portefeuille', titre: 'Mon portefeuille', actif: 'portefeuille' },
 ];
 
 // Email pré-rempli transmis par l'adresse (?email=...)
@@ -182,6 +181,15 @@ export default function Routeur({ passer = formulairesPassables() }) {
             element={
               <ExigerKycComplete>
                 <InformationsFiscales />
+              </ExigerKycComplete>
+            }
+          />
+          {/* Portefeuille (epic SCPI-247) : US-20 « Mes investissements » */}
+          <Route
+            path="/portefeuille"
+            element={
+              <ExigerKycComplete>
+                <Portefeuille />
               </ExigerKycComplete>
             }
           />
