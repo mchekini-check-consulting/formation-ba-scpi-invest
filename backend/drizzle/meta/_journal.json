@@ -127,6 +127,13 @@
       "when": 1795696879247,
       "tag": "0017_transmission_dossier",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795795334625,
+      "tag": "0018_message_recu",
+      "breakpoints": true
     }
   ]
 }

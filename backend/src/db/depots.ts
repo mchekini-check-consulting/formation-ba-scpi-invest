@@ -26,6 +26,7 @@ import type { DepotInformations, Justificatif, LigneHistorique } from '../inform
 import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.js';
 import type { DepotOutilsImport } from '../outils/service.js';
 import type { DossierATransmettre } from '../transmission/message.js';
+import type { DepotAccuseReception } from '../reception/accuse-service.js';
 import type { DepotTransmission } from '../transmission/service.js';
 import {
   acceptationCgu,
@@ -36,6 +37,7 @@ import {
   justificatif,
   kyc,
   kycPiece,
+  messageRecu,
   parametre,
   profilInvestisseur,
   questionnaireInvestisseur,
@@ -931,6 +933,42 @@ export function depotTransmission(db: Db): DepotTransmission {
         left join scpi_catalog c on c.id = d.scpi_id
         where ${A_TRANSMETTRE} and c.code is null`);
       return rows[0]?.n ?? 0;
+    },
+  };
+}
+
+// US-13 (SCPI-261) : accusé de réception de la SCPI partenaire. Le dossier est verrouillé
+// pendant la transaction (deux accusés traités en même temps ne se mélangent pas).
+export function depotAccuseReception(db: Db): DepotAccuseReception {
+  return {
+    async enregistrer(accuse, topic) {
+      return db.transaction(async (tx) => {
+        const [dossier] = await tx
+          .select({ statut: dossierInvestissement.statut })
+          .from(dossierInvestissement)
+          .where(eq(dossierInvestissement.id, accuse.idDossier))
+          .for('update');
+        if (!dossier) return 'dossier_inconnu';
+
+        // Règle C3 : un idMessage déjà traité n'a aucun effet
+        const nouveau = await tx
+          .insert(messageRecu)
+          .values({ idMessage: accuse.idMessage, topic })
+          .onConflictDoNothing()
+          .returning({ idMessage: messageRecu.idMessage });
+        if (nouveau.length === 0) return 'doublon';
+
+        const avance = dossier.statut === 'demande_envoyee';
+        await tx
+          .update(dossierInvestissement)
+          .set({
+            accuseReceptionLe: accuse.dateReception,
+            ...(avance && { statut: 'demande_recue' as const }),
+            modifieLe: sql`now()`,
+          })
+          .where(eq(dossierInvestissement.id, accuse.idDossier));
+        return avance ? 'statut_change' : 'date_seule';
+      });
     },
   };
 }

@@ -26,6 +26,7 @@ import { s3Client, s3Config, sourceR2, type S3Config } from './csv/source.js';
 import type { S3Client } from '@aws-sdk/client-s3';
 import { creerCompteService } from './comptes/service.js';
 import {
+  depotAccuseReception,
   depotAcceptationsCgu,
   depotTentativesConnexion,
   depotCatalogue,
@@ -52,8 +53,10 @@ import { creerPiecesService } from './kyc/pieces-service.js';
 import { routesKyc } from './kyc/routes.js';
 import { creerKycService } from './kyc/service.js';
 import { stockagePieces } from './kyc/stockage.js';
-import { topics } from './kafka/config.js';
+import { kafkaConfig, topics } from './kafka/config.js';
+import { lireKafka } from './kafka/lecteur.js';
 import { creerCanalKafka } from './kafka/producteur.js';
+import { creerAccuseReceptionService } from './reception/accuse-service.js';
 import { routesOutilsKafka } from './outils/kafka-routes.js';
 import { creerOutilsKafkaService } from './outils/kafka-service.js';
 import { demarrerTransmission } from './transmission/planification.js';
@@ -131,6 +134,23 @@ const outilsKafka = creerOutilsKafkaService({
 // minutes (désactivé sans Kafka)
 const transmission = creerTransmissionService(depotTransmission(db), kafka, topics().dossier);
 demarrerTransmission(kafka, () => transmission.transmettre());
+
+// Messages de la SCPI partenaire (contrat C3), lus en continu (désactivé sans Kafka) :
+// US-13 (SCPI-261) accusé de réception
+const accuses = creerAccuseReceptionService(depotAccuseReception(db), kafka);
+const lecture = lireKafka(
+  { [topics().accuseReception]: (message) => accuses.traiter(message) },
+  kafkaConfig(),
+);
+
+// Arrêt (redéploiement) : le lecteur quitte proprement son groupe Kafka, pour qu'un autre
+// réplica reprenne ses partitions sans attendre ; arrêt forcé au bout de 5 s
+for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+  process.once(signal, () => {
+    setTimeout(() => process.exit(0), 5000).unref();
+    void lecture.arreter().finally(() => process.exit(0));
+  });
+}
 
 const port = Number(process.env.PORT ?? 8080);
 createApp(() => db.execute(sql`select 1`), logger, {
