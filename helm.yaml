@@ -13,7 +13,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 7cf04c8
-      qualif: 59eb5ca
+      qualif: 7cf04c8
       preprod: ""
       prod: ""
     containerPort: 8080
@@ -80,7 +80,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: edceca8
-      qualif: 59eb5ca
+      qualif: edceca8
       preprod: ""
       prod: ""
     containerPort: 8080
@@ -102,7 +102,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 7cf04c8
-      qualif: ""
+      qualif: 7cf04c8
       preprod: ""
       prod: ""
     containerPort: 8080
