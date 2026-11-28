@@ -134,6 +134,13 @@
       "when": 1795795334625,
       "tag": "0018_message_recu",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795828014664,
+      "tag": "0019_parametres_fiscaux",
+      "breakpoints": true
     }
   ]
 }

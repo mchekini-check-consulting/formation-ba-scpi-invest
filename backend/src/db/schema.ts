@@ -266,6 +266,17 @@ export const informationFiscale = pgTable('information_fiscale', {
   misAJourLe: horodatage('mis_a_jour_le').notNull().defaultNow(),
 });
 
+// US-07 (règle 10) : paramètres de l'estimation fiscale, modifiables sans nouveau
+// développement (mise à jour des lignes en base). Valeurs initiales : migration
+// 0019_parametres_fiscaux. Le barème de l'impôt sur le revenu est dans le code
+// (fiscalite/bareme.ts, règle du 27/11/2026).
+// Autres paramètres, en % : prelevements_sociaux (17,2), taux_forfaitaire (30 : sans
+// informations fiscales, et taux présélectionné de la simulation, US-09)
+export const parametreFiscal = pgTable('parametre_fiscal', {
+  cle: text('cle').primaryKey(),
+  valeur: numeric('valeur', { precision: 5, scale: 2 }).notNull(),
+});
+
 // US-11 « Saisir ma demande d'investissement » (SCPI-259), données EN-02 (SCPI-249) :
 // dossier d'investissement, une ligne par demande. Créé au statut demande_envoyee par
 // POST /demandes ; les champs suivants (accusé de réception, refus, paiement, jouissance)

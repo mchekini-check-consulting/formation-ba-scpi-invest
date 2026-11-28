@@ -14,10 +14,14 @@ import { routesDemandes } from './demandes/routes.js';
 import { creerDemandesService } from './demandes/service.js';
 import { routesFiche } from './fiche/routes.js';
 import { creerFicheService } from './fiche/service.js';
+import { creerEstimationService } from './fiscalite/estimation.js';
+import { routesEstimationFiscale } from './fiscalite/routes-estimation.js';
 import { routesFiscalite } from './fiscalite/routes.js';
 import { creerFiscaliteService } from './fiscalite/service.js';
 import { routesPortefeuille } from './portefeuille/routes.js';
 import { creerPortefeuilleService } from './portefeuille/service.js';
+import { routesSimulation } from './simulation/routes.js';
+import { creerSimulationService } from './simulation/service.js';
 import {
   decrirePlanification,
   demarrerImportNocturne,
@@ -36,6 +40,7 @@ import {
   depotDemandes,
   depotTransmission,
   depotFiche,
+  depotEstimation,
   depotFiscalite,
   depotInformations,
   depotKyc,
@@ -44,6 +49,7 @@ import {
   depotPortefeuille,
   depotProfils,
   depotQuestionnaires,
+  depotSimulation,
   secretDesSessions,
 } from './db/depots.js';
 import { createDb, createPool } from './db/index.js';
@@ -90,6 +96,8 @@ const adresses = creerAdressesService();
 const catalogue = creerCatalogueService(depotCatalogue(db));
 // US-04 : SCPI du comparateur
 const comparaison = creerComparaisonService(depotComparaison(db));
+// US-08 (SCPI-257) : SCPI de la simulation
+const simulation = creerSimulationService(depotSimulation(db));
 // US-02 : fiche d'une SCPI
 const fiche = creerFicheService(depotFiche(db));
 // US-04c : fichiers des pièces dans R2 (dépôt indisponible, 503, sans les variables R2)
@@ -98,6 +106,8 @@ const pieces = creerPiecesService(depotKyc(db), depotPieces(db), stockagePieces(
 const informations = creerInformationsService(depotInformations(db), stockagePieces(), fournisseur);
 // US-06 (SCPI-255) : informations fiscales du foyer
 const fiscalite = creerFiscaliteService(depotFiscalite(db));
+// US-07 (SCPI-256) : calcul de l'estimation fiscale, appliqué à la simulation (US-09)
+const estimation = creerEstimationService(depotEstimation(db), depotFiscalite(db));
 // US-11 (SCPI-259) : demandes d'investissement (dossiers)
 const demandes = creerDemandesService(depotDemandes(db));
 // US-20 (SCPI-267) : portefeuille, liste des investissements regroupés par SCPI
@@ -168,10 +178,12 @@ createApp(() => db.execute(sql`select 1`), logger, {
     routesQuestionnaire(questionnaires, fournisseur),
     routesInformations(informations, fournisseur),
     routesFiscalite(fiscalite, fournisseur),
+    routesEstimationFiscale(estimation, fournisseur),
     routesDemandes(demandes, fournisseur),
     routesPortefeuille(portefeuille, fournisseur),
-    // Avant le Catalogue : /scpis/comparables ne doit pas être pris pour une adresse /scpis/<id>
+    // Avant le Catalogue : /scpis/comparables et /scpis/simulables ne doivent pas être pris pour une adresse /scpis/<id>
     routesComparaison(comparaison, fournisseur),
+    routesSimulation(simulation, fournisseur),
     routesCatalogue(catalogue, fournisseur),
     // US-02 : après le Comparateur et le Catalogue (/scpis/filtres, /scpis/recherche...)
     routesFiche(fiche, fournisseur),
