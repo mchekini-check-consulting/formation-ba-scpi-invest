@@ -3,7 +3,7 @@ import { BAREME_2026 } from './bareme.js';
 import { estimer, foyer, partsFiscales, type Parametres } from './calcul.js';
 import type { InformationsFiscales } from './service.js';
 
-// Valeurs de l'US-07 (migration 0016_bareme_fiscal_valeurs)
+// Valeurs de l'US-07 (migration 0019_parametres_fiscaux)
 const PARAMETRES: Parametres = {
   bareme: [
     { plafond: 11600, taux: 0 },

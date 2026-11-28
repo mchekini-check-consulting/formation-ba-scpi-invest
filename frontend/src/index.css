@@ -362,7 +362,8 @@ a {
   z-index: 0;
 }
 
-::view-transition-group(.ecran-entre) {
+::view-transition-group(.ecran-entre),
+::view-transition-group(.fiche-entre) {
   z-index: 1;
 }
 
@@ -379,6 +380,11 @@ a {
 
 ::view-transition-new(.ecran-entre) {
   animation: 0.25s ease-out both ecran-apparait;
+}
+
+/* Fiche d'une SCPI : affichée directement, sans fondu (navigation/transitions.js) */
+::view-transition-new(.fiche-entre) {
+  animation: none;
 }
 
 @keyframes ecran-apparait {

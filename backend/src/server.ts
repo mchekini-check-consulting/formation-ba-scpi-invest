@@ -10,12 +10,16 @@ import { creerCatalogueService } from './catalogue/service.js';
 import { routesComparaison } from './comparaison/routes.js';
 import { creerComparaisonService } from './comparaison/service.js';
 import { routesComptes } from './comptes/routes.js';
+import { routesDemandes } from './demandes/routes.js';
+import { creerDemandesService } from './demandes/service.js';
 import { routesFiche } from './fiche/routes.js';
 import { creerFicheService } from './fiche/service.js';
 import { creerEstimationService } from './fiscalite/estimation.js';
 import { routesEstimationFiscale } from './fiscalite/routes-estimation.js';
 import { routesFiscalite } from './fiscalite/routes.js';
 import { creerFiscaliteService } from './fiscalite/service.js';
+import { routesPortefeuille } from './portefeuille/routes.js';
+import { creerPortefeuilleService } from './portefeuille/service.js';
 import { routesSimulation } from './simulation/routes.js';
 import { creerSimulationService } from './simulation/service.js';
 import {
@@ -28,10 +32,13 @@ import { s3Client, s3Config, sourceR2, type S3Config } from './csv/source.js';
 import type { S3Client } from '@aws-sdk/client-s3';
 import { creerCompteService } from './comptes/service.js';
 import {
+  depotAccuseReception,
   depotAcceptationsCgu,
   depotTentativesConnexion,
   depotCatalogue,
   depotComparaison,
+  depotDemandes,
+  depotTransmission,
   depotFiche,
   depotEstimation,
   depotFiscalite,
@@ -39,6 +46,7 @@ import {
   depotKyc,
   depotOutilsImport,
   depotPieces,
+  depotPortefeuille,
   depotProfils,
   depotQuestionnaires,
   depotSimulation,
@@ -54,6 +62,14 @@ import { creerPiecesService } from './kyc/pieces-service.js';
 import { routesKyc } from './kyc/routes.js';
 import { creerKycService } from './kyc/service.js';
 import { stockagePieces } from './kyc/stockage.js';
+import { kafkaConfig, topics } from './kafka/config.js';
+import { lireKafka } from './kafka/lecteur.js';
+import { creerCanalKafka } from './kafka/producteur.js';
+import { creerAccuseReceptionService } from './reception/accuse-service.js';
+import { routesOutilsKafka } from './outils/kafka-routes.js';
+import { creerOutilsKafkaService } from './outils/kafka-service.js';
+import { demarrerTransmission } from './transmission/planification.js';
+import { creerTransmissionService } from './transmission/service.js';
 import { logger } from './logging/logger.js';
 import { migrate } from './migrate.js';
 import { routesOutilsImport } from './outils/routes.js';
@@ -92,6 +108,10 @@ const informations = creerInformationsService(depotInformations(db), stockagePie
 const fiscalite = creerFiscaliteService(depotFiscalite(db));
 // US-07 (SCPI-256) : calcul de l'estimation fiscale, appliqué à la simulation (US-09)
 const estimation = creerEstimationService(depotEstimation(db), depotFiscalite(db));
+// US-11 (SCPI-259) : demandes d'investissement (dossiers)
+const demandes = creerDemandesService(depotDemandes(db));
+// US-20 (SCPI-267) : portefeuille, liste des investissements regroupés par SCPI
+const portefeuille = creerPortefeuilleService(depotPortefeuille(db));
 
 // US-07a : import du catalogue au démarrage puis chaque nuit à 2h (désactivé sans les variables R2)
 const tacheImport = demarrerImportNocturne(pool, db);
@@ -116,6 +136,37 @@ const outilsImport = creerOutilsImportService({
   pod: process.env.HOSTNAME ?? null,
 });
 
+// Canal d'envoi Kafka (src/kafka/) : actif seulement si KAFKA_BOOTSTRAP_SERVERS est
+// renseignée (helm.yaml : dev). Connexion au premier envoi. Utilisé par l'US-12.
+const kafka = creerCanalKafka();
+const outilsKafka = creerOutilsKafkaService({
+  canal: kafka,
+  topic: topics().test,
+  pod: process.env.HOSTNAME ?? null,
+});
+
+// US-12 (SCPI-260) : dossiers « Demande envoyée » transmis à la SCPI partenaire toutes les
+// minutes (désactivé sans Kafka)
+const transmission = creerTransmissionService(depotTransmission(db), kafka, topics().dossier);
+demarrerTransmission(kafka, () => transmission.transmettre());
+
+// Messages de la SCPI partenaire (contrat C3), lus en continu (désactivé sans Kafka) :
+// US-13 (SCPI-261) accusé de réception
+const accuses = creerAccuseReceptionService(depotAccuseReception(db), kafka);
+const lecture = lireKafka(
+  { [topics().accuseReception]: (message) => accuses.traiter(message) },
+  kafkaConfig(),
+);
+
+// Arrêt (redéploiement) : le lecteur quitte proprement son groupe Kafka, pour qu'un autre
+// réplica reprenne ses partitions sans attendre ; arrêt forcé au bout de 5 s
+for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+  process.once(signal, () => {
+    setTimeout(() => process.exit(0), 5000).unref();
+    void lecture.arreter().finally(() => process.exit(0));
+  });
+}
+
 const port = Number(process.env.PORT ?? 8080);
 createApp(() => db.execute(sql`select 1`), logger, {
   auth: betterAuth,
@@ -128,6 +179,8 @@ createApp(() => db.execute(sql`select 1`), logger, {
     routesInformations(informations, fournisseur),
     routesFiscalite(fiscalite, fournisseur),
     routesEstimationFiscale(estimation, fournisseur),
+    routesDemandes(demandes, fournisseur),
+    routesPortefeuille(portefeuille, fournisseur),
     // Avant le Catalogue : /scpis/comparables et /scpis/simulables ne doivent pas être pris pour une adresse /scpis/<id>
     routesComparaison(comparaison, fournisseur),
     routesSimulation(simulation, fournisseur),
@@ -135,5 +188,6 @@ createApp(() => db.execute(sql`select 1`), logger, {
     // US-02 : après le Comparateur et le Catalogue (/scpis/filtres, /scpis/recherche...)
     routesFiche(fiche, fournisseur),
     routesOutilsImport(outilsImport),
+    routesOutilsKafka(outilsKafka),
   ],
 }).listen(port, () => logger.info({ port }, 'backend démarré'));

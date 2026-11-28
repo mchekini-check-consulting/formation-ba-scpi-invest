@@ -10,7 +10,7 @@
     "test": "vitest run",
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
+    "dev": "node --watch --import tsx/esm --env-file-if-exists=.env src/server.ts",
     "lint": "oxlint src/ test/ && tsc --noEmit",
     "test:cov": "vitest run --coverage",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
@@ -23,6 +23,7 @@
   "type": "module",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
+    "@platformatic/kafka": "^2.19.0",
     "better-auth": "1.7.12",
     "croner": "^11.0.0",
     "csv-parse": "^7.0.3",

@@ -1,6 +1,7 @@
 import {
   bigint,
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -12,8 +13,9 @@ import {
   text,
   timestamp,
   unique,
+  uuid,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 // Schéma Drizzle : une table par export (pgTable). Après une modification :
 //   npm run db:generate   ->  nouveau fichier SQL dans drizzle/, appliqué au démarrage
@@ -266,13 +268,85 @@ export const informationFiscale = pgTable('information_fiscale', {
 
 // US-07 (règle 10) : paramètres de l'estimation fiscale, modifiables sans nouveau
 // développement (mise à jour des lignes en base). Valeurs initiales : migration
-// 0016_bareme_fiscal_valeurs. Le barème de l'impôt sur le revenu est dans le code
-// (fiscalite/bareme.ts, règle du 27/11/2026) : table tranche_bareme retirée (0017).
+// 0019_parametres_fiscaux. Le barème de l'impôt sur le revenu est dans le code
+// (fiscalite/bareme.ts, règle du 27/11/2026).
 // Autres paramètres, en % : prelevements_sociaux (17,2), taux_forfaitaire (30 : sans
 // informations fiscales, et taux présélectionné de la simulation, US-09)
 export const parametreFiscal = pgTable('parametre_fiscal', {
   cle: text('cle').primaryKey(),
   valeur: numeric('valeur', { precision: 5, scale: 2 }).notNull(),
+});
+
+// US-11 « Saisir ma demande d'investissement » (SCPI-259), données EN-02 (SCPI-249) :
+// dossier d'investissement, une ligne par demande. Créé au statut demande_envoyee par
+// POST /demandes ; les champs suivants (accusé de réception, refus, paiement, jouissance)
+// restent vides jusqu'aux US-12 à 16. Statuts dans l'ordre du parcours (C2) ; refusee
+// arrête le parcours. scpi_id sans clé étrangère : un import peut retirer la SCPI du
+// catalogue, le dossier reste (scpi_nom garde son nom). Montants en euros.
+export const statutDossier = pgEnum('statut_dossier', [
+  'demande_envoyee',
+  'demande_recue',
+  'acceptee_attente_paiement',
+  'refusee',
+  'investissement_actif',
+]);
+
+export const typeInvestissement = pgEnum('type_investissement', [
+  'pleine_propriete',
+  'nue_propriete',
+  'usufruit',
+]);
+
+export const modeInvestissement = pgEnum('mode_investissement', ['ponctuel', 'programme']);
+
+export const dossierInvestissement = pgTable(
+  'dossier_investissement',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedByDefaultAsIdentity(),
+    utilisateurId: text('utilisateur_id').notNull(),
+    scpiId: integer('scpi_id').notNull(),
+    scpiNom: text('scpi_nom').notNull(),
+    nombreParts: integer('nombre_parts').notNull(),
+    // prix de part au moment de la demande
+    prixPart: numeric('prix_part', { precision: 10, scale: 2, mode: 'number' }).notNull(),
+    montant: numeric('montant', { precision: 14, scale: 2, mode: 'number' }).notNull(),
+    type: typeInvestissement('type').notNull(),
+    mode: modeInvestissement('mode').notNull().default('ponctuel'),
+    statut: statutDossier('statut').notNull().default('demande_envoyee'),
+    demandeLe: horodatage('demande_le').notNull().defaultNow(),
+    // US-12 (RG4) : date de transmission à la SCPI partenaire (publication Kafka) ;
+    // vide tant que le dossier n'est pas transmis (RG3 : publié une seule fois)
+    transmisLe: horodatage('transmis_le'),
+    // US-12 : idMessage du message Kafka, fixé à la création du dossier : identique à
+    // chaque nouvelle tentative, la SCPI reconnaît un doublon (règle C3)
+    idMessage: uuid('id_message').notNull().defaultRandom(),
+    accuseReceptionLe: horodatage('accuse_reception_le'),
+    motifRefus: text('motif_refus'),
+    ibanPaiement: text('iban_paiement'),
+    bicPaiement: text('bic_paiement'),
+    referenceVirement: text('reference_virement'),
+    paiementLe: horodatage('paiement_le'),
+    jouissanceLe: date('jouissance_le', { mode: 'string' }),
+    modifieLe: horodatage('modifie_le').notNull().defaultNow(),
+  },
+  (t) => [
+    index('dossier_investissement_utilisateur_id_idx').on(t.utilisateurId),
+    // US-12 : dossiers encore à transmettre à la SCPI (lus toutes les minutes)
+    index('dossier_investissement_a_transmettre_idx')
+      .on(t.demandeLe)
+      .where(sql`transmis_le is null`),
+  ],
+);
+
+// US-13 (SCPI-261), règle commune C3 : idMessage des messages reçus de la SCPI partenaire
+// déjà traités. Écrit dans la même transaction que leur effet sur le dossier : un message
+// dont l'idMessage est déjà là est un doublon, ignoré. Les messages invalides n'y sont pas
+// (rien n'est modifié, ils partent sur le topic d'erreur).
+export const messageRecu = pgTable('message_recu', {
+  // texte : C3 n'impose pas le format UUID à la SCPI
+  idMessage: text('id_message').primaryKey(),
+  topic: text('topic').notNull(),
+  traiteLe: horodatage('traite_le').notNull().defaultNow(),
 });
 
 // ---- Catalogue SCPI (import CSV, src/csv/)
@@ -325,6 +399,10 @@ export const TABLE_SCPI_CATALOG = pgTable('scpi_catalog', {
   // US-07a : empreinte sha256 des valeurs converties de la ligne CSV ; même empreinte au
   // prochain import = SCPI inchangée, rien n'est écrit. Vide pour les SCPI importées avant.
   empreinte: text(),
+  // Code de la SCPI (4 lettres majuscules, unique), généré à l'import à partir du nom
+  // (src/csv/code-scpi.ts) et jamais modifié ensuite : même nom, même code. Utilisé dans
+  // les échanges avec la SCPI partenaire (US-12). Vide pour les SCPI pas encore réimportées.
+  code: text().unique(),
 });
 
 export const TABLE_TAUX_DISTRIBUTION = pgTable(

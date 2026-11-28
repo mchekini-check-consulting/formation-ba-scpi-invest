@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { Suspense } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ErreurApi } from '../auth.js';
@@ -76,13 +78,18 @@ async function afficher(adresse = '/catalogue/12', options = {}) {
     ...options,
   };
   await act(async () => {
+    // Suspense : remplace l'écran tant que la fiche n'est pas chargée (Routeur.jsx)
     render(
-      <MemoryRouter initialEntries={[adresse]}>
-        <Routes>
-          <Route path="/catalogue/:id" element={<Fiche {...props} />} />
-          <Route path="*" element={<Adresse />} />
-        </Routes>
-      </MemoryRouter>,
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter initialEntries={[adresse]}>
+          <Suspense fallback={<p>Chargement…</p>}>
+            <Routes>
+              <Route path="/catalogue/:id" element={<Fiche {...props} />} />
+              <Route path="*" element={<Adresse />} />
+            </Routes>
+          </Suspense>
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
   });
   return props;
@@ -268,9 +275,15 @@ describe('Fiche SCPI (US-02)', () => {
     expect(screen.getByRole('alert').textContent).toBe('Service indisponible');
   });
 
-  it('chargement en cours, puis déconnexion depuis le menu', async () => {
-    const props = await afficher('/catalogue/12', { lire: vi.fn(() => new Promise(() => {})) });
+  it('chargement en cours : rien de la fiche affiché (pas d’écran vide « Fiche SCPI »)', async () => {
+    await afficher('/catalogue/12', { lire: vi.fn(() => new Promise(() => {})) });
     expect(texte()).toContain('Chargement…');
+    expect(screen.queryByText('Fiche SCPI')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Menu de l’application' })).toBeNull();
+  });
+
+  it('déconnexion depuis le menu', async () => {
+    const props = await afficher('/catalogue/12');
     const menu = screen.getByRole('navigation', { name: 'Menu de l’application' });
     await act(async () =>
       fireEvent.click(within(menu).getByRole('button', { name: 'Se déconnecter' })),

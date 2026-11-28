@@ -589,6 +589,12 @@
 
 /* --- Bouton du pied de page de l'accueil (dev uniquement, App.jsx) -------- */
 
+.pied__outils {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .pied__dev {
   display: inline-flex;
   align-items: center;

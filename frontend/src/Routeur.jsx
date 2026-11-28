@@ -1,7 +1,7 @@
 // Choix de l'écran selon l'adresse de la page, avec React Router (nginx renvoie
 // index.html pour toute adresse : nginx.conf). Le routeur (BrowserRouter) est posé
 // dans main.jsx ; les tests utilisent MemoryRouter.
-import { useEffect, ViewTransition } from 'react';
+import { Suspense, useEffect, ViewTransition } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router';
 import App from './App.jsx';
 import { EVENEMENT_SESSION_EXPIREE } from './auth.js';
@@ -10,6 +10,8 @@ import Comparateur from './comparaison/Comparateur.jsx';
 import Connexion from './connexion/Connexion.jsx';
 import Fiche from './fiche/Fiche.jsx';
 import InformationsFiscales from './fiscalite/InformationsFiscales.jsx';
+import Investir from './investir/Investir.jsx';
+import SuiviDemande from './investir/SuiviDemande.jsx';
 import { memoriserPage } from './connexion/destination.js';
 import Indicateurs from './Indicateurs.jsx';
 import FormulaireInvestisseur from './investisseur/FormulaireInvestisseur.jsx';
@@ -23,22 +25,20 @@ import Contact from './legal/Contact.jsx';
 import MentionsLegales from './legal/MentionsLegales.jsx';
 import PageBientot from './navigation/PageBientot.jsx';
 import { CHEMIN_MISE_A_JOUR } from './navigation/rappel.js';
-import { CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
+import { classeEntree } from './navigation/transitions.js';
+import BoiteScpi from './outils/BoiteScpi.jsx';
+import { CHEMIN_BOITE_SCPI, CHEMIN_IMPORT_CATALOGUE } from './outils/environnement.js';
 import { formulairesPassables } from './outils/passerFormulaires.js';
 import ImportCatalogue from './outils/ImportCatalogue.jsx';
+import Portefeuille from './portefeuille/Portefeuille.jsx';
 import Profil from './profil/Profil.jsx';
 import Simulation from './simulation/Simulation.jsx';
 
 // Adresses définitives des écrans du sprint 2 (convention C1), en attente de leur US ;
 // actif : entrée du menu marquée sélectionnée
 const ECRANS_A_VENIR = [
-  { chemin: '/investir/:id', titre: 'Investir' },
-  // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
-  { chemin: '/demandes/:id', titre: 'Suivi de ma demande' },
   // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
   { chemin: '/versements/nouveau', titre: 'Programmer un versement', actif: 'versements' },
-  // Titre provisoire (nom de l'écran dans C1), à préciser à la création de la page
-  { chemin: '/portefeuille', titre: 'Mon portefeuille', actif: 'portefeuille' },
 ];
 
 // Email pré-rempli transmis par l'adresse (?email=...)
@@ -65,7 +65,8 @@ function PageConnexion() {
 // investisseur sautés, leurs adresses mènent au Catalogue (connexion toujours exigée)
 export default function Routeur({ passer = formulairesPassables() }) {
   // Changement d'écran animé (<ViewTransition>, réglages dans index.css) : l'écran
-  // quitté s'efface, le nouveau apparaît ; un écran par adresse (key)
+  // quitté s'efface, le nouveau apparaît (sauf la fiche SCPI : navigation/transitions.js) ;
+  // un écran par adresse (key)
   const { pathname } = useLocation();
   // Dernier écran du parcours, pour y revenir après une reconnexion (destination.js)
   useEffect(() => {
@@ -80,115 +81,153 @@ export default function Routeur({ passer = formulairesPassables() }) {
     return () => window.removeEventListener(EVENEMENT_SESSION_EXPIREE, versConnexion);
   }, [naviguer]);
   return (
-    <ViewTransition key={pathname} enter="ecran-entre" exit="ecran-sort" default="none">
-      <Routes>
-        <Route path="/inscription" element={<PageInscription />} />
-        <Route path="/connexion" element={<PageConnexion />} />
-        <Route
-          path="/connaissance-client"
-          element={passer ? <Navigate to="/catalogue" replace /> : <Kyc />}
-        />
-        {/* Ancienne adresse du KYC (favoris, liens déjà envoyés) */}
-        <Route path="/kyc" element={<Navigate to="/connaissance-client" replace />} />
-        {/* Écrans de l'application : session et KYC validé exigés (US-04b) */}
-        <Route
-          path="/formulaire-investisseur"
-          element={
-            passer ? (
-              <Navigate to="/catalogue" replace />
-            ) : (
-              <ExigerKycComplete>
-                <FormulaireInvestisseur />
-              </ExigerKycComplete>
-            )
-          }
-        />
-        {/* Catalogue : profil investisseur validé exigé en plus (Catalogue.jsx, US-05b) */}
-        <Route
-          path="/catalogue"
-          element={
-            <ExigerKycComplete>
-              <Catalogue />
-            </ExigerKycComplete>
-          }
-        />
-        {/* Fiche d'une SCPI (US-02), ouverte par « En savoir plus » du Catalogue */}
-        <Route
-          path="/catalogue/:id"
-          element={
-            <ExigerKycComplete>
-              <Fiche />
-            </ExigerKycComplete>
-          }
-        />
-        {/* Comparateur (US-04) : SCPI pré-sélectionnées par ?scpi=<id>,<id>,<id> (C1) */}
-        <Route
-          path="/comparaison"
-          element={
-            <ExigerKycComplete>
-              <Comparateur />
-            </ExigerKycComplete>
-          }
-        />
-        {/* Simulation (US-08) : lignes pré-remplies par ?scpi=<id>:<parts>,… (C1) */}
-        <Route
-          path="/simulation"
-          element={
-            <ExigerKycComplete>
-              <Simulation />
-            </ExigerKycComplete>
-          }
-        />
-        {/* Page Profil, en lecture seule : ouverte par les initiales de la sidebar */}
-        <Route
-          path="/profil"
-          element={
-            <ExigerKycComplete>
-              <Profil />
-            </ExigerKycComplete>
-          }
-        />
-        {/* Mise à jour du profil investisseur (US-05d), non bloquante */}
-        <Route
-          path={CHEMIN_MISE_A_JOUR}
-          element={
-            <ExigerKycComplete>
-              <MiseAJourProfil />
-            </ExigerKycComplete>
-          }
-        />
-        {/* Mes informations fiscales (US-06, SCPI-255) : « Infos fiscales » en bas du menu */}
-        <Route
-          path="/fiscalite"
-          element={
-            <ExigerKycComplete>
-              <InformationsFiscales />
-            </ExigerKycComplete>
-          }
-        />
-        {/* Écrans du sprint 2 pas encore développés (EN-03) */}
-        {ECRANS_A_VENIR.map(({ chemin, titre, actif }) => (
+    // Suspense hors de la transition : un écran qui attend ses données (Fiche) laisse
+    // l'écran précédent affiché jusqu'à ce qu'il soit prêt (navigation dans startTransition)
+    <Suspense fallback={null}>
+      <ViewTransition
+        key={pathname}
+        enter={classeEntree(pathname)}
+        exit="ecran-sort"
+        default="none"
+      >
+        <Routes>
+          <Route path="/inscription" element={<PageInscription />} />
+          <Route path="/connexion" element={<PageConnexion />} />
           <Route
-            key={chemin}
-            path={chemin}
+            path="/connaissance-client"
+            element={passer ? <Navigate to="/catalogue" replace /> : <Kyc />}
+          />
+          {/* Ancienne adresse du KYC (favoris, liens déjà envoyés) */}
+          <Route path="/kyc" element={<Navigate to="/connaissance-client" replace />} />
+          {/* Écrans de l'application : session et KYC validé exigés (US-04b) */}
+          <Route
+            path="/formulaire-investisseur"
+            element={
+              passer ? (
+                <Navigate to="/catalogue" replace />
+              ) : (
+                <ExigerKycComplete>
+                  <FormulaireInvestisseur />
+                </ExigerKycComplete>
+              )
+            }
+          />
+          {/* Catalogue : profil investisseur validé exigé en plus (Catalogue.jsx, US-05b) */}
+          <Route
+            path="/catalogue"
             element={
               <ExigerKycComplete>
-                <PageBientot titre={titre} actif={actif} />
+                <Catalogue />
               </ExigerKycComplete>
             }
           />
-        ))}
-        <Route path="/indicateurs" element={<Indicateurs />} />
-        {/* Outil de test de l'import du catalogue (dev et poste uniquement, sans connexion) */}
-        <Route path={CHEMIN_IMPORT_CATALOGUE} element={<ImportCatalogue />} />
-        {/* Pages légales du pied de page (US-01b) */}
-        <Route path="/mentions-legales" element={<MentionsLegales />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/cgu" element={<Cgu />} />
-        <Route path="/confidentialite" element={<Confidentialite />} />
-        {/* Accueil, et toute adresse inconnue */}
-        <Route path="*" element={<App />} />
-      </Routes>
-    </ViewTransition>
+          {/* Fiche d'une SCPI (US-02), ouverte par « En savoir plus » du Catalogue */}
+          <Route
+            path="/catalogue/:id"
+            element={
+              <ExigerKycComplete>
+                <Fiche />
+              </ExigerKycComplete>
+            }
+          />
+          {/* Demande d'investissement (US-11) : ouverte par « Investir » (Catalogue, Fiche,
+            Comparateur), puis suivi du dossier créé */}
+          <Route
+            path="/investir/:id"
+            element={
+              <ExigerKycComplete>
+                <Investir />
+              </ExigerKycComplete>
+            }
+          />
+          <Route
+            path="/demandes/:id"
+            element={
+              <ExigerKycComplete>
+                <SuiviDemande />
+              </ExigerKycComplete>
+            }
+          />
+          {/* Comparateur (US-04) : SCPI pré-sélectionnées par ?scpi=<id>,<id>,<id> (C1) */}
+          <Route
+            path="/comparaison"
+            element={
+              <ExigerKycComplete>
+                <Comparateur />
+              </ExigerKycComplete>
+            }
+          />
+          {/* Simulation (US-08) : lignes pré-remplies par ?scpi=<id>:<parts>,… (C1) */}
+          <Route
+            path="/simulation"
+            element={
+              <ExigerKycComplete>
+                <Simulation />
+              </ExigerKycComplete>
+            }
+          />
+          {/* Page Profil, en lecture seule : ouverte par les initiales de la sidebar */}
+          <Route
+            path="/profil"
+            element={
+              <ExigerKycComplete>
+                <Profil />
+              </ExigerKycComplete>
+            }
+          />
+          {/* Mise à jour du profil investisseur (US-05d), non bloquante */}
+          <Route
+            path={CHEMIN_MISE_A_JOUR}
+            element={
+              <ExigerKycComplete>
+                <MiseAJourProfil />
+              </ExigerKycComplete>
+            }
+          />
+          {/* Mes informations fiscales (US-06, SCPI-255) : « Infos fiscales » en bas du menu */}
+          <Route
+            path="/fiscalite"
+            element={
+              <ExigerKycComplete>
+                <InformationsFiscales />
+              </ExigerKycComplete>
+            }
+          />
+          {/* Portefeuille (epic SCPI-247) : US-20 « Mes investissements » */}
+          <Route
+            path="/portefeuille"
+            element={
+              <ExigerKycComplete>
+                <Portefeuille />
+              </ExigerKycComplete>
+            }
+          />
+          {/* Écrans du sprint 2 pas encore développés (EN-03) */}
+          {ECRANS_A_VENIR.map(({ chemin, titre, actif }) => (
+            <Route
+              key={chemin}
+              path={chemin}
+              element={
+                <ExigerKycComplete>
+                  <PageBientot titre={titre} actif={actif} />
+                </ExigerKycComplete>
+              }
+            />
+          ))}
+          <Route path="/indicateurs" element={<Indicateurs />} />
+          {/* Outil de test de l'import du catalogue (dev et poste uniquement, sans connexion) */}
+          <Route path={CHEMIN_IMPORT_CATALOGUE} element={<ImportCatalogue />} />
+          {/* Boîte de réception de la SCPI simulée (societe-gestion ; dev et poste uniquement) */}
+          <Route path={CHEMIN_BOITE_SCPI} element={<BoiteScpi />} />
+          {/* Pages légales du pied de page (US-01b) */}
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/cgu" element={<Cgu />} />
+          <Route path="/confidentialite" element={<Confidentialite />} />
+          {/* Accueil, et toute adresse inconnue */}
+          <Route path="*" element={<App />} />
+        </Routes>
+      </ViewTransition>
+    </Suspense>
   );
 }

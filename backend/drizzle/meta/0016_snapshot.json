@@ -1,6 +1,6 @@
 {
-  "id": "ad0f0fd1-c34a-4ca0-a97b-37ef577ee17f",
-  "prevId": "dbcedee8-a428-4940-b319-72563fe260a2",
+  "id": "b3f997e1-a790-48af-a0c6-b67869719f19",
+  "prevId": "2973f32f-327a-40eb-855d-9f64817af6c0",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -45,24 +45,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "scpi_decote_demembrement_scpi_id_scpi_catalog_id_fk": {
           "name": "scpi_decote_demembrement_scpi_id_scpi_catalog_id_fk",
           "tableFrom": "scpi_decote_demembrement",
+          "tableTo": "scpi_catalog",
           "columnsFrom": [
             "scpi_id"
           ],
-          "tableTo": "scpi_catalog",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -81,15 +81,15 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
+            "type": "byDefault",
             "name": "import_rapport_id_seq",
+            "schema": "public",
             "increment": "1",
+            "startWith": "1",
             "minValue": "1",
             "maxValue": "9223372036854775807",
-            "startWith": "1",
             "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
+            "cycle": false
           }
         },
         "debut": {
@@ -230,24 +230,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "scpi_localisation_scpi_id_scpi_catalog_id_fk": {
           "name": "scpi_localisation_scpi_id_scpi_catalog_id_fk",
           "tableFrom": "scpi_localisation",
+          "tableTo": "scpi_catalog",
           "columnsFrom": [
             "scpi_id"
           ],
-          "tableTo": "scpi_catalog",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -297,24 +297,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "scpi_prix_part_scpi_id_scpi_catalog_id_fk": {
           "name": "scpi_prix_part_scpi_id_scpi_catalog_id_fk",
           "tableFrom": "scpi_prix_part",
+          "tableTo": "scpi_catalog",
           "columnsFrom": [
             "scpi_id"
           ],
-          "tableTo": "scpi_catalog",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -436,6 +436,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -444,10 +450,17 @@
       "uniqueConstraints": {
         "scpi_catalog_nom_unique": {
           "name": "scpi_catalog_nom_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "nom"
-          ],
-          "nullsNotDistinct": false
+          ]
+        },
+        "scpi_catalog_code_unique": {
+          "name": "scpi_catalog_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
         }
       },
       "policies": {},
@@ -464,15 +477,15 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
+            "type": "byDefault",
             "name": "scpi_supprimee_id_seq",
+            "schema": "public",
             "increment": "1",
+            "startWith": "1",
             "minValue": "1",
             "maxValue": "9223372036854775807",
-            "startWith": "1",
             "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
+            "cycle": false
           }
         },
         "scpi_id": {
@@ -507,9 +520,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -561,24 +574,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "scpi_secteurs_scpi_id_scpi_catalog_id_fk": {
           "name": "scpi_secteurs_scpi_id_scpi_catalog_id_fk",
           "tableFrom": "scpi_secteurs",
+          "tableTo": "scpi_catalog",
           "columnsFrom": [
             "scpi_id"
           ],
-          "tableTo": "scpi_catalog",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -628,24 +641,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "scpi_taux_distribution_scpi_id_scpi_catalog_id_fk": {
           "name": "scpi_taux_distribution_scpi_id_scpi_catalog_id_fk",
           "tableFrom": "scpi_taux_distribution",
+          "tableTo": "scpi_catalog",
           "columnsFrom": [
             "scpi_id"
           ],
-          "tableTo": "scpi_catalog",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -695,24 +708,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "scpi_valeur_recon_scpi_id_scpi_catalog_id_fk": {
           "name": "scpi_valeur_recon_scpi_id_scpi_catalog_id_fk",
           "tableFrom": "scpi_valeur_recon",
+          "tableTo": "scpi_catalog",
           "columnsFrom": [
             "scpi_id"
           ],
-          "tableTo": "scpi_catalog",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -731,15 +744,15 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
+            "type": "byDefault",
             "name": "acceptation_cgu_id_seq",
+            "schema": "public",
             "increment": "1",
+            "startWith": "1",
             "minValue": "1",
             "maxValue": "9223372036854775807",
-            "startWith": "1",
             "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
+            "cycle": false
           }
         },
         "utilisateur_id": {
@@ -774,9 +787,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -883,24 +896,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "auth_account_user_id_auth_user_id_fk": {
           "name": "auth_account_user_id_auth_user_id_fk",
           "tableFrom": "auth_account",
+          "tableTo": "auth_user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "auth_user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -976,34 +989,34 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "auth_session_user_id_auth_user_id_fk": {
           "name": "auth_session_user_id_auth_user_id_fk",
           "tableFrom": "auth_session",
+          "tableTo": "auth_user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "auth_user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "auth_session_token_unique": {
           "name": "auth_session_token_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "token"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1066,10 +1079,10 @@
       "uniqueConstraints": {
         "auth_user_email_unique": {
           "name": "auth_user_email_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1131,9 +1144,176 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dossier_investissement": {
+      "name": "dossier_investissement",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "dossier_investissement_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "utilisateur_id": {
+          "name": "utilisateur_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scpi_id": {
+          "name": "scpi_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scpi_nom": {
+          "name": "scpi_nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre_parts": {
+          "name": "nombre_parts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prix_part": {
+          "name": "prix_part",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "montant": {
+          "name": "montant",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "type_investissement",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mode": {
+          "name": "mode",
+          "type": "mode_investissement",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ponctuel'"
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_dossier",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'demande_envoyee'"
+        },
+        "demande_le": {
+          "name": "demande_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "transmis_le": {
+          "name": "transmis_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accuse_reception_le": {
+          "name": "accuse_reception_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motif_refus": {
+          "name": "motif_refus",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "iban_paiement": {
+          "name": "iban_paiement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bic_paiement": {
+          "name": "bic_paiement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reference_virement": {
+          "name": "reference_virement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paiement_le": {
+          "name": "paiement_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jouissance_le": {
+          "name": "jouissance_le",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modifie_le": {
+          "name": "modifie_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "dossier_investissement_utilisateur_id_idx": {
+          "name": "dossier_investissement_utilisateur_id_idx",
+          "columns": [
+            {
+              "expression": "utilisateur_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -1153,15 +1333,15 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
+            "type": "byDefault",
             "name": "historique_information_id_seq",
+            "schema": "public",
             "increment": "1",
+            "startWith": "1",
             "minValue": "1",
             "maxValue": "9223372036854775807",
-            "startWith": "1",
             "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
+            "cycle": false
           }
         },
         "utilisateur_id": {
@@ -1220,24 +1400,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "historique_information_justificatif_id_justificatif_id_fk": {
           "name": "historique_information_justificatif_id_justificatif_id_fk",
           "tableFrom": "historique_information",
+          "tableTo": "justificatif",
           "columnsFrom": [
             "justificatif_id"
           ],
-          "tableTo": "justificatif",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1256,15 +1436,15 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
+            "type": "byDefault",
             "name": "information_fiscale_id_seq",
+            "schema": "public",
             "increment": "1",
+            "startWith": "1",
             "minValue": "1",
             "maxValue": "9223372036854775807",
-            "startWith": "1",
             "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
+            "cycle": false
           }
         },
         "utilisateur_id": {
@@ -1305,10 +1485,10 @@
       "uniqueConstraints": {
         "information_fiscale_utilisateur_id_unique": {
           "name": "information_fiscale_utilisateur_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "utilisateur_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1325,15 +1505,15 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
+            "type": "byDefault",
             "name": "justificatif_id_seq",
+            "schema": "public",
             "increment": "1",
+            "startWith": "1",
             "minValue": "1",
             "maxValue": "9223372036854775807",
-            "startWith": "1",
             "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
+            "cycle": false
           }
         },
         "utilisateur_id": {
@@ -1386,9 +1566,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -1408,15 +1588,15 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
+            "type": "byDefault",
             "name": "kyc_id_seq",
+            "schema": "public",
             "increment": "1",
+            "startWith": "1",
             "minValue": "1",
             "maxValue": "9223372036854775807",
-            "startWith": "1",
             "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
+            "cycle": false
           }
         },
         "utilisateur_id": {
@@ -1474,10 +1654,10 @@
       "uniqueConstraints": {
         "kyc_utilisateur_id_unique": {
           "name": "kyc_utilisateur_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "utilisateur_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1494,15 +1674,15 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
+            "type": "byDefault",
             "name": "kyc_piece_id_seq",
+            "schema": "public",
             "increment": "1",
+            "startWith": "1",
             "minValue": "1",
             "maxValue": "9223372036854775807",
-            "startWith": "1",
             "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
+            "cycle": false
           }
         },
         "utilisateur_id": {
@@ -1571,11 +1751,11 @@
       "uniqueConstraints": {
         "kyc_piece_utilisateur_type_unique": {
           "name": "kyc_piece_utilisateur_type_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "utilisateur_id",
             "type"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1607,31 +1787,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.parametre_fiscal": {
-      "name": "parametre_fiscal",
-      "schema": "",
-      "columns": {
-        "cle": {
-          "name": "cle",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "valeur": {
-          "name": "valeur",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.profil_investisseur": {
       "name": "profil_investisseur",
       "schema": "",
@@ -1642,15 +1797,15 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
+            "type": "byDefault",
             "name": "profil_investisseur_id_seq",
+            "schema": "public",
             "increment": "1",
+            "startWith": "1",
             "minValue": "1",
             "maxValue": "9223372036854775807",
-            "startWith": "1",
             "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
+            "cycle": false
           }
         },
         "utilisateur_id": {
@@ -1710,9 +1865,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -1732,15 +1887,15 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
+            "type": "byDefault",
             "name": "questionnaire_investisseur_id_seq",
+            "schema": "public",
             "increment": "1",
+            "startWith": "1",
             "minValue": "1",
             "maxValue": "9223372036854775807",
-            "startWith": "1",
             "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
+            "cycle": false
           }
         },
         "utilisateur_id": {
@@ -1790,10 +1945,10 @@
       "uniqueConstraints": {
         "questionnaire_investisseur_utilisateur_id_unique": {
           "name": "questionnaire_investisseur_utilisateur_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "utilisateur_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -1836,56 +1991,6 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
-    },
-    "public.tranche_bareme": {
-      "name": "tranche_bareme",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigint",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "name": "tranche_bareme_id_seq",
-            "increment": "1",
-            "minValue": "1",
-            "maxValue": "9223372036854775807",
-            "startWith": "1",
-            "cache": "1",
-            "cycle": false,
-            "schema": "public",
-            "type": "byDefault"
-          }
-        },
-        "plafond": {
-          "name": "plafond",
-          "type": "numeric(12, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "taux": {
-          "name": "taux",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "tranche_bareme_plafond_unique": {
-          "name": "tranche_bareme_plafond_unique",
-          "columns": [
-            "plafond"
-          ],
-          "nullsNotDistinct": false
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -1898,6 +2003,14 @@
         "Annuelle",
         "Semestrielle",
         "Bimestrielle"
+      ]
+    },
+    "public.mode_investissement": {
+      "name": "mode_investissement",
+      "schema": "public",
+      "values": [
+        "ponctuel",
+        "programme"
       ]
     },
     "public.secteur": {
@@ -1913,6 +2026,17 @@
         "Santé",
         "Transport",
         "Autre"
+      ]
+    },
+    "public.statut_dossier": {
+      "name": "statut_dossier",
+      "schema": "public",
+      "values": [
+        "demande_envoyee",
+        "demande_recue",
+        "acceptee_attente_paiement",
+        "refusee",
+        "investissement_actif"
       ]
     },
     "public.statut_import": {
@@ -1943,6 +2067,15 @@
         "refusee"
       ]
     },
+    "public.type_investissement": {
+      "name": "type_investissement",
+      "schema": "public",
+      "values": [
+        "pleine_propriete",
+        "nue_propriete",
+        "usufruit"
+      ]
+    },
     "public.type_piece_kyc": {
       "name": "type_piece_kyc",
       "schema": "public",
@@ -1958,10 +2091,10 @@
     }
   },
   "schemas": {},
-  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

@@ -16,6 +16,7 @@ import {
   type LigneComparable,
 } from '../comparaison/service.js';
 import type { DepotTentativesConnexion } from '../comptes/service.js';
+import type { ConditionsScpi, DepotDemandes } from '../demandes/service.js';
 import type { DepotFiche, LigneFiche } from '../fiche/service.js';
 import { BAREME_2026 } from '../fiscalite/bareme.js';
 import type { Parametres } from '../fiscalite/calcul.js';
@@ -28,13 +29,20 @@ import type { DepotInformations, Justificatif, LigneHistorique } from '../inform
 import type { DepotProfils, DepotQuestionnaires } from '../investisseur/service.js';
 import type { DepotSimulation, LigneSimulable } from '../simulation/service.js';
 import type { DepotOutilsImport } from '../outils/service.js';
+import type { DepotPortefeuille, LigneInvestissement } from '../portefeuille/service.js';
+import type { DossierATransmettre } from '../transmission/message.js';
+import type { DepotAccuseReception } from '../reception/accuse-service.js';
+import type { DepotTransmission } from '../transmission/service.js';
 import {
   acceptationCgu,
+  authUser,
+  dossierInvestissement,
   historiqueInformation,
   informationFiscale,
   justificatif,
   kyc,
   kycPiece,
+  messageRecu,
   parametre,
   profilInvestisseur,
   questionnaireInvestisseur,
@@ -847,6 +855,229 @@ export function depotEstimation(db: Db): DepotEstimation {
           sql`, `,
         )})`);
       return new Map(resultat.rows.map((l) => [l.id, l.partFrance]));
+    },
+  };
+}
+
+// US-11 (SCPI-259) : dossiers d'investissement. Conditions de la SCPI lues au moment de la
+// demande (prix de part de l'année la plus récente) ; un dossier n'est lu que par son
+// investisseur (cloisonnement, EN-02 règle 3). Société de gestion lue dans le catalogue
+// (null si la SCPI en a été retirée depuis).
+export function depotDemandes(db: Db): DepotDemandes {
+  return {
+    async kycComplet(utilisateurId) {
+      const [ligne] = await db
+        .select({ id: kyc.id })
+        .from(kyc)
+        .where(and(eq(kyc.utilisateurId, utilisateurId), eq(kyc.statut, 'complete')));
+      return ligne !== undefined;
+    },
+    async conditions(scpiId) {
+      const resultat = await db.execute<ConditionsScpi>(sql`
+        select c.id,
+               c.nom,
+               c.minimum_souscription::float8 as minimum,
+               (select p.prix::float8 from scpi_prix_part p
+                 where p.scpi_id = c.id order by p.annee desc limit 1) as "prixPart"
+        from scpi_catalog c
+        where c.id = ${scpiId}`);
+      return resultat.rows[0] ?? null;
+    },
+    async creer(dossier) {
+      const [ligne] = await db
+        .insert(dossierInvestissement)
+        .values(dossier)
+        .returning({ id: dossierInvestissement.id });
+      return ligne.id;
+    },
+    async lire(utilisateurId, id) {
+      const [ligne] = await db
+        .select({
+          id: dossierInvestissement.id,
+          scpiId: dossierInvestissement.scpiId,
+          scpiNom: dossierInvestissement.scpiNom,
+          gerant: TABLE_SCPI_CATALOG.gerant,
+          nombreParts: dossierInvestissement.nombreParts,
+          prixPart: dossierInvestissement.prixPart,
+          montant: dossierInvestissement.montant,
+          type: dossierInvestissement.type,
+          statut: dossierInvestissement.statut,
+          demandeLe: dossierInvestissement.demandeLe,
+          // US-16 : informations de suivi
+          accuseReceptionLe: dossierInvestissement.accuseReceptionLe,
+          motifRefus: dossierInvestissement.motifRefus,
+          ibanPaiement: dossierInvestissement.ibanPaiement,
+          bicPaiement: dossierInvestissement.bicPaiement,
+          referenceVirement: dossierInvestissement.referenceVirement,
+          jouissanceLe: dossierInvestissement.jouissanceLe,
+        })
+        .from(dossierInvestissement)
+        .leftJoin(TABLE_SCPI_CATALOG, eq(TABLE_SCPI_CATALOG.id, dossierInvestissement.scpiId))
+        .where(
+          and(
+            eq(dossierInvestissement.id, id),
+            eq(dossierInvestissement.utilisateurId, utilisateurId),
+          ),
+        );
+      return ligne ?? null;
+    },
+  };
+}
+
+// US-20 (SCPI-267) : dossiers de l'investisseur pour son portefeuille (et seulement les
+// siens, EN-02 règle 3), avec la société de gestion (null si la SCPI a été retirée du
+// catalogue) et le dernier taux de distribution connu de la SCPI (revenus mensuels, C6)
+export function depotPortefeuille(db: Db): DepotPortefeuille {
+  return {
+    async investissements(utilisateurId) {
+      const { rows } = await db.execute<LigneInvestissement>(sql`
+        select d.id::float8 as id,
+               d.scpi_id as "scpiId",
+               d.scpi_nom as "scpiNom",
+               c.gerant,
+               d.nombre_parts as "nombreParts",
+               d.montant::float8 as montant,
+               d.type,
+               d.mode,
+               d.statut,
+               d.demande_le as "demandeLe",
+               d.jouissance_le::text as "jouissanceLe",
+               d.reference_virement as "referenceVirement",
+               d.motif_refus as "motifRefus",
+               (select t.taux::float8 from scpi_taux_distribution t
+                 where t.scpi_id = d.scpi_id
+                 order by t.annee desc nulls last, t.id desc limit 1) as "tauxDistribution"
+        from dossier_investissement d
+        left join scpi_catalog c on c.id = d.scpi_id
+        where d.utilisateur_id = ${utilisateurId}`);
+      return rows.map((ligne) => ({ ...ligne, demandeLe: new Date(ligne.demandeLe) }));
+    },
+  };
+}
+
+// US-12 : dossiers à transmettre à la SCPI partenaire (src/transmission/). Dossier
+// ponctuel, « Demande envoyée », pas encore transmis, SCPI avec un code.
+const A_TRANSMETTRE = sql`d.transmis_le is null
+  and d.statut = 'demande_envoyee'
+  and d.mode = 'ponctuel'`;
+
+type LigneATransmettre = Omit<
+  DossierATransmettre,
+  'email' | 'reponsesKyc' | 'profil' | 'pieces'
+> & { utilisateurId: string };
+
+export function depotTransmission(db: Db): DepotTransmission {
+  return {
+    async transmettreProchain(publier) {
+      return db.transaction(async (tx) => {
+        // skip locked : un dossier pris par un autre serveur est ignoré ; celui-ci reste
+        // verrouillé jusqu'à la fin de la transaction (publication + transmis_le)
+        const { rows } = await tx.execute<LigneATransmettre>(sql`
+          select d.id::float8 as id,
+                 d.id_message as "idMessage",
+                 c.code as "codeScpi",
+                 d.nombre_parts as "nombreParts",
+                 d.prix_part::float8 as "prixPart",
+                 d.montant::float8 as montant,
+                 d.type,
+                 d.demande_le as "demandeLe",
+                 d.utilisateur_id as "utilisateurId"
+          from dossier_investissement d
+          join scpi_catalog c on c.id = d.scpi_id
+          where ${A_TRANSMETTRE} and c.code is not null
+          order by d.demande_le, d.id
+          limit 1
+          for update of d skip locked`);
+        const ligne = rows[0];
+        if (!ligne) return false;
+        const { utilisateurId, ...dossier } = ligne;
+
+        const [compte] = await tx
+          .select({ email: authUser.email })
+          .from(authUser)
+          .where(eq(authUser.id, utilisateurId));
+        const [formulaire] = await tx
+          .select({ reponses: kyc.reponses })
+          .from(kyc)
+          .where(eq(kyc.utilisateurId, utilisateurId));
+        // Profil investisseur validé le plus récent (une ligne par validation, US-05d)
+        const [profil] = await tx
+          .select({
+            profil: profilInvestisseur.profil,
+            score: profilInvestisseur.score,
+            versionQuestionnaire: profilInvestisseur.versionQuestionnaire,
+            valideLe: profilInvestisseur.valideLe,
+          })
+          .from(profilInvestisseur)
+          .where(eq(profilInvestisseur.utilisateurId, utilisateurId))
+          .orderBy(desc(profilInvestisseur.valideLe), desc(profilInvestisseur.id))
+          .limit(1);
+        const pieces = await tx
+          .select({ type: kycPiece.type, nomFichier: kycPiece.nomFichier })
+          .from(kycPiece)
+          .where(eq(kycPiece.utilisateurId, utilisateurId))
+          .orderBy(asc(kycPiece.id));
+
+        await publier({
+          ...dossier,
+          demandeLe: new Date(dossier.demandeLe),
+          email: compte?.email ?? '',
+          reponsesKyc: formulaire?.reponses ?? {},
+          profil: profil ?? null,
+          pieces,
+        });
+        // Heure réelle de la publication (now() donnerait le début de la transaction, avant
+        // une éventuelle attente du retour de Kafka)
+        await tx
+          .update(dossierInvestissement)
+          .set({ transmisLe: sql`clock_timestamp()` })
+          .where(eq(dossierInvestissement.id, dossier.id));
+        return true;
+      });
+    },
+    async enAttenteSansCode() {
+      const { rows } = await db.execute<{ n: number }>(sql`
+        select count(*)::int as n
+        from dossier_investissement d
+        left join scpi_catalog c on c.id = d.scpi_id
+        where ${A_TRANSMETTRE} and c.code is null`);
+      return rows[0]?.n ?? 0;
+    },
+  };
+}
+
+// US-13 (SCPI-261) : accusé de réception de la SCPI partenaire. Le dossier est verrouillé
+// pendant la transaction (deux accusés traités en même temps ne se mélangent pas).
+export function depotAccuseReception(db: Db): DepotAccuseReception {
+  return {
+    async enregistrer(accuse, topic) {
+      return db.transaction(async (tx) => {
+        const [dossier] = await tx
+          .select({ statut: dossierInvestissement.statut })
+          .from(dossierInvestissement)
+          .where(eq(dossierInvestissement.id, accuse.idDossier))
+          .for('update');
+        if (!dossier) return 'dossier_inconnu';
+
+        // Règle C3 : un idMessage déjà traité n'a aucun effet
+        const nouveau = await tx
+          .insert(messageRecu)
+          .values({ idMessage: accuse.idMessage, topic })
+          .onConflictDoNothing()
+          .returning({ idMessage: messageRecu.idMessage });
+        if (nouveau.length === 0) return 'doublon';
+
+        const avance = dossier.statut === 'demande_envoyee';
+        await tx
+          .update(dossierInvestissement)
+          .set({
+            accuseReceptionLe: accuse.dateReception,
+            ...(avance && { statut: 'demande_recue' as const }),
+            modifieLe: sql`now()`,
+          })
+          .where(eq(dossierInvestissement.id, accuse.idDossier));
+        return avance ? 'statut_change' : 'date_seule';
+      });
     },
   };
 }

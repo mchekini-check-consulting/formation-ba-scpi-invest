@@ -1,0 +1,310 @@
+/* Écran « Mon portefeuille » (US-20), maquette validée par le BA : bandeau bleu de la Fiche
+   en tête de page (fiche/fiche.css), une carte blanche par SCPI avec ses chiffres en tuiles
+   colorées (chiffres clés de la Fiche), tableau des dossiers sur fond beige */
+
+/* Le bandeau occupe toute la largeur (marges de la Fiche) ; la liste des SCPI est recentrée
+   avec environ 1,5 cm (57 px) de chaque côté (demande du BA), moins sur écran moyen, rien
+   sur petit écran. */
+.portefeuille {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-inline: min(57px, 4vw);
+}
+
+@media (width <= 900px) {
+  .portefeuille {
+    padding-inline: 0;
+  }
+}
+
+.portefeuille__bandeau .fiche__identite {
+  align-items: center;
+}
+
+.portefeuille__bloc {
+  min-width: 0;
+}
+
+.portefeuille__scpis {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Carte d'une SCPI ; cerclée de bleu quand elle est dépliée */
+.portefeuille__scpi {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgb(22 44 101 / 6%);
+}
+
+.portefeuille__scpi--ouverte {
+  padding-bottom: 16px;
+  box-shadow: 0 0 0 2px #193071;
+}
+
+.portefeuille__entete-scpi {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1.4fr) repeat(4, minmax(0, 1fr)) 24px;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--encre);
+  text-align: left;
+  cursor: pointer;
+}
+
+.portefeuille__entete-scpi:focus-visible {
+  border-radius: 12px;
+  outline: 2px solid #3d6ef0;
+  outline-offset: 6px;
+}
+
+/* Photo de la SCPI, la même que sur sa carte du Catalogue */
+.portefeuille__photo {
+  display: block;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: var(--sable);
+}
+
+.portefeuille__nom {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.portefeuille__nom strong {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.portefeuille__gerant {
+  font-size: 12px;
+  color: var(--encre-douce);
+}
+
+/* Chiffres : tuile en dégradé + libellé + valeur (comme .fiche__chiffre) */
+.portefeuille__chiffre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.portefeuille__chiffre-texte {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.portefeuille__chiffre-texte span {
+  font-size: 12px;
+  color: var(--encre-douce);
+}
+
+.portefeuille__chiffre-texte strong {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.portefeuille__tuile {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  color: #fff;
+}
+
+.portefeuille__tuile .fiche__icone {
+  width: 18px;
+  height: 18px;
+}
+
+.portefeuille__tuile--violet {
+  background: linear-gradient(135deg, #4a3fe0, #3d6ef0);
+  box-shadow: 0 8px 18px rgb(74 63 224 / 27%);
+}
+
+.portefeuille__tuile--turquoise {
+  background: linear-gradient(135deg, #0f9f8a, #38bdf8);
+  box-shadow: 0 8px 18px rgb(15 159 138 / 27%);
+}
+
+.portefeuille__tuile--orange {
+  background: linear-gradient(135deg, #ff9a3d, #e86a1a);
+  box-shadow: 0 8px 18px rgb(255 154 61 / 27%);
+}
+
+.portefeuille__tuile--rose {
+  background: linear-gradient(135deg, #e0457a, #b5338a);
+  box-shadow: 0 8px 18px rgb(224 69 122 / 27%);
+}
+
+.portefeuille__chevron {
+  width: 20px;
+  height: 20px;
+  color: var(--encre-douce);
+}
+
+.portefeuille__scpi--ouverte .portefeuille__chevron {
+  color: #193071;
+}
+
+/* Tableau des dossiers d'une SCPI dépliée (défile seul sur petit écran) */
+.portefeuille__dossiers {
+  overflow-x: auto;
+  border-radius: 14px;
+  background: #fbfaf7;
+}
+
+.portefeuille__dossiers table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.portefeuille__dossiers th {
+  padding: 10px 12px;
+  background: #f1eee7;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--encre-douce);
+}
+
+/* Tout le tableau centré : titres et valeurs (retours du BA) */
+.portefeuille__dossiers th,
+.portefeuille__dossiers td {
+  text-align: center;
+}
+
+.portefeuille__dossiers td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--ligne);
+  white-space: nowrap;
+}
+
+/* Colonne « Information » réduite à son texte le plus long : la place restante se répartit
+   sur les autres colonnes au lieu de s'accumuler en fin de tableau (retour du BA) */
+.portefeuille__dossiers th:last-child,
+.portefeuille__dossiers td:last-child {
+  width: 1%;
+  padding-right: 20px;
+}
+
+.portefeuille__dossiers td.portefeuille__nombre {
+  font-weight: 700;
+}
+
+.compte a.portefeuille__numero {
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.compte a.portefeuille__numero:hover {
+  color: #162c65;
+}
+
+.portefeuille__statut {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #e3edff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.portefeuille__statut--acceptee_attente_paiement {
+  background: #fde7c8;
+  color: #8a4b0f;
+}
+
+.portefeuille__statut--refusee {
+  background: #ffd1e1;
+  color: #8a1240;
+}
+
+/* Même pastille que « Investissement actif » du suivi de la demande */
+.portefeuille__statut--investissement_actif {
+  background: linear-gradient(90deg, #5eead4, #38bdf8);
+  color: #0f1f45;
+}
+
+.portefeuille__detail {
+  color: var(--encre-douce);
+}
+
+.portefeuille__vide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+/* Écran moyen : chiffres en 2 colonnes sous le nom */
+@media (width <= 1100px) {
+  .portefeuille__entete-scpi {
+    grid-template-columns: 52px repeat(2, minmax(0, 1fr)) 24px;
+    row-gap: 12px;
+  }
+
+  /* Photo et chevron occupent leur colonne sur toute la hauteur : les chiffres se rangent
+     dans les deux colonnes du milieu */
+  .portefeuille__photo,
+  .portefeuille__chevron {
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+
+  .portefeuille__chevron {
+    grid-column: 4;
+  }
+
+  .portefeuille__nom {
+    grid-column: 2 / 4;
+    grid-row: 1;
+  }
+}
+
+/* Téléphone : un chiffre par ligne */
+@media (width <= 560px) {
+  .portefeuille__entete-scpi {
+    grid-template-columns: 52px minmax(0, 1fr) 24px;
+  }
+
+  .portefeuille__photo,
+  .portefeuille__chevron {
+    grid-row: 1 / span 5;
+  }
+
+  .portefeuille__nom {
+    grid-column: 2;
+  }
+
+  .portefeuille__chevron {
+    grid-column: 3;
+  }
+}

@@ -11,6 +11,7 @@ import {
   TABLE_VALEUR_RECONSTITUTION,
 } from '../db/schema.js';
 import type { RejetImport } from '../db/schema.js';
+import { attribuerCodes } from './code-scpi.js';
 import { convertirLigne, empreinte, type ScpiConvertie } from './convert.js';
 import { aucuneLigneValide, colonnesAbsentes, erreurDeLecture, fichierVide } from './erreurs.js';
 
@@ -133,16 +134,35 @@ export async function importScpis(db: Db, rows: Lignes): Promise<BilanImport> {
             id: TABLE_SCPI_CATALOG.id,
             nom: TABLE_SCPI_CATALOG.nom,
             empreinte: TABLE_SCPI_CATALOG.empreinte,
+            code: TABLE_SCPI_CATALOG.code,
           })
           .from(TABLE_SCPI_CATALOG)
       ).map((s) => [s.nom, s]),
     );
 
+    // Code SCPI (src/csv/code-scpi.ts) : une SCPI qui a déjà un code le garde (même nom,
+    // même code) ; les nouvelles, et celles importées avant l'existence du code, en
+    // reçoivent un, différent de tous les codes en base (y compris des SCPI supprimées
+    // plus bas : elles le sont après les ajouts)
+    const codesPris = new Set([...existantes.values()].flatMap((s) => (s.code ? [s.code] : [])));
+    const nouveauxCodes = attribuerCodes(
+      valides.map((s) => s.fiche.nom).filter((nom) => !existantes.get(nom)?.code),
+      codesPris,
+    );
+
     for (const scpi of valides) {
       const signature = empreinte(scpi);
       const existante = existantes.get(scpi.fiche.nom);
+      const code = existante?.code ?? nouveauxCodes.get(scpi.fiche.nom);
 
       if (existante?.empreinte === signature) {
+        // Fiche inchangée : seul le code manquant est écrit (toujours comptée inchangée)
+        if (!existante.code) {
+          await tx
+            .update(TABLE_SCPI_CATALOG)
+            .set({ code })
+            .where(eq(TABLE_SCPI_CATALOG.id, existante.id));
+        }
         bilan.inchangees++;
         continue;
       }
@@ -151,7 +171,7 @@ export async function importScpis(db: Db, rows: Lignes): Promise<BilanImport> {
       if (existante) {
         await tx
           .update(TABLE_SCPI_CATALOG)
-          .set({ ...scpi.fiche, empreinte: signature, mise_a_jour: new Date() })
+          .set({ ...scpi.fiche, empreinte: signature, code, mise_a_jour: new Date() })
           .where(eq(TABLE_SCPI_CATALOG.id, existante.id));
         for (const table of TABLES_VALEURS) {
           await tx.delete(table).where(eq(table.scpi_id, existante.id));
@@ -161,7 +181,7 @@ export async function importScpis(db: Db, rows: Lignes): Promise<BilanImport> {
       } else {
         const [ajoutee] = await tx
           .insert(TABLE_SCPI_CATALOG)
-          .values({ ...scpi.fiche, empreinte: signature })
+          .values({ ...scpi.fiche, empreinte: signature, code })
           .returning({ id: TABLE_SCPI_CATALOG.id }); // pour récupérer l'id créé
         id = ajoutee.id;
         bilan.ajoutees++;

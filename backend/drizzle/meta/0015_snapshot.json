@@ -1,5 +1,5 @@
 {
-  "id": "dbcedee8-a428-4940-b319-72563fe260a2",
+  "id": "2973f32f-327a-40eb-855d-9f64817af6c0",
   "prevId": "2bc68b0e-4b71-49c3-b905-77063501fa6f",
   "version": "7",
   "dialect": "postgresql",
@@ -1143,6 +1143,167 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.dossier_investissement": {
+      "name": "dossier_investissement",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "dossier_investissement_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "utilisateur_id": {
+          "name": "utilisateur_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scpi_id": {
+          "name": "scpi_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scpi_nom": {
+          "name": "scpi_nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre_parts": {
+          "name": "nombre_parts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prix_part": {
+          "name": "prix_part",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "montant": {
+          "name": "montant",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "type_investissement",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mode": {
+          "name": "mode",
+          "type": "mode_investissement",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ponctuel'"
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_dossier",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'demande_envoyee'"
+        },
+        "demande_le": {
+          "name": "demande_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "accuse_reception_le": {
+          "name": "accuse_reception_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motif_refus": {
+          "name": "motif_refus",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "iban_paiement": {
+          "name": "iban_paiement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bic_paiement": {
+          "name": "bic_paiement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reference_virement": {
+          "name": "reference_virement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paiement_le": {
+          "name": "paiement_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jouissance_le": {
+          "name": "jouissance_le",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modifie_le": {
+          "name": "modifie_le",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "dossier_investissement_utilisateur_id_idx": {
+          "name": "dossier_investissement_utilisateur_id_idx",
+          "columns": [
+            {
+              "expression": "utilisateur_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.historique_information": {
       "name": "historique_information",
       "schema": "",
@@ -1607,31 +1768,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.parametre_fiscal": {
-      "name": "parametre_fiscal",
-      "schema": "",
-      "columns": {
-        "cle": {
-          "name": "cle",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "valeur": {
-          "name": "valeur",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.profil_investisseur": {
       "name": "profil_investisseur",
       "schema": "",
@@ -1836,56 +1972,6 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
-    },
-    "public.tranche_bareme": {
-      "name": "tranche_bareme",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigint",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "byDefault",
-            "name": "tranche_bareme_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "9223372036854775807",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "plafond": {
-          "name": "plafond",
-          "type": "numeric(12, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "taux": {
-          "name": "taux",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "tranche_bareme_plafond_unique": {
-          "name": "tranche_bareme_plafond_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "plafond"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -1898,6 +1984,14 @@
         "Annuelle",
         "Semestrielle",
         "Bimestrielle"
+      ]
+    },
+    "public.mode_investissement": {
+      "name": "mode_investissement",
+      "schema": "public",
+      "values": [
+        "ponctuel",
+        "programme"
       ]
     },
     "public.secteur": {
@@ -1913,6 +2007,17 @@
         "Santé",
         "Transport",
         "Autre"
+      ]
+    },
+    "public.statut_dossier": {
+      "name": "statut_dossier",
+      "schema": "public",
+      "values": [
+        "demande_envoyee",
+        "demande_recue",
+        "acceptee_attente_paiement",
+        "refusee",
+        "investissement_actif"
       ]
     },
     "public.statut_import": {
@@ -1941,6 +2046,15 @@
         "en_verification",
         "validee",
         "refusee"
+      ]
+    },
+    "public.type_investissement": {
+      "name": "type_investissement",
+      "schema": "public",
+      "values": [
+        "pleine_propriete",
+        "nue_propriete",
+        "usufruit"
       ]
     },
     "public.type_piece_kyc": {

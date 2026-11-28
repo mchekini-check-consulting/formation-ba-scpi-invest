@@ -110,22 +110,36 @@
     {
       "idx": 15,
       "version": "7",
-      "when": 1795559800969,
-      "tag": "0015_bareme_fiscal",
+      "when": 1795560509703,
+      "tag": "0015_dossier_investissement",
       "breakpoints": true
     },
     {
       "idx": 16,
       "version": "7",
-      "when": 1795559804006,
-      "tag": "0016_bareme_fiscal_valeurs",
+      "when": 1795696004605,
+      "tag": "0016_code_scpi_transmission",
       "breakpoints": true
     },
     {
       "idx": 17,
       "version": "7",
-      "when": 1795809772477,
-      "tag": "0017_retirer_tranche_bareme",
+      "when": 1795696879247,
+      "tag": "0017_transmission_dossier",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795795334625,
+      "tag": "0018_message_recu",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795828014664,
+      "tag": "0019_parametres_fiscaux",
       "breakpoints": true
     }
   ]

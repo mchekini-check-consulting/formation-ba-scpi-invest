@@ -1,0 +1,799 @@
+/* Écrans « Investir » et « Suivi de ma demande » (US-11) : maquette validée par le BA, sur
+   le modèle de la Fiche (fiche.css : bandeau, chiffres clés, cartes blanches, lignes). */
+
+/* --- Montant dans le bandeau (à la place du taux de la Fiche) ----------- */
+
+.investir__total {
+  align-items: flex-end;
+}
+
+.fiche__pastilles li.investir__statut {
+  background: #5eead4;
+  color: #0f1f45;
+  font-weight: 700;
+}
+
+/* --- Rappel et colonnes -------------------------------------------------- */
+
+.investir__chiffres {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.investir__colonnes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  align-items: stretch;
+  gap: 20px;
+}
+
+.investir__demande {
+  gap: 18px;
+  padding: 18px 24px;
+}
+
+/* --- Nombre de parts ----------------------------------------------------- */
+
+.investir__parts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.investir__parts label,
+.investir__types legend {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.investir__parts input {
+  width: 200px;
+  max-width: 100%;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border: 1.5px solid var(--bordure-champ);
+  border-radius: 12px;
+  background: #fff;
+  font: 700 18px var(--sans);
+  color: var(--encre);
+}
+
+.investir__parts input:focus-visible {
+  outline: 2px solid var(--bleu-vif);
+  outline-offset: 2px;
+}
+
+.investir__parts input[aria-invalid='true'] {
+  border-color: var(--erreur);
+}
+
+.investir__erreur {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fbe9e5;
+  color: var(--erreur);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.investir__aide {
+  font-size: 12.5px;
+  color: var(--encre-douce);
+}
+
+/* Jauge du minimum, comme les parts des répartitions de la Fiche */
+.investir__jauge {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #f4f7fb;
+  font-size: 12.5px;
+}
+
+.investir__jauge p {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.investir__atteint {
+  color: #0f766e;
+}
+
+.investir__atteint--non {
+  color: var(--erreur);
+}
+
+.investir__barre {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e3e8f0;
+}
+
+.investir__barre span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #0f9f8a, #38bdf8);
+  transition: width 0.2s ease;
+}
+
+.investir__barre span.investir__barre--non {
+  background: linear-gradient(90deg, #e8913a, #d65745);
+}
+
+/* --- Type d'investissement : trois tuiles -------------------------------- */
+
+.investir__types {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.investir__types legend {
+  margin-bottom: 10px;
+  padding: 0;
+}
+
+.investir__tuiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.investir__tuile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1.5px solid var(--ligne);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.investir__tuile:has(input:focus-visible) {
+  outline: 2px solid var(--bleu-vif);
+  outline-offset: 2px;
+}
+
+.investir__tuile--choisie {
+  border-color: var(--bleu);
+  background: linear-gradient(160deg, #e6fbf6, #f6f3ff);
+}
+
+.investir__tuile-haut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.investir__tuile-haut input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--bleu);
+}
+
+.investir__tuile-icone {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+}
+
+.investir__tuile-icone .fiche__icone {
+  width: 18px;
+  height: 18px;
+}
+
+.investir__tuile--pleine_propriete .investir__tuile-icone {
+  background: linear-gradient(135deg, #4a3fe0, #3d6ef0);
+  color: #fff;
+}
+
+.investir__tuile--nue_propriete .investir__tuile-icone {
+  background: #fff0e3;
+  color: #c2410c;
+}
+
+.investir__tuile--usufruit .investir__tuile-icone {
+  background: #ffe6f0;
+  color: #be185d;
+}
+
+.investir__tuile strong {
+  font-size: 15px;
+}
+
+.investir__tuile-texte {
+  font-size: 12.5px;
+  color: var(--encre-douce);
+}
+
+/* --- Récapitulatif ------------------------------------------------------- */
+
+.investir__recap {
+  padding: 18px 24px;
+}
+
+.investir__lignes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.investir__lignes .fiche__condition {
+  padding: 8px 0;
+}
+
+.investir__montant {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 6px 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.investir__montant strong {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--bleu);
+}
+
+.investir__valider {
+  align-self: flex-end;
+  margin-top: auto;
+  min-height: 44px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5eead4, #38bdf8);
+  color: #0f1f45;
+  font: 700 15px var(--sans);
+  cursor: pointer;
+}
+
+.investir__valider:hover:not(:disabled) {
+  background: linear-gradient(90deg, #7af0de, #5cc8fa);
+}
+
+.investir__valider:focus-visible {
+  outline: 2px solid var(--bleu);
+  outline-offset: 2px;
+}
+
+.investir__valider:disabled {
+  background: #d9dde6;
+  color: #5a6379;
+  cursor: not-allowed;
+}
+
+/* --- Suivi de ma demande (US-16 et sa correction) ---------------------------------
+   Un seul écran pour toutes les étapes (maquettes validées par le BA), dans le style de la
+   Fiche (fiche.css) : frise pleine largeur, puis trois cartes blanches compactes
+   (« Prochaine étape », la carte du statut au centre, plus large, « Votre dossier »),
+   tuiles d'icône en dégradé comme les chiffres clés. Sur petit écran, les cartes s'empilent. */
+
+/* Pastille du statut dans le bandeau, couleur selon le statut */
+.fiche__pastilles li.investir__statut--demande_envoyee,
+.fiche__pastilles li.investir__statut--demande_recue {
+  background: rgb(255 255 255 / 16%);
+  color: #e3ebff;
+}
+
+.fiche__pastilles li.investir__statut--refusee {
+  background: #ffd1e1;
+  color: #8a1240;
+}
+
+.fiche__pastilles li.investir__statut--investissement_actif {
+  background: linear-gradient(90deg, #5eead4, #38bdf8);
+}
+
+.suivi__carte {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 16px 20px 20px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.suivi__titre {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: #000;
+}
+
+.suivi__cartes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+@media (max-width: 960px) {
+  .suivi__cartes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* En-tête de carte : tuile, surtitre, titre */
+.suivi__entete {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.suivi__entete > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.suivi__tuile {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  color: #fff;
+}
+
+.suivi__tuile .fiche__icone {
+  width: 18px;
+  height: 18px;
+}
+
+.suivi__tuile--violet {
+  background: linear-gradient(135deg, #4a3fe0, #3d6ef0);
+  box-shadow: 0 8px 18px rgb(74 63 224 / 27%);
+}
+
+.suivi__tuile--bleu {
+  background: linear-gradient(135deg, #3d6ef0, #38bdf8);
+  box-shadow: 0 8px 18px rgb(61 110 240 / 27%);
+}
+
+.suivi__tuile--turquoise {
+  background: linear-gradient(135deg, #0f9f8a, #38bdf8);
+  box-shadow: 0 8px 18px rgb(15 159 138 / 27%);
+}
+
+.suivi__tuile--rose {
+  background: linear-gradient(135deg, #e0457a, #b5338a);
+  box-shadow: 0 8px 18px rgb(224 69 122 / 27%);
+}
+
+.suivi__tuile--orange {
+  background: linear-gradient(135deg, #ff9a3d, #e86a1a);
+  box-shadow: 0 8px 18px rgb(255 154 61 / 27%);
+}
+
+.suivi__surtitre {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.suivi__surtitre--bleu {
+  color: #1d4ed8;
+}
+
+.suivi__surtitre--turquoise {
+  color: #0f766e;
+}
+
+.suivi__surtitre--rose {
+  color: #be185d;
+}
+
+.suivi__texte {
+  margin: 0;
+  color: var(--encre-douce);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* Étapes numérotées de « Prochaine étape » */
+.suivi__consignes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suivi__consignes li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f4f7fb;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.suivi__numero {
+  display: grid;
+  flex: 0 0 24px;
+  place-items: center;
+  height: 24px;
+  border-radius: 8px;
+  background: #ecebff;
+  color: #4a3fe0;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* Montant mis en avant, fond dégradé clair comme les graphiques de la Fiche */
+.suivi__montant {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.suivi__montant strong {
+  color: var(--encre);
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.suivi__montant--bleu {
+  background: linear-gradient(160deg, #e3edff, #f6f3ff);
+  color: #1d4ed8;
+}
+
+.suivi__montant--turquoise {
+  background: linear-gradient(160deg, #e6fbf6, #f6f3ff);
+  color: #0f766e;
+}
+
+/* Motif du refus */
+.suivi__motif {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, #ffe6f0, #fff8f3);
+  color: #be185d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.suivi__motif strong {
+  color: var(--encre);
+  font-size: 15px;
+}
+
+/* Lignes de faits de la carte du statut, comme les conditions de la Fiche */
+.suivi__faits {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.suivi__fait {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ligne);
+  font-size: 13px;
+}
+
+.suivi__fait dt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--encre-douce);
+}
+
+.suivi__fait dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.suivi__fait-icone {
+  display: grid;
+  flex: 0 0 26px;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.suivi__fait-icone .fiche__icone {
+  width: 14px;
+  height: 14px;
+}
+
+.suivi__fait-icone--turquoise {
+  background: #dcfaf4;
+  color: #0f766e;
+}
+
+.suivi__fait-icone--bleu {
+  background: #e3edff;
+  color: #1d4ed8;
+}
+
+.suivi__fait-icone--violet {
+  background: #f1e8ff;
+  color: #7c3aed;
+}
+
+.suivi__fait-icone--orange {
+  background: #fff0e3;
+  color: #c2410c;
+}
+
+/* Coordonnées du virement, chacune avec son bouton « Copier » */
+.suivi__coordonnees {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.suivi__coordonnee {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ligne);
+}
+
+.suivi__coordonnee > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.suivi__coordonnee dt {
+  color: var(--encre-douce);
+  font-size: 12px;
+}
+
+.suivi__coordonnee dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.suivi__copier {
+  flex: none;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #c7d0e6;
+  border-radius: 999px;
+  background: #fff;
+  color: #0f1f45;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.suivi__copier:hover {
+  border-color: #0f1f45;
+  background: #0f1f45;
+  color: #fff;
+}
+
+.suivi__note {
+  margin: 0;
+  color: var(--encre-douce);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* Bouton principal (refus : choisir une autre SCPI), comme celui de la Fiche */
+.compte a.suivi__bouton {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5eead4, #38bdf8);
+  color: #0f1f45;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.compte a.suivi__bouton:hover {
+  background: linear-gradient(90deg, #7af0de, #5cc8fa);
+}
+
+/* Lignes libellé / valeur du dossier */
+.suivi__lignes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: 13px;
+}
+
+.suivi__ligne {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--ligne);
+}
+
+.suivi__ligne:last-child {
+  border-bottom: 0;
+}
+
+.suivi__ligne dt {
+  color: var(--encre-douce);
+}
+
+.suivi__ligne dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* --- Frise du suivi ------------------------------------------------------- */
+
+.investir__suivi {
+  gap: 16px;
+}
+
+.investir__frise {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.investir__etape {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  text-align: center;
+}
+
+/* Trait vers l'étape suivante, plein si l'étape est franchie */
+.investir__etape:not(:last-child)::after {
+  position: absolute;
+  top: 14px;
+  left: calc(50% + 19px);
+  width: calc(100% - 38px);
+  height: 3px;
+  background: var(--ligne);
+  content: '';
+}
+
+.investir__etape--franchie:not(:last-child)::after {
+  background: #0f9f8a;
+}
+
+.investir__etape-point {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #c9c2b4;
+  border-radius: 50%;
+  background: #fff;
+  color: #fff;
+}
+
+.investir__etape-point .fiche__icone {
+  width: 15px;
+  height: 15px;
+}
+
+.investir__etape--franchie .investir__etape-point {
+  border: 0;
+  background: linear-gradient(135deg, #0f9f8a, #38bdf8);
+}
+
+.investir__etape--en_cours .investir__etape-point {
+  border: 7px solid #3d6ef0;
+}
+
+.investir__etape-libelle {
+  color: var(--encre);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.investir__etape--a_venir .investir__etape-libelle {
+  color: var(--encre-douce);
+  font-weight: 500;
+}
+
+.investir__etape-detail {
+  color: var(--encre-douce);
+  font-size: 12px;
+}
+
+.investir__etape--en_cours .investir__etape-detail {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.investir__etape--refusee.investir__etape--en_cours .investir__etape-point {
+  border: 0;
+  background: linear-gradient(135deg, #e0457a, #b5338a);
+}
+
+.investir__etape--refusee.investir__etape--en_cours .investir__etape-detail {
+  color: #be185d;
+}
+
+.investir__etape--investissement_actif.investir__etape--en_cours .investir__etape-point {
+  border: 0;
+  background: linear-gradient(135deg, #0f9f8a, #38bdf8);
+}
+
+.investir__etape--investissement_actif.investir__etape--en_cours .investir__etape-detail {
+  color: #0f766e;
+}
+
+/* Petit écran : étapes l'une sous l'autre */
+@media (max-width: 640px) {
+  .investir__frise {
+    grid-auto-flow: row;
+    gap: 12px;
+  }
+
+  .investir__etape {
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .investir__etape:not(:last-child)::after {
+    display: none;
+  }
+
+  .investir__etape-detail {
+    margin-left: auto;
+  }
+}
