@@ -322,7 +322,7 @@ function TableauRevenus({ brut, net, duree, selonPeriode = false }) {
           <td />
           <th scope="col">Bruts</th>
           <th scope="col">
-            Après fiscalité
+            <span>Après fiscalité</span>
             <span className="simulation__precision">Impôt estimé, à titre indicatif</span>
           </th>
         </tr>

@@ -158,12 +158,12 @@ export function Barres({ barres }) {
       <div className="simulation__legende-barres" aria-hidden="true">
         <span>
           <span className="fiche__point" style={{ background: COULEUR_BRUT }} />
-          Brut
+          <span>Brut</span>
         </span>
         {avecNet && (
           <span>
             <span className="fiche__point" style={{ background: COULEUR_NET }} />
-            Après fiscalité
+            <span>Après fiscalité</span>
           </span>
         )}
       </div>
