@@ -12,6 +12,8 @@ import { creerComparaisonService } from './comparaison/service.js';
 import { routesComptes } from './comptes/routes.js';
 import { routesFiche } from './fiche/routes.js';
 import { creerFicheService } from './fiche/service.js';
+import { creerEstimationService } from './fiscalite/estimation.js';
+import { routesEstimationFiscale } from './fiscalite/routes-estimation.js';
 import { routesFiscalite } from './fiscalite/routes.js';
 import { creerFiscaliteService } from './fiscalite/service.js';
 import { routesSimulation } from './simulation/routes.js';
@@ -31,6 +33,7 @@ import {
   depotCatalogue,
   depotComparaison,
   depotFiche,
+  depotEstimation,
   depotFiscalite,
   depotInformations,
   depotKyc,
@@ -87,6 +90,8 @@ const pieces = creerPiecesService(depotKyc(db), depotPieces(db), stockagePieces(
 const informations = creerInformationsService(depotInformations(db), stockagePieces(), fournisseur);
 // US-06 (SCPI-255) : informations fiscales du foyer
 const fiscalite = creerFiscaliteService(depotFiscalite(db));
+// US-07 (SCPI-256) : calcul de l'estimation fiscale, appliqué à la simulation (US-09)
+const estimation = creerEstimationService(depotEstimation(db), depotFiscalite(db));
 
 // US-07a : import du catalogue au démarrage puis chaque nuit à 2h (désactivé sans les variables R2)
 const tacheImport = demarrerImportNocturne(pool, db);
@@ -122,6 +127,7 @@ createApp(() => db.execute(sql`select 1`), logger, {
     routesQuestionnaire(questionnaires, fournisseur),
     routesInformations(informations, fournisseur),
     routesFiscalite(fiscalite, fournisseur),
+    routesEstimationFiscale(estimation, fournisseur),
     // Avant le Catalogue : /scpis/comparables et /scpis/simulables ne doivent pas être pris pour une adresse /scpis/<id>
     routesComparaison(comparaison, fournisseur),
     routesSimulation(simulation, fournisseur),

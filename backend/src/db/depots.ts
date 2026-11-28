@@ -17,6 +17,9 @@ import {
 } from '../comparaison/service.js';
 import type { DepotTentativesConnexion } from '../comptes/service.js';
 import type { DepotFiche, LigneFiche } from '../fiche/service.js';
+import { BAREME_2026 } from '../fiscalite/bareme.js';
+import type { Parametres } from '../fiscalite/calcul.js';
+import type { DepotEstimation } from '../fiscalite/estimation.js';
 import type { DepotFiscalite, SituationFamiliale } from '../fiscalite/service.js';
 import { ETAPE_RECAPITULATIF } from '../kyc/champs.js';
 import type { DepotPieces, PieceKyc } from '../kyc/pieces-service.js';
@@ -679,7 +682,15 @@ export function depotSimulation(db: Db): DepotSimulation {
                                                            'partNuePropriete', x.decote)
                                          order by x.duree)
                          from scpi_decote_demembrement x where x.scpi_id = c.id), '[]')
-                 as decotes
+                 as decotes,
+               coalesce((select json_agg(json_build_object('libelle', l.pays,
+                                                           'part', l.pourcentage::float8)
+                                         order by l.pourcentage desc, l.pays)
+                         from scpi_localisation l where l.scpi_id = c.id), '[]') as pays,
+               coalesce((select json_agg(json_build_object('libelle', s.secteur::text,
+                                                           'part', s.pourcentage::float8)
+                                         order by s.pourcentage desc, s.secteur::text)
+                         from scpi_secteurs s where s.scpi_id = c.id), '[]') as secteurs
         from scpi_catalog c
         order by c.nom, c.id`);
       return resultat.rows;
@@ -798,6 +809,44 @@ export function depotFiscalite(db: Db): DepotFiscalite {
       await db
         .delete(informationFiscale)
         .where(eq(informationFiscale.utilisateurId, utilisateurId));
+    },
+  };
+}
+
+// US-07 / US-09 : paramètres de l'estimation fiscale (barème : constantes de
+// fiscalite/bareme.ts ; prélèvements sociaux et taux forfaitaire : table parametre_fiscal)
+// et part « France » de la répartition géographique des SCPI
+export function depotEstimation(db: Db): DepotEstimation {
+  return {
+    async lireParametres(): Promise<Parametres> {
+      const valeurs = await db.execute<{ cle: string; valeur: number }>(sql`
+        select cle, valeur::float8 as valeur from parametre_fiscal`);
+      const parametre = (cle: string) => {
+        const ligne = valeurs.rows.find((v) => v.cle === cle);
+        if (!ligne) throw new Error(`Paramètre fiscal manquant : ${cle}`);
+        return ligne.valeur;
+      };
+      return {
+        bareme: BAREME_2026,
+        prelevementsSociaux: parametre('prelevements_sociaux'),
+        tauxForfaitaire: parametre('taux_forfaitaire'),
+      };
+    },
+    async partsFrance(ids) {
+      if (ids.length === 0) return new Map();
+      // Sans aucune ligne de répartition : null ; avec une répartition sans France : 0
+      const resultat = await db.execute<{ id: number; partFrance: number | null }>(sql`
+        select c.id,
+               case when exists (select 1 from scpi_localisation l where l.scpi_id = c.id)
+                    then coalesce((select sum(l.pourcentage)::float8 from scpi_localisation l
+                                   where l.scpi_id = c.id and trim(l.pays) = 'France'), 0)
+               end as "partFrance"
+        from scpi_catalog c
+        where c.id in (${sql.join(
+          ids.map((id) => sql`${id}`),
+          sql`, `,
+        )})`);
+      return new Map(resultat.rows.map((l) => [l.id, l.partFrance]));
     },
   };
 }

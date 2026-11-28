@@ -8,6 +8,9 @@ import { loggable } from '../logging/service.js';
 // Durée de démembrement proposée (en années) et sa décote (en %)
 export type Decote = { duree: number; decote: number };
 
+// Part d'un pays ou d'un secteur dans le patrimoine de la SCPI, en %
+export type Part = { libelle: string; part: number };
+
 export type ScpiSimulable = {
   id: number;
   nom: string;
@@ -23,6 +26,10 @@ export type ScpiSimulable = {
   demembrement: boolean | null;
   // durées de démembrement du référentiel, de la plus courte à la plus longue
   decotes: Decote[];
+  // US-09 : répartitions géographique et sectorielle, de la plus forte à la plus faible
+  // (vides sans répartition dans le référentiel)
+  pays: Part[];
+  secteurs: Part[];
 };
 
 // Ligne lue en base : la colonne « decote » du référentiel (CSV decote_demembrement) contient

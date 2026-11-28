@@ -2,9 +2,10 @@ import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testconta
 import type { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { importScpis } from '../src/csv/import.js';
-import { depotSimulation } from '../src/db/depots.js';
+import { depotEstimation, depotFiscalite, depotSimulation } from '../src/db/depots.js';
 import { createDb, createPool } from '../src/db/index.js';
 import { migrate } from '../src/migrate.js';
+import { creerEstimationService } from '../src/fiscalite/estimation.js';
 import { creerSimulationService } from '../src/simulation/service.js';
 
 // US-08 : SCPI de la simulation lues sur un PostgreSQL 16 jetable, alimenté par l'import
@@ -59,7 +60,12 @@ describe('Simulation (e2e)', () => {
     await importScpis(
       db,
       lignes(
-        scpi('Transitions Europe', { demembrement: 'Oui', decote_demembrement: '10,70,5,80' }),
+        scpi('Transitions Europe', {
+          demembrement: 'Oui',
+          decote_demembrement: '10,70,5,80',
+          localisation: 'Espagne,30,France,70',
+          secteurs: 'Santé,40,Bureaux,60',
+        }),
         scpi('Atlas', { taux_distribution: '' }),
       ),
     );
@@ -77,6 +83,14 @@ describe('Simulation (e2e)', () => {
         { duree: 5, decote: 20 },
         { duree: 10, decote: 30 },
       ],
+      pays: [
+        { libelle: 'France', part: 70 },
+        { libelle: 'Espagne', part: 30 },
+      ],
+      secteurs: [
+        { libelle: 'Bureaux', part: 60 },
+        { libelle: 'Santé', part: 40 },
+      ],
     });
     expect(atlas).toMatchObject({
       nom: 'Atlas',
@@ -84,5 +98,59 @@ describe('Simulation (e2e)', () => {
       demembrement: false,
       decotes: [],
     });
+  });
+
+  // US-07 / US-09 : barème 2026 (constantes du code), paramètres posés par la migration,
+  // part France lue en base
+  it('estimation fiscale : barème 2026, paramètres de la migration, part France, informations fiscales', async () => {
+    const db = createDb(pool);
+    const depot = depotEstimation(db);
+    expect(await depot.lireParametres()).toEqual({
+      bareme: [
+        { plafond: 11600, taux: 0 },
+        { plafond: 29579, taux: 11 },
+        { plafond: 84577, taux: 30 },
+        { plafond: 181917, taux: 41 },
+        { plafond: null, taux: 45 },
+      ],
+      prelevementsSociaux: 17.2,
+      tauxForfaitaire: 30,
+    });
+    await importScpis(
+      db,
+      lignes(
+        scpi('Europa', { localisation: 'Espagne,80,France,20' }),
+        scpi('Ibérique', { localisation: 'Espagne,100' }),
+        scpi('Sans pays'),
+      ),
+    );
+    const ids = new Map(
+      (await creerSimulationService(depotSimulation(db)).lister()).map((s) => [s.nom, s.id]),
+    );
+    // Répartition géographique retirée (l'import exige une localisation)
+    await pool.query('delete from scpi_localisation where scpi_id = $1', [ids.get('Sans pays')]);
+    const parts = await depot.partsFrance([
+      ids.get('Europa')!,
+      ids.get('Ibérique')!,
+      ids.get('Sans pays')!,
+      999999,
+    ]);
+    expect([...parts.values()]).toEqual(expect.arrayContaining([20, 0, null]));
+    expect(parts.get(ids.get('Europa')!)).toBe(20);
+    expect(parts.get(ids.get('Ibérique')!)).toBe(0);
+    expect(parts.get(ids.get('Sans pays')!)).toBeNull();
+    expect(parts.has(999999)).toBe(false);
+    expect(await depot.partsFrance([])).toEqual(new Map());
+
+    const fiscalite = depotFiscalite(db);
+    await fiscalite.enregistrer('e2e-fiscal', {
+      revenuNetImposable: 40000,
+      situationFamiliale: 'seul',
+      nombreEnfants: 0,
+    });
+    const resultat = await creerEstimationService(depot, fiscalite).estimerRevenus('e2e-fiscal', {
+      lignes: [{ scpiId: ids.get('Europa')!, revenuAnnuel: 1000 }],
+    });
+    expect(resultat).toMatchObject({ foyer: { tmi: 30, tauxMoyen: 12.76 }, impot: 228.96 });
   });
 });

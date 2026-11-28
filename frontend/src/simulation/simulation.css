@@ -1,31 +1,78 @@
 /* Simulation (US-08) : couleurs de compte.css (variables de .compte) et de index.css */
 
-/* Saisie à gauche, résultat à droite ; l'un sous l'autre sur un écran étroit */
+/* Décision BA : la saisie, puis le résultat en dessous, sur toute la largeur */
 .simulation {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  display: flex;
+  flex-direction: column;
   gap: 20px;
-  align-items: start;
-}
-
-@media (max-width: 900px) {
-  .simulation {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 .simulation__saisie,
+.simulation__ma-fiscalite,
 .simulation__resultat {
-  padding: 18px 20px 20px;
+  padding: 22px 26px 24px;
   border: 1px solid var(--bordure);
   border-radius: var(--r-m);
   background: #fff;
 }
 
-/* Le résultat reste visible pendant la saisie d'une longue simulation */
+/* Bloc Résultat (refonte maquette A) : deux colonnes égales, empilées quand le bloc fait
+   moins de 900 px de large (tablette, mobile) */
 .simulation__resultat {
-  position: sticky;
-  top: 16px;
+  container: resultat / inline-size;
+}
+
+.simulation__resultat-grille {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 48px;
+  align-items: start;
+}
+
+/* À gauche : le haut (montant simulé) puis les revenus. À droite : l'encadré, sur toute la
+   hauteur ; avec des cartes de période, il commence sous le montant, à la hauteur de la
+   première carte */
+.simulation__resultat-haut {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.simulation__resultat-gauche {
+  grid-row: 2;
+  grid-column: 1;
+}
+
+.simulation__resultat-droite {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+}
+
+.simulation__resultat-droite--cartes {
+  grid-row: 2;
+  margin-top: 8px; /* même écart que celui des cartes (marge haute de la frise) */
+}
+
+/* Aucune SCPI prise en compte : rien à droite, largeur de lecture */
+.simulation__resultat-grille--seule {
+  grid-template-columns: minmax(0, 640px);
+}
+
+@container resultat (max-width: 900px) {
+  .simulation__resultat-grille {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .simulation__resultat-droite,
+  .simulation__resultat-droite--cartes {
+    grid-row: 3;
+    grid-column: 1;
+    margin-top: 24px;
+  }
+}
+
+.simulation__resultat-colonne {
+  container: colonne / inline-size;
+  min-width: 0;
 }
 
 .simulation__entete {
@@ -109,7 +156,8 @@
   color: var(--encre);
 }
 
-.simulation__champ select:disabled {
+.simulation__champ select:disabled,
+.simulation__champ input:disabled {
   background: var(--papier);
   color: var(--discret);
 }
@@ -232,22 +280,6 @@
   white-space: nowrap;
 }
 
-/* Cumul sur la durée : chiffre principal, mis en avant */
-.simulation__chiffres .simulation__cumul {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 12px 14px;
-  border: none;
-  border-radius: 14px;
-  background: var(--bleu-ciel);
-}
-
-.simulation__cumul dd {
-  font-size: 24px;
-  color: var(--bleu);
-}
-
 .simulation__aide {
   margin: 12px 0 0;
   font-size: 13.5px;
@@ -259,4 +291,817 @@
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--discret);
+}
+
+/* US-09 : revenus « Bruts » / « Après fiscalité » côte à côte */
+.simulation__tableau {
+  width: 100%;
+  margin-top: 12px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.simulation__tableau th,
+.simulation__tableau td {
+  padding: 9px 6px;
+  border-bottom: 1px solid var(--bordure);
+  text-align: right;
+  vertical-align: baseline;
+}
+
+.simulation__tableau thead th {
+  font-size: 13px;
+  color: var(--encre-douce);
+  vertical-align: bottom;
+}
+
+.simulation__tableau tbody th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--encre-douce);
+}
+
+.simulation__tableau tbody td {
+  font-weight: 800;
+  color: var(--encre);
+  white-space: nowrap;
+}
+
+.simulation__precision {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--discret);
+}
+
+/* Cumul sur la durée : chiffre principal, mis en avant */
+.simulation__tableau .simulation__cumul > * {
+  background: var(--bleu-ciel);
+  border-bottom: none;
+}
+
+.simulation__tableau .simulation__cumul td {
+  font-size: 15.5px;
+  color: var(--bleu);
+}
+
+.simulation__tableau .simulation__impot td {
+  color: var(--erreur);
+}
+
+/* TMI et taux moyen, ou liste du taux d'imposition */
+.simulation__fiscal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 14px 0 0;
+}
+
+.simulation__fiscal > div {
+  display: flex;
+  gap: 6px;
+  font-size: 13.5px;
+}
+
+.simulation__fiscal dt {
+  color: var(--encre-douce);
+  /* « TMI retenue : » sur une seule ligne, même dans une carte étroite */
+  white-space: nowrap;
+}
+
+.simulation__fiscal dt::after {
+  content: ' :';
+}
+
+.simulation__fiscal dd {
+  margin: 0;
+  font-weight: 800;
+  color: var(--encre);
+}
+
+/* Changement de TMI : part du revenu au-dessus du plafond de la tranche sans SCPI */
+.simulation__depassement {
+  margin-left: 6px;
+  font-weight: 400;
+  color: var(--encre-douce);
+}
+
+.simulation__depassement::before {
+  content: '(';
+}
+
+.simulation__depassement::after {
+  content: ')';
+}
+
+/* Carte « Détail de l'impôt sur N ans » (colonne de droite, sous l'encadré SCPI) : bordure
+   fine, défilement horizontal si elle ne tient pas ; Total en gras sur fond beige */
+.simulation__carte-impot {
+  margin-top: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+}
+
+.simulation__carte-impot h3 {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--encre);
+}
+
+.simulation__tableau.simulation__parts {
+  min-width: 380px;
+  font-size: 13px;
+}
+
+.simulation__parts thead th:first-child,
+.simulation__parts tbody th,
+.simulation__parts tfoot th {
+  text-align: left;
+}
+
+.simulation__parts tbody td {
+  font-weight: 400;
+}
+
+.simulation__parts tfoot > tr > * {
+  background: var(--cadre);
+  border-bottom: none;
+  font-weight: 800;
+  color: var(--encre);
+  white-space: nowrap;
+}
+
+/* Une seule période : TMI et taux moyen dans un petit encadré beige, l'un sous l'autre */
+.simulation__fiscal--encadre {
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--cadre);
+}
+
+/* « Votre SCPI » compact : badge à côté du titre, repères sur une ligne de 4 colonnes */
+.simulation__encadre--compact .simulation__encadre-entete {
+  justify-content: flex-start;
+}
+
+.simulation__reperes-scpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 10px 12px;
+  margin: 12px 0 0;
+}
+
+.simulation__reperes-scpi dt {
+  font-size: 12px;
+  color: var(--discret);
+}
+
+.simulation__reperes-scpi dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--encre);
+}
+
+/* Info-bulle « i » : texte au survol ou au focus du bouton */
+.simulation__infobulle {
+  position: relative;
+  display: inline-block;
+}
+
+.simulation__infobulle button {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--encre-douce);
+  border-radius: 50%;
+  background: none;
+  color: var(--encre-douce);
+  font:
+    italic 700 11px/1 Georgia,
+    serif;
+  cursor: help;
+}
+
+.simulation__infobulle [role='tooltip'] {
+  position: absolute;
+  z-index: 2;
+  bottom: calc(100% + 6px);
+  left: 0;
+  width: 300px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--encre);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.simulation__infobulle:hover [role='tooltip'],
+.simulation__infobulle button:focus-visible + [role='tooltip'],
+.simulation__infobulle button:focus + [role='tooltip'] {
+  visibility: visible;
+  opacity: 1;
+}
+
+.simulation__fiscal .simulation__champ {
+  flex-direction: column;
+}
+
+.simulation__fiscal .simulation__aide {
+  margin: 0;
+}
+
+.simulation__lien {
+  font-weight: 700;
+  color: var(--bleu);
+}
+
+/* Saisie et résultat, puis les graphiques en dessous */
+.simulation__page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Graphiques : cartes de la fiche US-02 (fiche__carte-blanche), revenus par SCPI puis
+   les deux répartitions côte à côte (fiche__repartitions) */
+.simulation__graphiques {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.simulation__graphique {
+  width: 100%;
+  max-width: 760px;
+  height: 240px;
+  margin: 0 auto;
+}
+
+.simulation__legende-barres {
+  display: flex;
+  gap: 16px;
+  font-size: 12.5px;
+  color: var(--encre-douce);
+}
+
+.simulation__legende-barres > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.simulation__note {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--discret);
+}
+
+/* Nue-propriété : aucun revenu pendant le démembrement, en rouge */
+.simulation__infos .simulation__sans-revenu {
+  font-weight: 700;
+  color: var(--erreur);
+}
+
+/* Frise par période (revenus qui changent au fil des années) : cartes côte à côte, dans
+   l'ordre des années, l'une sous l'autre sur un écran étroit */
+.simulation__precision--frise {
+  margin: 14px 0 0;
+}
+
+.simulation__frise {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.simulation__frise > li {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nombre impair de cartes : la dernière prend toute la largeur (pas de case vide) */
+.simulation__frise > li:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+/* Colonne trop étroite pour deux cartes côte à côte : l'une sous l'autre */
+@container colonne (max-width: 460px) {
+  .simulation__frise {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.simulation__periode {
+  flex: 1;
+  padding: 10px 12px 4px;
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  background: var(--cadre);
+}
+
+.simulation__periode .simulation__tableau {
+  margin-top: 4px;
+}
+
+.simulation__periode .simulation__tableau tr:last-child > * {
+  border-bottom: none;
+}
+
+.simulation__periode-titre {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--encre);
+}
+
+.simulation__periode-titre span {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--encre-douce);
+}
+
+/* Changement qui ouvre la période, au-dessus de sa carte */
+.simulation__evenement {
+  position: relative;
+  margin: 0 0 6px;
+  padding-left: 18px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--bleu);
+}
+
+.simulation__evenement::before {
+  content: '▶';
+  position: absolute;
+  left: 2px;
+  font-size: 10px;
+  line-height: 18px;
+}
+
+/* Cumul (cartes de période, colonne de droite) : bloc bleu arrondi, aligné sur l'encadré
+   « Détail par SCPI » (même bord, contenu à la même marge intérieure) */
+.simulation__tableau--cumul {
+  margin-top: 16px;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 14px;
+  background: var(--bleu-ciel);
+  overflow: hidden;
+}
+
+.simulation__tableau--cumul th,
+.simulation__tableau--cumul td {
+  border-bottom: none;
+}
+
+.simulation__tableau--cumul thead > tr > * {
+  padding: 12px 21px 0;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--encre-douce);
+}
+
+.simulation__tableau--cumul tbody > tr > * {
+  padding: 2px 21px 14px;
+}
+
+.simulation__tableau--cumul thead > tr > :not(:first-child),
+.simulation__tableau--cumul tbody td {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.simulation__tableau--cumul thead > tr > :last-child,
+.simulation__tableau--cumul tbody td:last-child {
+  padding-left: 0;
+}
+
+/* Cartes de période : en-têtes et libellés sur une seule ligne, pour que « Par an »,
+   « Par mois » et « Impôt / an » restent alignés d'une carte à l'autre */
+.simulation__periode .simulation__tableau th {
+  white-space: nowrap;
+}
+
+/* Cartes de période : l'événement qui ouvre la période, sous le titre */
+.simulation__periode .simulation__evenement {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+}
+
+/* Encadré de droite : « Détail par SCPI » ou « Votre SCPI » */
+.simulation__encadre {
+  padding: 16px 20px;
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  background: var(--cadre);
+}
+
+.simulation__encadre-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.simulation__encadre-entete h3 {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--encre);
+}
+
+.simulation__encadre-entete > span:not(.simulation__badge) {
+  font-size: 11.5px;
+  color: var(--discret);
+}
+
+.simulation__scpis {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.simulation__scpis li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.simulation__scpis li:last-child {
+  border-bottom: none;
+}
+
+.simulation__scpi-nom {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--encre);
+}
+
+.simulation__revenu-scpi {
+  margin: 0;
+  font-size: 14px;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--encre-douce);
+}
+
+.simulation__revenu-scpi strong {
+  font-weight: 800;
+  color: var(--encre);
+}
+
+.simulation__net {
+  font-weight: 800;
+  color: var(--succes);
+}
+
+/* Nue-propriété sur toute la durée : aucun revenu, en rouge */
+.simulation__revenu-scpi--aucun {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: normal;
+}
+
+.simulation__revenu-scpi--aucun strong {
+  font-size: 13px;
+  color: var(--erreur);
+}
+
+.simulation__revenu-scpi--aucun span {
+  font-size: 11.5px;
+  color: var(--discret);
+}
+
+.simulation__encadre-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 2px solid var(--bordure);
+  font-size: 13.5px;
+  color: var(--encre-douce);
+}
+
+/* Badges : bleu pour pleine propriété et usufruit, orange pour nue-propriété */
+.simulation__badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--bleu-ciel);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--bleu);
+}
+
+.simulation__badge--nue {
+  background: color-mix(in srgb, var(--ocre) 55%, #fff);
+  color: var(--encre);
+}
+
+/* Plus de MAX_PERIODES_EN_CARTES périodes : tableau pleine largeur sous les deux colonnes,
+   qui défile horizontalement sur un écran étroit */
+.simulation__periodes {
+  margin-top: 28px;
+}
+
+.simulation__periodes h3 {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--encre);
+}
+
+.simulation__defilement {
+  overflow-x: auto;
+}
+
+.simulation__tableau--periodes {
+  min-width: 760px;
+}
+
+.simulation__tableau--periodes th[scope='colgroup'] {
+  text-align: center;
+}
+
+.simulation__tableau--periodes .simulation__gauche {
+  text-align: left;
+}
+
+.simulation__tableau--periodes tbody th {
+  font-weight: 800;
+  color: var(--encre);
+  white-space: nowrap;
+}
+
+.simulation__tableau--periodes .simulation__scpis-periode {
+  text-align: left;
+  font-weight: 400;
+  color: var(--encre-douce);
+  white-space: normal;
+}
+
+.simulation__tableau .simulation__montant-impot {
+  color: var(--erreur);
+}
+
+/* Événement entre deux périodes : ligne fine sur fond beige */
+.simulation__ligne-evenement td {
+  padding: 5px 8px;
+  background: var(--papier);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  white-space: normal;
+  color: var(--bleu);
+}
+
+.simulation__ligne-evenement td::before {
+  content: '▸ ';
+}
+
+/* Carte des pays : sans étiquettes sur les pays ; nom et part dans une bulle au survol
+   (souris) ou au toucher (mobile), au-dessus du centre du pays */
+.simulation__cadre-carte {
+  position: relative;
+}
+
+.simulation__pays {
+  cursor: pointer;
+}
+
+.simulation__bulle-carte {
+  position: absolute;
+  z-index: 1;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgb(15 31 69 / 22%);
+  font-size: 13.5px;
+  color: var(--encre-douce);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 10px));
+}
+
+.simulation__bulle-carte strong {
+  font-weight: 800;
+  color: var(--encre);
+}
+
+/* Maquette de l'écran d'accueil : sous-titre, cadre « Ma fiscalité », résultat vide */
+.simulation__intro {
+  margin: -6px 0 0;
+  font-size: 15px;
+  color: var(--encre-douce);
+}
+
+.simulation__aide--saisie {
+  margin: 0 0 14px;
+  color: var(--encre-douce);
+}
+
+.simulation__page > .simulation__mention {
+  margin: 0;
+}
+
+/* Ma fiscalité : icône, texte, puis le taux et le bouton à droite (dessous sur mobile) */
+.simulation__ma-fiscalite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px 18px;
+}
+
+.simulation__icone-fiscalite {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fdecd2;
+  color: #b26a12;
+}
+
+.simulation__icone-fiscalite svg,
+.simulation__icone-vide svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.simulation__ma-fiscalite-texte {
+  flex: 1 1 280px;
+}
+
+.simulation__ma-fiscalite-texte .simulation__titre {
+  margin-bottom: 6px;
+}
+
+.simulation__ma-fiscalite-texte p {
+  margin: 0;
+  max-width: 460px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--encre-douce);
+}
+
+.simulation__ma-fiscalite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 24px;
+  align-self: center;
+}
+
+.simulation__ma-fiscalite-actions .simulation__champ {
+  min-width: 200px;
+}
+
+.simulation__bouton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1.5px solid var(--bleu);
+  border-radius: 10px;
+  background: var(--bleu);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.simulation__bouton:hover {
+  background: var(--nuit);
+  border-color: var(--nuit);
+}
+
+.simulation__bouton--secondaire {
+  background: #fff;
+  color: var(--bleu);
+}
+
+.simulation__bouton--secondaire:hover {
+  background: var(--bleu-ciel);
+  border-color: var(--bleu);
+}
+
+/* Résultat vide : icône, titre, texte centrés, puis les trois étapes */
+.simulation__vide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 0 8px;
+  text-align: center;
+}
+
+.simulation__icone-vide {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #e8eef8;
+  color: var(--bleu);
+}
+
+.simulation__vide-titre {
+  margin: 16px 0 8px;
+  font-size: 19px;
+  color: var(--encre);
+}
+
+.simulation__vide-texte {
+  max-width: 500px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--encre-douce);
+}
+
+.simulation__etapes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@container resultat (width < 700px) {
+  .simulation__etapes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.simulation__etape {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--bordure);
+  border-radius: 14px;
+  background: var(--cadre);
+}
+
+.simulation__etape p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--encre-douce);
+}
+
+.simulation__etape strong {
+  display: block;
+  font-size: 15px;
+  color: var(--encre);
+}
+
+.simulation__etape-numero {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--bleu);
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--bleu);
+}
+
+.simulation__etape:first-child .simulation__etape-numero {
+  background: var(--bleu);
+  color: #fff;
 }

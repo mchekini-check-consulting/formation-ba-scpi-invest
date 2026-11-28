@@ -264,6 +264,17 @@ export const informationFiscale = pgTable('information_fiscale', {
   misAJourLe: horodatage('mis_a_jour_le').notNull().defaultNow(),
 });
 
+// US-07 (règle 10) : paramètres de l'estimation fiscale, modifiables sans nouveau
+// développement (mise à jour des lignes en base). Valeurs initiales : migration
+// 0016_bareme_fiscal_valeurs. Le barème de l'impôt sur le revenu est dans le code
+// (fiscalite/bareme.ts, règle du 27/11/2026) : table tranche_bareme retirée (0017).
+// Autres paramètres, en % : prelevements_sociaux (17,2), taux_forfaitaire (30 : sans
+// informations fiscales, et taux présélectionné de la simulation, US-09)
+export const parametreFiscal = pgTable('parametre_fiscal', {
+  cle: text('cle').primaryKey(),
+  valeur: numeric('valeur', { precision: 5, scale: 2 }).notNull(),
+});
+
 // ---- Catalogue SCPI (import CSV, src/csv/)
 
 export const frequence = pgEnum('frequence', [
